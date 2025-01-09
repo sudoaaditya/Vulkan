@@ -1,6 +1,6 @@
 # Vulkan Projects
 
-Welcome to the Vulkan Projects repository. This repository contains various projects and code samples related to the Vulkan graphics API.
+This is my Vulkan Projects repository. This repository contains various projects and code samples related to the Vulkan graphics API. Implementated over a period of time!
 
 ## Getting Started
 
