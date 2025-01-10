@@ -197,6 +197,8 @@ void ToggleFullScreen(void) {
 
 int initialize(void) {
 
+    return 0;
+
 }
 
 void resize(int width, int height) {
