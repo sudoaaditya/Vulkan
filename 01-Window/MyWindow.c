@@ -1,16 +1,19 @@
 #include<windows.h>
 #include<stdio.h>
 
+#include "MyWindow.h"
+
 #define WIN_WIDTH 800
 #define WIN_HEIGHT 600
 
 // global variables
-bool gbFullScreen = false;
+BOOL gbFullScreen = FALSE;
 DWORD dwStyle = NULL;
-WINDOWPLACEMENT wpPrev = {sizeof(WINDOWPLACEMENT)};
+WINDOWPLACEMENT wpPrev = { sizeof(WINDOWPLACEMENT) };
 HWND ghwnd = NULL;
-bool gbActiveWindow = false;
+BOOL gbActiveWindow = FALSE;
 HDC ghdc = NULL;
+HGLRC ghrc = NULL;
 FILE *fptr = NULL;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
@@ -20,13 +23,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     int initialize(void);
     void display(void);
     void update(void);
+    void uninitialize(void);
     
     // Vars
     WNDCLASSEX wndclass;
     MSG msg;
     HWND hwnd;
     TCHAR szAppName[] = TEXT("Vulkan Window");
-    bool bDone = false;
+    BOOL bDone = FALSE;
     int iRet = 0;
 
     fptr = fopen("_VulkanWindowLog.txt", "w");
@@ -38,27 +42,36 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
         fprintf(fptr, "Log Created Successful!!\n\n");
     }
 
+    // Centered window
+    int xPos = GetSystemMetrics(SM_CXSCREEN);
+    int yPos = GetSystemMetrics(SM_CYSCREEN);
+    int xMid = xPos / 2;
+    int yMid = yPos / 2;
+
+    xPos = xMid - (WIN_WIDTH / 2);
+    yPos = yMid - (WIN_HEIGHT / 2);
+
     wndclass.cbSize = sizeof(WNDCLASSEX);
     wndclass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-    wndclass.cbClsExtra = NULL;
-    wndclass.cbWndExtra = NULL;
+    wndclass.cbClsExtra = 0;
+    wndclass.cbWndExtra = 0;
     wndclass.lpszClassName = szAppName;
     wndclass.lpszMenuName = NULL;
     wndclass.lpfnWndProc = MyCallBack;
     wndclass.hInstance = hInstance;
-    wndclass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-    wndclass.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
-    wndclass.hbrBackground = CreateSolidBrush(RGB(0, 0, 0));
+    wndclass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(ICON_MORPHED));
+    wndclass.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(ICON_MORPHED));
+    wndclass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wndclass.hCursor = LoadCursor(NULL, IDC_ARROW);
 
     RegisterClassEx(&wndclass);
 
-    hwnd = CreateWindowEx(WS_EX_WINDOWEDGE,
+    hwnd = CreateWindowEx(WS_EX_ACCEPTFILES,
             szAppName,
             TEXT("Vulkan Window"),
             WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE,
-            100,
-            100,
+            xPos,
+            yPos,
             WIN_WIDTH,
             WIN_HEIGHT,
             NULL,
@@ -70,7 +83,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     ghwnd = hwnd;
 
     iRet = initialize();
-    if(iRet == -1) {
+    if(iRet != 0) {
         fprintf(fptr, "Initialization Failed!!!...\n");
         DestroyWindow(hwnd);
     } else {
@@ -85,18 +98,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     while(!bDone) {
         if(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
             if(msg.message == WM_QUIT) {
-                bDone = true;
+                bDone = TRUE;
             } else {
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
         } else {
-            if(gbActiveWindow == true) {
+            if(gbActiveWindow == TRUE) {
                 update();
             }
             display();
         }
     }
+
+    uninitialize();
     
     return((int)msg.wParam);
 }
@@ -110,17 +125,20 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
     void resize(int, int);
 
     //var
-    bool bIsMax = false;
+    BOOL bIsMax = FALSE;
 
     switch(iMsg) {
 
         case WM_SETFOCUS:
-            gbActiveWindow = true;
+            gbActiveWindow = TRUE;
             break;
 
         case WM_KILLFOCUS:
-            gbActiveWindow = false;
+            gbActiveWindow = FALSE;
             break;
+
+        case WM_ERASEBKGND:
+            return(0);
 
         case WM_SIZE:
             resize(LOWORD(lParam), HIWORD(lParam));
@@ -132,16 +150,23 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
                 case VK_ESCAPE:
                     DestroyWindow(hwnd);
                     break;
-                
+
+                default:
+                    break;
+            }
+            break;
+
+        case WM_CHAR:
+            switch(LOWORD(wParam)) {
                 case 's':
                 case 'S':
                     if(!bIsMax) {
                         ShowWindow(hwnd, SW_MAXIMIZE);
-                        bIsMax = true;
+                        bIsMax = TRUE;
                     }
                     else {
                         ShowWindow(hwnd, SW_SHOWNORMAL);
-                        bIsMax = false;
+                        bIsMax = FALSE;
                     }
                 break;
 
@@ -149,11 +174,11 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
                 case 'F':
                     ToggleFullScreen();
                     break;
+                
+                default:
+                    break;
             }
             break;
-
-        case WM_ERASEBKGND:
-            return(0);
 
         case WM_CLOSE:
             DestroyWindow(hwnd);
@@ -163,7 +188,6 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
             uninitialize();
             PostQuitMessage(0);
             break;
-
     }
 
     return(DefWindowProc(hwnd, iMsg, wParam, lParam));
@@ -172,14 +196,13 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
 void ToggleFullScreen(void){
 
 	//var
-	MONITORINFO mi;
+	MONITORINFO mi = {sizeof(MONITORINFO)};
 
 	if(!gbFullScreen){
 
 		dwStyle = GetWindowLong(ghwnd, GWL_STYLE);
 
 		if(dwStyle & WS_OVERLAPPEDWINDOW) {
-			mi = {sizeof(MONITORINFO)};
 
 			if(GetWindowPlacement(ghwnd, &wpPrev) && GetMonitorInfo(MonitorFromWindow(ghwnd, MONITORINFOF_PRIMARY), &mi)){
 
@@ -195,7 +218,7 @@ void ToggleFullScreen(void){
 			}
 		}
 		ShowCursor(FALSE);
-		gbFullScreen = true;
+		gbFullScreen = TRUE;
 	}
 	else {
 
@@ -209,7 +232,7 @@ void ToggleFullScreen(void){
 			SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER);
 
 		ShowCursor(TRUE);
-		gbFullScreen = false;
+		gbFullScreen = FALSE;
 	}
 }
 
@@ -221,7 +244,6 @@ int initialize(void) {
 
 void resize(int width, int height) {
 
-
 }
 
 void display(void) {
@@ -230,8 +252,14 @@ void display(void) {
 
 void uninitialize(void){
 
+    if(ghwnd) {
+        DestroyWindow(ghwnd);
+        ghwnd = NULL;
+    }
+
 	if(fptr){
 		fprintf(fptr,"\nFile Closed Successfully..\n");
+        fclose(fptr);
 		fptr = NULL;
 	}
 }
