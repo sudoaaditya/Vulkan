@@ -1,7 +1,7 @@
 #include<windows.h>
 #include<stdio.h>
 
-#include "MyWindow.h"
+#include "vk.h"
 
 #define WIN_WIDTH 800
 #define WIN_HEIGHT 600
@@ -9,7 +9,7 @@
 // global variables
 BOOL gbFullScreen = FALSE;
 DWORD dwStyle = NULL;
-WINDOWPLACEMENT wpPrev = { sizeof(WINDOWPLACEMENT) };
+WINDOWPLACEMENT wpPrev;
 HWND ghwnd = NULL;
 BOOL gbActiveWindow = FALSE;
 HDC ghdc = NULL;
@@ -66,9 +66,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
     RegisterClassEx(&wndclass);
 
-    hwnd = CreateWindowEx(WS_EX_ACCEPTFILES,
+    hwnd = CreateWindowEx(WS_EX_APPWINDOW,
             szAppName,
-            TEXT("Vulkan Window"),
+            TEXT("Vulkan"),
             WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE,
             xPos,
             yPos,
@@ -84,13 +84,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
     iRet = initialize();
     if(iRet != 0) {
-        fprintf(fptr, "Initialization Failed!!!...\n");
+        fprintf(fptr, "WinMain: Initialization Failed!!!...\n");
         DestroyWindow(hwnd);
     } else {
-        fprintf(fptr, "Initialization Successful!!!...\n");
+        fprintf(fptr, "WinMain: Initialization Successful!!!...\n");
     }
 
     ShowWindow(hwnd, iCmdShow);
+    UpdateWindow(hwnd);
     SetForegroundWindow(hwnd);
     SetFocus(hwnd);
 
@@ -120,7 +121,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 
     //func
-    void uninitialize(void);
     void ToggleFullScreen(void);
     void resize(int, int);
 
@@ -128,6 +128,11 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
     BOOL bIsMax = FALSE;
 
     switch(iMsg) {
+
+        case WM_CREATE:
+            memset(&wpPrev, 0, sizeof(WINDOWPLACEMENT));
+            wpPrev.length = sizeof(WINDOWPLACEMENT);
+            break;
 
         case WM_SETFOCUS:
             gbActiveWindow = TRUE;
@@ -185,7 +190,6 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
             break;
 
         case WM_DESTROY:
-            uninitialize();
             PostQuitMessage(0);
             break;
     }
@@ -239,6 +243,8 @@ void ToggleFullScreen(void){
 
 int initialize(void) {
 
+
+
     return(0);
 }
 
@@ -252,13 +258,15 @@ void display(void) {
 
 void uninitialize(void){
 
+    // to do toggle window full screen!
+
     if(ghwnd) {
         DestroyWindow(ghwnd);
         ghwnd = NULL;
     }
 
 	if(fptr){
-		fprintf(fptr,"\nFile Closed Successfully..\n");
+		fprintf(fptr,"\nuninitialize:File Closed Successfully..\n");
         fclose(fptr);
 		fptr = NULL;
 	}

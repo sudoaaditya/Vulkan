@@ -4,10 +4,10 @@ del *.txt
 
 cls
 
-cl.exe /c /EHsc MyWindow.c
+cl.exe /c /EHsc vk.c
 
-rc.exe resource.rc
+rc.exe vk.rc
 
-link.exe resource.res user32.lib gdi32.lib /SUBSYSTEM:WINDOWS MyWindow.obj /out:"./OGL.exe"
+link.exe vk.res user32.lib gdi32.lib /SUBSYSTEM:WINDOWS vk.obj /out:"./VK.exe"
 
-OGL.exe
+VK.exe

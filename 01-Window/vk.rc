@@ -1,5 +1,5 @@
 #include <windows.h>
 
-#include "MyWindow.h"
+#include "vk.h"
 
 ICON_MORPHED ICON morphed.ico 

@@ -1,5 +1,5 @@
 Log Created Successful!!
 
-Initialization Successful!!!...
+WinMain: Initialization Successful!!!...
 
-File Closed Successfully..
+uninitialize:File Closed Successfully..
