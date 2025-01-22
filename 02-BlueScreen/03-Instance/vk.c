@@ -28,6 +28,8 @@ const CHAR *gpszAppName = "ARTR: Vulkan";
 // instance extension related variables
 uint32_t enabledInstanceExtensionCount = 0;
 const char *enabledInstanceExtensionNames_array[2]; // VK_KHR_SURFACE_EXTENSION_NAME & VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+// vulkan instance
+VkInstance vkInstance = VK_NULL_HANDLE;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
@@ -260,20 +262,19 @@ void ToggleFullScreen(void){
 VkResult initialize(void) {
 
     // function declarations
-    VkResult fillInstanceExtensionNames(void);
+    VkResult createVulkanInstance(void);
 
     // varibales
     VkResult vkResult = VK_SUCCESS;
 
     // code
-    vkResult = fillInstanceExtensionNames();
+    vkResult = createVulkanInstance();
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "initialize(): fillInstanceExtensionNames() Failed!.\n");
+        fprintf(fptr, "initialize(): createVulkanInstance() Failed!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "initialize(): fillInstanceExtensionNames() Successful!.\n");
+        fprintf(fptr, "initialize(): createVulkanInstance() Successful!.\n");
     }
-
 
     return (vkResult);
 }
@@ -295,8 +296,17 @@ void uninitialize(void){
         ghwnd = NULL;
     }
 
+
+    // destroy vkInstance
+    if(vkInstance) {
+        vkDestroyInstance(vkInstance, NULL);
+        vkInstance = VK_NULL_HANDLE;
+		fprintf(fptr,"\nuninitialize(): vkDestroyInstance() Succeed\n");
+
+    }
+
 	if(fptr){
-		fprintf(fptr,"\nuninitialize: File Closed Successfully..\n");
+		fprintf(fptr,"uninitialize(): File Closed Successfully..\n");
         fclose(fptr);
 		fptr = NULL;
 	}
@@ -307,6 +317,63 @@ void update(void) {
 }
 
 //! //////////////////////////////////////// Definations of vulkan Related Functions ///////////////////////////////////////////////
+
+VkResult createVulkanInstance (void) {
+    // function declarations
+    VkResult fillInstanceExtensionNames(void);
+
+    // varibales
+    VkResult vkResult = VK_SUCCESS;
+
+    // code
+    vkResult = fillInstanceExtensionNames();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVulkanInstance(): fillInstanceExtensionNames() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVulkanInstance(): fillInstanceExtensionNames() Successful!.\n");
+    }
+
+    // step 2:
+    VkApplicationInfo vkApplicationInfo;
+    memset((void*)&vkApplicationInfo, 0, sizeof(VkApplicationInfo));
+
+    vkApplicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    vkApplicationInfo.pNext = NULL;
+    vkApplicationInfo.pApplicationName = gpszAppName;
+    vkApplicationInfo.applicationVersion = 1;
+    vkApplicationInfo.pEngineName = gpszAppName;
+    vkApplicationInfo. engineVersion = 1;
+    vkApplicationInfo.apiVersion = VK_API_VERSION_1_3;  // change it VK_API_VERSION_1_4 once you update vulkan
+
+    // Step 3: initialize struct VkInstanceCreateInfo
+    VkInstanceCreateInfo vkInstanceCreateInfo;
+    memset((void*)&vkInstanceCreateInfo, 0, sizeof(VkInstanceCreateInfo));
+
+    vkInstanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    vkInstanceCreateInfo.pNext = NULL;
+    vkInstanceCreateInfo.pApplicationInfo = &vkApplicationInfo;
+    vkInstanceCreateInfo.enabledExtensionCount = enabledInstanceExtensionCount;
+    vkInstanceCreateInfo.ppEnabledExtensionNames = enabledInstanceExtensionNames_array;
+
+    // Step 4: Create instance using vkCreateInstance
+    vkResult = vkCreateInstance(&vkInstanceCreateInfo, NULL, &vkInstance);
+    if(vkResult == VK_ERROR_INCOMPATIBLE_DRIVER) {
+        fprintf(fptr, "createVulkanInstance(): vkCreateInstance() Failed Due to Incompatible Driver (%d)!.\n", vkResult);
+        return (vkResult);
+    } else if(vkResult == VK_ERROR_EXTENSION_NOT_PRESENT) {
+        fprintf(fptr, "createVulkanInstance(): vkCreateInstance() Failed Due to Extention Not Present (%d)!.\n", vkResult);
+        return (vkResult);
+    } else if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVulkanInstance(): vkCreateInstance() Failed Due to Unknown Reason (%d)!.\n", vkResult);
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVulkanInstance(): vkCreateInstance() Successful!.\n\n");
+    }
+
+    return (vkResult);
+
+}
 
 VkResult fillInstanceExtensionNames (void) {
     // variables
@@ -393,5 +460,4 @@ VkResult fillInstanceExtensionNames (void) {
     }
 
     return vkResult;
-
 }
