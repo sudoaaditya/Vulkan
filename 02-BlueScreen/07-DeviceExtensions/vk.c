@@ -771,6 +771,7 @@ VkResult fillDeviceExtensionNames (void) {
     // Step 3: 
     char **deviceExtensionNames_array = NULL;
     deviceExtensionNames_array = (char**)malloc(sizeof(char*) * devicesExtensionCount);
+    fprintf(fptr, "fillDeviceExtensionNames(): Vulkan Device Extension Count = %d \n", devicesExtensionCount);
     for(uint32_t i = 0; i < devicesExtensionCount; i++) {
         deviceExtensionNames_array[i] = (char*)malloc(sizeof(char) * strlen(vkExtensionProperties_array[i].extensionName) + 1);
         memcpy(

@@ -61,6 +61,7 @@ printVKInfo(): freed vkPhysicalDevice_array!.
 initialize(): printVKInfo() Successful!.
 fillDeviceExtensionNames(): vkEnumerateDeviceExtensionProperties() First Call Successful!.
 fillDeviceExtensionNames(): vkEnumerateDeviceExtensionProperties() Second Call Successful!.
+fillDeviceExtensionNames(): Vulkan Device Extension Count = 229 
 fillDeviceExtensionNames(): Vulkan Device Extension Name = VK_KHR_16bit_storage 
 fillDeviceExtensionNames(): Vulkan Device Extension Name = VK_KHR_8bit_storage 
 fillDeviceExtensionNames(): Vulkan Device Extension Name = VK_KHR_acceleration_structure 
