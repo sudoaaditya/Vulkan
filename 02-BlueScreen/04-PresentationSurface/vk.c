@@ -316,13 +316,11 @@ void uninitialize(void){
 		fprintf(fptr,"\nuninitialize(): vkDestroySurfaceKHR() Succeed\n");
     }
 
-
     // destroy vkInstance
     if(vkInstance) {
         vkDestroyInstance(vkInstance, NULL);
         vkInstance = VK_NULL_HANDLE;
 		fprintf(fptr,"uninitialize(): vkDestroyInstance() Succeed\n");
-
     }
 
 	if(fptr){

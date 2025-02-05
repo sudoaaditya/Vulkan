@@ -323,6 +323,9 @@ void uninitialize(void){
         DestroyWindow(ghwnd);
         ghwnd = NULL;
     }
+    
+    //No need to destroy selected physical device!
+
 
     // destroy surface
     if(vkSurfaceKHR) {
@@ -331,13 +334,11 @@ void uninitialize(void){
 		fprintf(fptr,"\nuninitialize(): vkDestroySurfaceKHR() Succeed\n");
     }
 
-
     // destroy vkInstance
     if(vkInstance) {
         vkDestroyInstance(vkInstance, NULL);
         vkInstance = VK_NULL_HANDLE;
 		fprintf(fptr,"uninitialize(): vkDestroyInstance() Succeed\n");
-
     }
 
 	if(fptr){
@@ -543,6 +544,7 @@ VkResult getPhysicalDevice() {
         return (vkResult);
     } else if(physicalDeviceCount == 0) {
         fprintf(fptr, "getPhysicalDevice(): vkEnumeratePhysicalDevices() Resulted in Zero Physical Devices!.\n");
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
         return (vkResult);
     } else {
         fprintf(fptr, "getPhysicalDevice(): vkEnumeratePhysicalDevices() First Call Successful!.\n");
