@@ -107,7 +107,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
     hwnd = CreateWindowEx(WS_EX_APPWINDOW,
             szAppName,
-            TEXT("Vulkan"),
+            TEXT("AMK_Vulkan : Device Queue"),
             WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE,
             xPos,
             yPos,
@@ -365,8 +365,7 @@ void uninitialize(void){
 
     // Destroy Vulkan Device
     if(vkDevice) {
-        vkDeviceWaitIdle(vkDevice); // this basically waits on til all \
-                the operations have done the device and then this function call returns
+        vkDeviceWaitIdle(vkDevice); // this basically waits on til all the operations have done the device and then this function call returns
         fprintf(fptr, "\nuninitialize(): vkDeviceWaitIdle is done!\n");
         vkDestroyDevice(vkDevice, NULL);
         vkDevice = VK_NULL_HANDLE;
@@ -867,7 +866,7 @@ VkResult createVulkanDevice () {
     vkDeviceQueueCreateInfo.flags = 0;
     vkDeviceQueueCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex_selected;
     vkDeviceQueueCreateInfo.queueCount = 1;
-    vkDeviceQueueCreateInfo.pQueuePriorities = &queuePriorities;
+    vkDeviceQueueCreateInfo.pQueuePriorities = queuePriorities;
 
     // initialize VkDeviceCreateInfo structure
     VkDeviceCreateInfo vkDeviceCreateInfo;
