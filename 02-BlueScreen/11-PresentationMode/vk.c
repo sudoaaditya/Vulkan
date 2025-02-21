@@ -189,9 +189,6 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
             gbActiveWindow = FALSE;
             break;
 
-        case WM_ERASEBKGND:
-            return(0);
-
         case WM_SIZE:
             resize(LOWORD(lParam), HIWORD(lParam));
             break;
