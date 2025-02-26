@@ -60,6 +60,11 @@ VkColorSpaceKHR vkColorSpaceKHR = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 // Presentation Mode
 VkPresentModeKHR vkPresentModeKHR = VK_PRESENT_MODE_FIFO_KHR;
 
+// Swapchain
+int winWidth = WIN_WIDTH, winHeight = WIN_HEIGHT;
+VkSwapchainKHR vkSwapchainKHR = VK_NULL_HANDLE;
+VkExtent2D vkExtent2D_swapchain;
+
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
@@ -294,8 +299,7 @@ VkResult initialize(void) {
     VkResult printVKInfo(void);
     VkResult createVulkanDevice(void);
     void getDeviceQueue(void);
-    VkResult getPhysicalDeviceSurfaceFormatAndColorSpace(void);
-    VkResult getPhysicalDeviceSurfacePresentMode(void);
+    VkResult createSwapchain(VkBool32);
 
     // varibales
     VkResult vkResult = VK_SUCCESS;
@@ -347,21 +351,13 @@ VkResult initialize(void) {
     // Device Queue
     getDeviceQueue();
 
-    // Surface Color & Color Space
-    vkResult = getPhysicalDeviceSurfaceFormatAndColorSpace();
+    // Swapchain
+    vkResult = createSwapchain(VK_FALSE);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "initialize(): getPhysicalDeviceSurfaceFormatAndColorSpace() Failed!.\n");
-        return (vkResult);
+        fprintf(fptr, "initialize(): createSwapchain() Failed!.\n");
+        return (VK_ERROR_INITIALIZATION_FAILED);
     } else {
-        fprintf(fptr, "initialize(): getPhysicalDeviceSurfaceFormatAndColorSpace() Successful!.\n\n");
-    }
-
-    vkResult = getPhysicalDeviceSurfacePresentMode();
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "initialize(): getPhysicalDeviceSurfacePresentMode() Failed!.\n");
-        return (vkResult);
-    } else {
-        fprintf(fptr, "initialize(): getPhysicalDeviceSurfacePresentMode() Successful!.\n\n");
+        fprintf(fptr, "initialize(): createSwapchain() Successful!.\n\n");
     }
 
     return (vkResult);
@@ -382,6 +378,12 @@ void uninitialize(void){
     if(ghwnd) {
         DestroyWindow(ghwnd);
         ghwnd = NULL;
+    }
+
+    // Destroy Vulkan Swapchain
+    if(vkSwapchainKHR) {
+        vkDestroySwapchainKHR(vkDevice, vkSwapchainKHR, NULL);
+        vkSwapchainKHR = VK_NULL_HANDLE;
     }
     
     // No need to destroy device queue
@@ -934,7 +936,7 @@ void getDeviceQueue (void) {
     if(vkQueue == VK_NULL_HANDLE) {
         fprintf(fptr, "getDeviceQueue(): vkGetDeviceQueue() Failed!.\n");
     } else {
-        fprintf(fptr, "getDeviceQueue(): vkGetDeviceQueue() Successful!.\n");
+        fprintf(fptr, "getDeviceQueue(): vkGetDeviceQueue() Successful!.\n\n");
     }
 
 }
@@ -1051,6 +1053,137 @@ VkResult getPhysicalDeviceSurfacePresentMode(void) {
         free(vkPresentModeKHR_array);
         vkPresentModeKHR_array = NULL;
         fprintf(fptr, "getPhysicalDeviceSurfacePresentMode(): vkPresentModeKHR_array freed.\n");
+    }
+
+    return (vkResult);
+}
+
+VkResult createSwapchain (VkBool32 vSync) {
+
+    // Functions
+    VkResult getPhysicalDeviceSurfaceFormatAndColorSpace(void);
+    VkResult getPhysicalDeviceSurfacePresentMode(void);
+
+    // Variables
+    VkResult vkResult = VK_SUCCESS;
+    
+    // Code
+    // Surface Color & Color Space
+    vkResult = getPhysicalDeviceSurfaceFormatAndColorSpace();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createSwapchain(): getPhysicalDeviceSurfaceFormatAndColorSpace() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createSwapchain(): getPhysicalDeviceSurfaceFormatAndColorSpace() Successful!.\n");
+    }
+
+    // Get Physical Device Surface Capabilities
+    VkSurfaceCapabilitiesKHR vkSurfaceCapabilitiesKHR;
+    memset((void*)&vkSurfaceCapabilitiesKHR, 0, sizeof(VkSurfaceCapabilitiesKHR));
+
+    vkResult = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice_selected, vkSurfaceKHR, &vkSurfaceCapabilitiesKHR);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createSwapchain(): vkGetPhysicalDeviceSurfaceCapabilitiesKHR() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createSwapchain(): vkGetPhysicalDeviceSurfaceCapabilitiesKHR() Successful!.\n");
+    }
+
+    // Decide Image Count of Swapchain using minImageCount & maxImageCount from vkSurfaceCapabilitiesKHR
+    uint32_t testingNumberOfSwapchainImages = vkSurfaceCapabilitiesKHR.minImageCount + 1;
+    uint32_t desiredNumberOfSwapchainImages = 0;
+
+    if(vkSurfaceCapabilitiesKHR.maxImageCount > 0 && vkSurfaceCapabilitiesKHR.maxImageArrayLayers < testingNumberOfSwapchainImages) {
+        desiredNumberOfSwapchainImages = vkSurfaceCapabilitiesKHR.maxImageCount;
+    } else {
+        desiredNumberOfSwapchainImages = vkSurfaceCapabilitiesKHR.minImageCount;
+    }
+
+    fprintf(
+        fptr, 
+        "createSwapchain(): desiredNumberOfSwapchainImages is : %d, [Min: %d, Max: %d]\n", 
+        desiredNumberOfSwapchainImages,  vkSurfaceCapabilitiesKHR.minImageCount,  
+        vkSurfaceCapabilitiesKHR.maxImageCount
+    );
+
+    // Decide Size of Swapchain Image using currentExtent Size & window Size
+    memset((void*)&vkExtent2D_swapchain, 0, sizeof(VkExtent2D));
+
+    if(vkSurfaceCapabilitiesKHR.currentExtent.width != UINT32_MAX) {
+        vkExtent2D_swapchain.width = vkSurfaceCapabilitiesKHR.currentExtent.width;
+        vkExtent2D_swapchain.height = vkSurfaceCapabilitiesKHR.currentExtent.height;
+
+        fprintf(
+            fptr, 
+            "createSwapchain(): Swapchain Image Width : %d X Height : %d\n", 
+            vkExtent2D_swapchain.width, vkExtent2D_swapchain.height
+        );
+    } else {
+        // if surface size is already defined then swapchain image size must match with it!
+        VkExtent2D vkExtent2D;
+        memset((void*)&vkExtent2D, 0, sizeof(VkExtent2D));
+
+        vkExtent2D.width = (uint32_t)winWidth;
+        vkExtent2D.height = (uint32_t)winHeight;
+
+        vkExtent2D_swapchain.width = max(vkSurfaceCapabilitiesKHR.minImageExtent.width, min(vkSurfaceCapabilitiesKHR.maxImageExtent.width, vkExtent2D.width));
+        vkExtent2D_swapchain.height = max(vkSurfaceCapabilitiesKHR.minImageExtent.height, min(vkSurfaceCapabilitiesKHR.maxImageExtent.height, vkExtent2D.height));
+
+        fprintf(
+            fptr, 
+            "createSwapchain(): Swapchain Image (Derived from best of minImageExtent, maxImageExtent & Window Size) Width  : %d X Height : %d\n", 
+            vkExtent2D_swapchain.width, vkExtent2D_swapchain.height
+        );
+    }
+
+    // Set Swapchain Image Usage Flag
+    VkImageUsageFlags vkImageUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+    // Whether to Consider Pre-Transform/Flipping or Not
+    VkSurfaceTransformFlagBitsKHR vkSurfaceTransformFlagBitsKHR;
+
+    if(vkSurfaceCapabilitiesKHR.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
+        vkSurfaceTransformFlagBitsKHR = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    } else {
+        vkSurfaceTransformFlagBitsKHR = vkSurfaceCapabilitiesKHR.currentTransform;
+    }
+
+    // Physical Device Presentation Mode
+    vkResult = getPhysicalDeviceSurfacePresentMode();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createSwapchain(): getPhysicalDeviceSurfacePresentMode() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createSwapchain(): getPhysicalDeviceSurfacePresentMode() Successful!.\n");
+    }
+
+    // Initalize VkSwapchainCreateInfoKHR
+    VkSwapchainCreateInfoKHR vkSwapchainCreateInfoKHR;
+    memset((void*)&vkSwapchainCreateInfoKHR, 0, sizeof(VkSwapchainCreateInfoKHR));
+
+    vkSwapchainCreateInfoKHR.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    vkSwapchainCreateInfoKHR.pNext = NULL;
+    vkSwapchainCreateInfoKHR.flags = 0;
+    vkSwapchainCreateInfoKHR.surface = vkSurfaceKHR;
+    vkSwapchainCreateInfoKHR.minImageCount = desiredNumberOfSwapchainImages;
+    vkSwapchainCreateInfoKHR.imageFormat = vkFormat_color;
+    vkSwapchainCreateInfoKHR.imageColorSpace = vkColorSpaceKHR;
+    vkSwapchainCreateInfoKHR.imageExtent.width = vkExtent2D_swapchain.width;
+    vkSwapchainCreateInfoKHR.imageExtent.height = vkExtent2D_swapchain.height;
+    vkSwapchainCreateInfoKHR.imageUsage = vkImageUsageFlags;
+    vkSwapchainCreateInfoKHR.preTransform = vkSurfaceTransformFlagBitsKHR;
+    vkSwapchainCreateInfoKHR.imageArrayLayers = 1;
+    vkSwapchainCreateInfoKHR.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    vkSwapchainCreateInfoKHR.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    vkSwapchainCreateInfoKHR.presentMode = vkPresentModeKHR;
+    vkSwapchainCreateInfoKHR.clipped = VK_TRUE;
+
+    vkResult = vkCreateSwapchainKHR(vkDevice, &vkSwapchainCreateInfoKHR, NULL, &vkSwapchainKHR);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createSwapchain(): vkCreateSwapchainKHR() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createSwapchain(): vkCreateSwapchainKHR() Successful!.\n");
     }
 
     return (vkResult);
