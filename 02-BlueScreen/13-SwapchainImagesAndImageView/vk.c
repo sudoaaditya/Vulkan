@@ -65,6 +65,11 @@ int winWidth = WIN_WIDTH, winHeight = WIN_HEIGHT;
 VkSwapchainKHR vkSwapchainKHR = VK_NULL_HANDLE;
 VkExtent2D vkExtent2D_swapchain;
 
+// Swapchain Images & Image Views
+uint32_t swapchainImageCount = UINT32_MAX;
+VkImage *swapchainImage_array = NULL;
+VkImageView *swapchainImageView_array = NULL;
+
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
@@ -300,6 +305,7 @@ VkResult initialize(void) {
     VkResult createVulkanDevice(void);
     void getDeviceQueue(void);
     VkResult createSwapchain(VkBool32);
+    VkResult createSwapchainImagesAndImageViews(void);
 
     // varibales
     VkResult vkResult = VK_SUCCESS;
@@ -360,6 +366,15 @@ VkResult initialize(void) {
         fprintf(fptr, "initialize(): createSwapchain() Successful!.\n\n");
     }
 
+    // Swapchain Images & Image Views
+    vkResult = createSwapchainImagesAndImageViews();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): createSwapchainImagesAndImageViews() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): createSwapchainImagesAndImageViews() Successful!.\n\n");
+    }
+
     return (vkResult);
 }
 
@@ -380,6 +395,8 @@ void uninitialize(void){
         ghwnd = NULL;
     }
 
+    vkDeviceWaitIdle(vkDevice); // this basically waits on til all the operations have done the device and then this function call returns
+
     // Destroy Vulkan Swapchain
     if(vkSwapchainKHR) {
         vkDestroySwapchainKHR(vkDevice, vkSwapchainKHR, NULL);
@@ -390,7 +407,6 @@ void uninitialize(void){
 
     // Destroy Vulkan Device
     if(vkDevice) {
-        vkDeviceWaitIdle(vkDevice); // this basically waits on til all the operations have done the device and then this function call returns
         fprintf(fptr, "\nuninitialize(): vkDeviceWaitIdle is done!\n");
         vkDestroyDevice(vkDevice, NULL);
         vkDevice = VK_NULL_HANDLE;
@@ -1185,6 +1201,74 @@ VkResult createSwapchain (VkBool32 vSync) {
     } else {
         fprintf(fptr, "createSwapchain(): vkCreateSwapchainKHR() Successful!.\n");
     }
+
+    return (vkResult);
+}
+
+VkResult createSwapchainImagesAndImageViews(void) {
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // code
+    // Step 1: Get Swapchain Image Count
+    vkResult = vkGetSwapchainImagesKHR(vkDevice, vkSwapchainKHR, &swapchainImageCount, NULL);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() First Call Failed!.\n");
+        return (vkResult);
+    } else if( swapchainImageCount == 0) {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Failed: 0 Swapchain Images found!.\n");
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Successful!. : Swapchain Image Count : [%d]\n", swapchainImageCount);
+    }
+
+    // Step 2: Allocate Swapchain Image Array
+    swapchainImage_array = (VkImage*)malloc(sizeof(VkImage) * swapchainImageCount);
+
+    // Step 3: Fill Swapchain Image Array
+    vkResult = vkGetSwapchainImagesKHR(vkDevice, vkSwapchainKHR, &swapchainImageCount, swapchainImage_array);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Second Call Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Second Call Successful!.\n");
+    }
+
+    // Setp 4: Allocate Swapchain Image Views Array
+    swapchainImageView_array = (VkImageView*)malloc(sizeof(VkImageView) * swapchainImageCount);
+
+    // Step 5: vkCreateImageView for each Swapchain Image
+    VkImageViewCreateInfo vkImageViewCreateInfo;
+    memset((void*)&vkImageViewCreateInfo, 0, sizeof(VkImageViewCreateInfo));
+    
+    vkImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    vkImageViewCreateInfo.pNext = NULL;
+    vkImageViewCreateInfo.flags = 0;
+    vkImageViewCreateInfo.format = vkFormat_color;
+    vkImageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_R;
+    vkImageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_G;
+    vkImageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_B;
+    vkImageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_A;
+    vkImageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkImageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+    vkImageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    vkImageViewCreateInfo.subresourceRange.layerCount = 1;
+    vkImageViewCreateInfo.subresourceRange.levelCount = 1;
+    vkImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+
+    // Step 6: Fill Imafe view Array  using above struct
+    for(uint32_t i = 0; i < swapchainImageCount; i++) {
+        vkImageViewCreateInfo.image = swapchainImage_array[i];
+        vkResult = vkCreateImageView(vkDevice, &vkImageViewCreateInfo, NULL, &swapchainImageView_array[i]);
+        if(vkResult != VK_SUCCESS) {
+            fprintf(fptr, "createSwapchainImagesAndImageViews(): vkCreateImageView() Failed at {%d}!.\n", i);
+            return (vkResult);
+        } else {
+            fprintf(fptr, "createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {%d}!.\n", i);
+        }
+    }
+
 
     return (vkResult);
 }
