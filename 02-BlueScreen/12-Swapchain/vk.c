@@ -380,6 +380,11 @@ void uninitialize(void){
         ghwnd = NULL;
     }
 
+    if(vkDevice) {
+        vkDeviceWaitIdle(vkDevice); // this basically waits on til all the operations have done the device and then this function call returns
+        fprintf(fptr, "\nuninitialize(): vkDeviceWaitIdle is done!\n");
+    }
+
     // Destroy Vulkan Swapchain
     if(vkSwapchainKHR) {
         vkDestroySwapchainKHR(vkDevice, vkSwapchainKHR, NULL);
@@ -390,8 +395,6 @@ void uninitialize(void){
 
     // Destroy Vulkan Device
     if(vkDevice) {
-        vkDeviceWaitIdle(vkDevice); // this basically waits on til all the operations have done the device and then this function call returns
-        fprintf(fptr, "\nuninitialize(): vkDeviceWaitIdle is done!\n");
         vkDestroyDevice(vkDevice, NULL);
         vkDevice = VK_NULL_HANDLE;
     }
