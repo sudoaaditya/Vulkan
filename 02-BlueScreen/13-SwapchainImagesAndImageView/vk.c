@@ -395,7 +395,46 @@ void uninitialize(void){
         ghwnd = NULL;
     }
 
-    vkDeviceWaitIdle(vkDevice); // this basically waits on til all the operations have done the device and then this function call returns
+    // wait til vkDevice is idle
+    if(vkDevice) {
+        vkDeviceWaitIdle(vkDevice); // this basically waits on til all the operations are done using the device and then this function call returns
+        fprintf(fptr, "\nuninitialize(): vkDeviceWaitIdle is done!\n");
+    }
+
+    // Destroy Vulkan Swapchain Image Views
+    if(swapchainImageView_array) {
+        for(uint32_t i = 0; i < swapchainImageCount; i++) {
+            if(swapchainImageView_array[i]) {
+                vkDestroyImageView(vkDevice, swapchainImageView_array[i], NULL);
+                fprintf(fptr, "uninitialize(): vkDestroyImageView() Succeed for {%d}\n", i);
+                swapchainImageView_array[i] = VK_NULL_HANDLE;
+            }
+        }
+    }
+
+    if(swapchainImageView_array) {
+        free(swapchainImageView_array);
+        fprintf(fptr, "uninitialize(): freed swapchainImageView_array!.\n");
+        swapchainImageView_array = NULL;
+    }
+
+    /* // Destroy vulkan Images
+    if(swapchainImage_array) {
+        for(uint32_t i = 0; i < swapchainImageCount; i++) {
+            if(swapchainImage_array[i]) {
+                vkDestroyImage(vkDevice, swapchainImage_array[i], NULL);
+                fprintf(fptr, "uninitialize(): vkDestroyImage() Succeed for {%d}\n", i);
+                swapchainImage_array[i] = VK_NULL_HANDLE;
+            }
+        }
+    } */
+
+    if(swapchainImage_array) {
+        free(swapchainImage_array);
+        fprintf(fptr, "uninitialize(): freed swapchainImage_array!.\n");
+        swapchainImage_array = NULL;
+    }
+
 
     // Destroy Vulkan Swapchain
     if(vkSwapchainKHR) {
@@ -407,7 +446,6 @@ void uninitialize(void){
 
     // Destroy Vulkan Device
     if(vkDevice) {
-        fprintf(fptr, "\nuninitialize(): vkDeviceWaitIdle is done!\n");
         vkDestroyDevice(vkDevice, NULL);
         vkDevice = VK_NULL_HANDLE;
     }
