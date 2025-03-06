@@ -73,6 +73,8 @@ VkImageView *swapchainImageView_array = NULL;
 // Command Pool
 VkCommandPool vkCommandPool = VK_NULL_HANDLE;
 
+// Command Buffer
+VkCommandBuffer *vkCommandBuffer_array;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
@@ -128,7 +130,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
     hwnd = CreateWindowEx(WS_EX_APPWINDOW,
             szAppName,
-            TEXT("AMK_Vulkan : Command Pool"),
+            TEXT("AMK_Vulkan : Command Buffer"),
             WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE,
             xPos,
             yPos,
@@ -311,6 +313,7 @@ VkResult initialize(void) {
     VkResult createSwapchain(VkBool32);
     VkResult createSwapchainImagesAndImageViews(void);
     VkResult createCommandPool(void);
+    VkResult createCommandBuffers(void);
 
     // varibales
     VkResult vkResult = VK_SUCCESS;
@@ -389,6 +392,15 @@ VkResult initialize(void) {
         fprintf(fptr, "initialize(): createCommandPool() Successful!.\n\n");
     }
 
+    // Command Buffer
+    vkResult = createCommandBuffers();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): createCommandBuffers() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): createCommandBuffers() Successful!.\n\n");
+    }
+
     return (vkResult);
 }
 
@@ -413,6 +425,21 @@ void uninitialize(void){
     if(vkDevice) {
         vkDeviceWaitIdle(vkDevice); // this basically waits on til all the operations are done using the device and then this function call returns
         fprintf(fptr, "\nuninitialize(): vkDeviceWaitIdle is done!\n");
+    }
+
+    // Destroy  Command Buffers
+    if(vkCommandBuffer_array) {
+        for(uint32_t i = 0; i < swapchainImageCount; i++) {
+            vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_array[i]);
+            fprintf(fptr, "uninitialize(): vkFreeCommandBuffers() Succeed for {%d}\n", i);
+            vkCommandBuffer_array[i] = VK_NULL_HANDLE;
+        }
+    }
+
+    if(vkCommandBuffer_array) {
+        free(vkCommandBuffer_array);
+        fprintf(fptr, "uninitialize(): freed vkCommandBuffer_array!.\n");
+        vkCommandBuffer_array = NULL;
     }
 
     // Destroy the command pool
@@ -1351,6 +1378,37 @@ VkResult createCommandPool(void) {
         return (vkResult);
     } else {
         fprintf(fptr, "createCommandPool(): vkCreateCommandPool() Successful!.\n");
+    }
+
+    return (vkResult);
+}
+
+VkResult createCommandBuffers(void) {
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Step 1: Init and Allocate VkCommandBufferAllocateInfo
+    VkCommandBufferAllocateInfo vkCommandBufferAllocateInfo;
+    memset((void*)&vkCommandBufferAllocateInfo, 0, sizeof(VkCommandBufferAllocateInfo));
+
+    vkCommandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    vkCommandBufferAllocateInfo.pNext = NULL;
+    vkCommandBufferAllocateInfo.commandPool = vkCommandPool;
+    vkCommandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vkCommandBufferAllocateInfo.commandBufferCount = 1;
+
+    // Step 2: Allocate Command Buffer Array to the size of swapchainImageCount
+    vkCommandBuffer_array = (VkCommandBuffer*)malloc(sizeof(VkCommandBuffer) * swapchainImageCount);
+
+    // Step 3: Allocat eeach command buffer in loop with allocateInfo struct
+    for(uint32_t i = 0; i < swapchainImageCount; i++) {
+        vkResult = vkAllocateCommandBuffers(vkDevice, &vkCommandBufferAllocateInfo, &vkCommandBuffer_array[i]);
+        if(vkResult != VK_SUCCESS) {
+            fprintf(fptr, "createCommandBuffers(): vkCreatvkAllocateCommandBufferseImageView() Failed at {%d}!.\n", i);
+            return (vkResult);
+        } else {
+            fprintf(fptr, "createCommandBuffers(): vkAllocateCommandBuffers() Successful for {%d}!.\n", i);
+        }
     }
 
     return (vkResult);

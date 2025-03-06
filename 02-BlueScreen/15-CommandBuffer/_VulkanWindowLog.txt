@@ -332,9 +332,28 @@ initialize(): createSwapchainImagesAndImageViews() Successful!.
 createCommandPool(): vkCreateCommandPool() Successful!.
 initialize(): createCommandPool() Successful!.
 
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {2}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {3}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {4}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {5}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {6}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {7}!.
+initialize(): createCommandBuffers() Successful!.
+
 WinMain(): initialize() Successful!.
 
 uninitialize(): vkDeviceWaitIdle is done!
+uninitialize(): vkFreeCommandBuffers() Succeed for {0}
+uninitialize(): vkFreeCommandBuffers() Succeed for {1}
+uninitialize(): vkFreeCommandBuffers() Succeed for {2}
+uninitialize(): vkFreeCommandBuffers() Succeed for {3}
+uninitialize(): vkFreeCommandBuffers() Succeed for {4}
+uninitialize(): vkFreeCommandBuffers() Succeed for {5}
+uninitialize(): vkFreeCommandBuffers() Succeed for {6}
+uninitialize(): vkFreeCommandBuffers() Succeed for {7}
+uninitialize(): freed vkCommandBuffer_array!.
 uninitialize(): vkDestroyCommandPool Successful!.
 uninitialize(): vkDestroyImageView() Succeed for {0}
 uninitialize(): vkDestroyImageView() Succeed for {1}
