@@ -307,7 +307,7 @@ getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormats
 getPhysicalDeviceSurfaceFormatAndColorSpace(): vkSurfaceFormatKHR_array freed.
 createSwapchain(): getPhysicalDeviceSurfaceFormatAndColorSpace() Successful!.
 createSwapchain(): vkGetPhysicalDeviceSurfaceCapabilitiesKHR() Successful!.
-createSwapchain(): desiredNumberOfSwapchainImages is : 8, [Min: 2, Max: 8]
+createSwapchain(): desiredNumberOfSwapchainImages is : 2, [Min: 2, Max: 8]
 createSwapchain(): Swapchain Image Width : 784 X Height : 561
 getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() first Call Successful!. [Found 4 Present Modes]
 getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() Second Call Successful!.
@@ -317,16 +317,10 @@ createSwapchain(): getPhysicalDeviceSurfacePresentMode() Successful!.
 createSwapchain(): vkCreateSwapchainKHR() Successful!.
 initialize(): createSwapchain() Successful!.
 
-createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Successful!. : Swapchain Image Count : [8]
+createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Successful!. : Swapchain Image Count : [2]
 createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Second Call Successful!.
 createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {0}!.
 createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {1}!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {2}!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {3}!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {4}!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {5}!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {6}!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {7}!.
 initialize(): createSwapchainImagesAndImageViews() Successful!.
 
 createCommandPool(): vkCreateCommandPool() Successful!.
@@ -334,12 +328,6 @@ initialize(): createCommandPool() Successful!.
 
 createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
 createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
-createCommandBuffers(): vkAllocateCommandBuffers() Successful for {2}!.
-createCommandBuffers(): vkAllocateCommandBuffers() Successful for {3}!.
-createCommandBuffers(): vkAllocateCommandBuffers() Successful for {4}!.
-createCommandBuffers(): vkAllocateCommandBuffers() Successful for {5}!.
-createCommandBuffers(): vkAllocateCommandBuffers() Successful for {6}!.
-createCommandBuffers(): vkAllocateCommandBuffers() Successful for {7}!.
 initialize(): createCommandBuffers() Successful!.
 
 WinMain(): initialize() Successful!.
@@ -347,22 +335,10 @@ WinMain(): initialize() Successful!.
 uninitialize(): vkDeviceWaitIdle is done!
 uninitialize(): vkFreeCommandBuffers() Succeed for {0}
 uninitialize(): vkFreeCommandBuffers() Succeed for {1}
-uninitialize(): vkFreeCommandBuffers() Succeed for {2}
-uninitialize(): vkFreeCommandBuffers() Succeed for {3}
-uninitialize(): vkFreeCommandBuffers() Succeed for {4}
-uninitialize(): vkFreeCommandBuffers() Succeed for {5}
-uninitialize(): vkFreeCommandBuffers() Succeed for {6}
-uninitialize(): vkFreeCommandBuffers() Succeed for {7}
 uninitialize(): freed vkCommandBuffer_array!.
 uninitialize(): vkDestroyCommandPool Successful!.
 uninitialize(): vkDestroyImageView() Succeed for {0}
 uninitialize(): vkDestroyImageView() Succeed for {1}
-uninitialize(): vkDestroyImageView() Succeed for {2}
-uninitialize(): vkDestroyImageView() Succeed for {3}
-uninitialize(): vkDestroyImageView() Succeed for {4}
-uninitialize(): vkDestroyImageView() Succeed for {5}
-uninitialize(): vkDestroyImageView() Succeed for {6}
-uninitialize(): vkDestroyImageView() Succeed for {7}
 uninitialize(): freed swapchainImageView_array!.
 uninitialize(): freed swapchainImage_array!.
 uninitialize(): vkDestroySurfaceKHR() Succeed

@@ -307,7 +307,7 @@ getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormats
 getPhysicalDeviceSurfaceFormatAndColorSpace(): vkSurfaceFormatKHR_array freed.
 createSwapchain(): getPhysicalDeviceSurfaceFormatAndColorSpace() Successful!.
 createSwapchain(): vkGetPhysicalDeviceSurfaceCapabilitiesKHR() Successful!.
-createSwapchain(): desiredNumberOfSwapchainImages is : 8, [Min: 2, Max: 8]
+createSwapchain(): desiredNumberOfSwapchainImages is : 2, [Min: 2, Max: 8]
 createSwapchain(): Swapchain Image Width : 784 X Height : 561
 getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() first Call Successful!. [Found 4 Present Modes]
 getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() Second Call Successful!.

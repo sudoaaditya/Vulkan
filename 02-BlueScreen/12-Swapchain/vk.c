@@ -1096,7 +1096,7 @@ VkResult createSwapchain (VkBool32 vSync) {
     uint32_t testingNumberOfSwapchainImages = vkSurfaceCapabilitiesKHR.minImageCount + 1;
     uint32_t desiredNumberOfSwapchainImages = 0;
 
-    if(vkSurfaceCapabilitiesKHR.maxImageCount > 0 && vkSurfaceCapabilitiesKHR.maxImageArrayLayers < testingNumberOfSwapchainImages) {
+    if(vkSurfaceCapabilitiesKHR.maxImageCount > 0 && vkSurfaceCapabilitiesKHR.maxImageCount < testingNumberOfSwapchainImages) {
         desiredNumberOfSwapchainImages = vkSurfaceCapabilitiesKHR.maxImageCount;
     } else {
         desiredNumberOfSwapchainImages = vkSurfaceCapabilitiesKHR.minImageCount;
