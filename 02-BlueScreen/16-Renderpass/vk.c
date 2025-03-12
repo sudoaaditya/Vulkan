@@ -76,6 +76,9 @@ VkCommandPool vkCommandPool = VK_NULL_HANDLE;
 // Command Buffer
 VkCommandBuffer *vkCommandBuffer_array;
 
+// Render Pass
+VkRenderPass vkRenderPass = VK_NULL_HANDLE;
+
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
@@ -130,7 +133,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
     hwnd = CreateWindowEx(WS_EX_APPWINDOW,
             szAppName,
-            TEXT("AMK_Vulkan : Renderpass"),
+            TEXT("AMK_Vulkan : Render Pass"),
             WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE,
             xPos,
             yPos,
@@ -314,6 +317,7 @@ VkResult initialize(void) {
     VkResult createSwapchainImagesAndImageViews(void);
     VkResult createCommandPool(void);
     VkResult createCommandBuffers(void);
+    VkResult createRenderPass(void);
 
     // varibales
     VkResult vkResult = VK_SUCCESS;
@@ -401,6 +405,15 @@ VkResult initialize(void) {
         fprintf(fptr, "initialize(): createCommandBuffers() Successful!.\n\n");
     }
 
+    // Render Pass
+    vkResult = createRenderPass();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): createRenderPass() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): createRenderPass() Successful!.\n\n");
+    }
+
     return (vkResult);
 }
 
@@ -425,6 +438,12 @@ void uninitialize(void){
     if(vkDevice) {
         vkDeviceWaitIdle(vkDevice); // this basically waits on til all the operations are done using the device and then this function call returns
         fprintf(fptr, "\nuninitialize(): vkDeviceWaitIdle is done!\n");
+    }
+
+    if(vkRenderPass) {
+        vkDestroyRenderPass(vkDevice, vkRenderPass, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyRenderPass() Succeed!\n");
+        vkRenderPass = VK_NULL_HANDLE;
     }
 
     // Destroy  Command Buffers
@@ -1372,7 +1391,7 @@ VkResult createCommandPool(void) {
     vkCommandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vkCommandPoolCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex_selected;
 
-    vkCreateCommandPool(vkDevice, &vkCommandPoolCreateInfo, NULL, &vkCommandPool);
+    vkResult = vkCreateCommandPool(vkDevice, &vkCommandPoolCreateInfo, NULL, &vkCommandPool);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createCommandPool(): vkCreateCommandPool() Failed!.\n");
         return (vkResult);
@@ -1409,6 +1428,81 @@ VkResult createCommandBuffers(void) {
         } else {
             fprintf(fptr, "createCommandBuffers(): vkAllocateCommandBuffers() Successful for {%d}!.\n", i);
         }
+    }
+
+    return (vkResult);
+}
+
+
+VkResult createRenderPass(void) {
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Code
+    //Step 1: Create Attachment Description stcture array
+    VkAttachmentDescription vkAttachmentDescription_array[1];
+    memset((void*)vkAttachmentDescription_array, 0, sizeof(VkAttachmentDescription) * _ARRAYSIZE(vkAttachmentDescription_array));
+
+    vkAttachmentDescription_array[0].flags = 0;
+    vkAttachmentDescription_array[0].format =  vkFormat_color;
+    vkAttachmentDescription_array[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    vkAttachmentDescription_array[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    vkAttachmentDescription_array[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    vkAttachmentDescription_array[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    vkAttachmentDescription_array[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    vkAttachmentDescription_array[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkAttachmentDescription_array[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // Step 2: Create Attachment Reference Structure
+    VkAttachmentReference vkAttachmentReference;
+    memset((void*)&vkAttachmentReference, 0, sizeof(VkAttachmentReference));
+
+    vkAttachmentReference.attachment = 0; // From the array of attachment description, refer to 0th index, oth will be color attachment
+    vkAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; 
+
+    // STep 3: create sub pass description strcture
+    VkSubpassDescription vkSubpassDescription;
+    memset((void*)&vkSubpassDescription, 0, sizeof(VkSubpassDescription));
+    
+    vkSubpassDescription.flags = 0;
+    vkSubpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    vkSubpassDescription.inputAttachmentCount = 0;
+    vkSubpassDescription.pInputAttachments = NULL;
+    vkSubpassDescription.colorAttachmentCount = _ARRAYSIZE(vkAttachmentDescription_array);
+    vkSubpassDescription.pColorAttachments = &vkAttachmentReference;
+    vkSubpassDescription.pResolveAttachments = NULL;
+    vkSubpassDescription.pDepthStencilAttachment = NULL;
+    vkSubpassDescription.preserveAttachmentCount = 0;
+    vkSubpassDescription.pPreserveAttachments = NULL;
+
+    // Step 4: Render Pass Create Info
+    VkRenderPassCreateInfo vkRenderPassCreateInfo;
+    memset((void*)&vkRenderPassCreateInfo, 0, sizeof(VkRenderPassCreateInfo));
+
+    vkRenderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    vkRenderPassCreateInfo.flags = 0;
+    vkRenderPassCreateInfo.pNext = NULL;
+    vkRenderPassCreateInfo.attachmentCount = _ARRAYSIZE(vkAttachmentDescription_array);
+    vkRenderPassCreateInfo.pAttachments = vkAttachmentDescription_array;
+    vkRenderPassCreateInfo.subpassCount = 1;
+    vkRenderPassCreateInfo.pSubpasses = &vkSubpassDescription;
+    vkRenderPassCreateInfo.dependencyCount = 0;
+    vkRenderPassCreateInfo.pDependencies = NULL;
+    
+
+    // Step 5: Create Render Pass
+    vkResult = vkCreateRenderPass(
+        vkDevice,
+        &vkRenderPassCreateInfo,
+        NULL,
+        &vkRenderPass
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createRenderPass(): vkCreateRenderPass() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createRenderPass(): vkCreateRenderPass() Successful!.\n");
     }
 
     return (vkResult);
