@@ -82,6 +82,11 @@ VkRenderPass vkRenderPass = VK_NULL_HANDLE;
 // Frame Buffer
 VkFramebuffer *vkFramebuffer_array = NULL;
 
+// Fences & Semaphore
+VkSemaphore vkSemaphore_backbuffer = VK_NULL_HANDLE;
+VkSemaphore vkSemaphore_rendercomplete = VK_NULL_HANDLE;
+VkFence *vkFence_array = NULL;
+
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
@@ -322,6 +327,8 @@ VkResult initialize(void) {
     VkResult createCommandBuffers(void);
     VkResult createRenderPass(void);
     VkResult createFramebuffers(void);
+    VkResult createSemaphores(void);
+    VkResult createFences(void);
 
     // varibales
     VkResult vkResult = VK_SUCCESS;
@@ -427,6 +434,24 @@ VkResult initialize(void) {
         fprintf(fptr, "initialize(): createFramebuffers() Successful!.\n\n");
     }
 
+    // Create Semaphores
+    vkResult = createSemaphores();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): createSemaphores() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): createSemaphores() Successful!.\n\n");
+    }
+
+    // Create Fences
+    vkResult = createFences();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): createFences() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): createFences() Successful!.\n\n");
+    }
+
     return (vkResult);
 }
 
@@ -453,11 +478,43 @@ void uninitialize(void){
         fprintf(fptr, "\nuninitialize(): vkDeviceWaitIdle is done!\n");
     }
 
+    // Destroy Fence
+    for(uint32_t i = 0; i < swapchainImageCount; i++) {
+        vkDestroyFence(vkDevice, vkFence_array[i], NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyFence() Succeed for {%d}!.\n", i);
+        vkFence_array[i] = VK_NULL_HANDLE;
+    }
+
+    if(vkFence_array) {
+        free(vkFence_array);
+        fprintf(fptr, "uninitialize(): freed vkFence_array!.\n");
+        vkFence_array = NULL;
+    }
+
+    // Destroy Semaphore
+    if(vkSemaphore_rendercomplete) {
+        vkDestroySemaphore(vkDevice, vkSemaphore_rendercomplete, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroySemaphore() for Render Complete Succeed!\n");
+        vkSemaphore_rendercomplete = VK_NULL_HANDLE;
+    }
+
+    if(vkSemaphore_backbuffer) {
+        vkDestroySemaphore(vkDevice, vkSemaphore_backbuffer, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroySemaphore() for Back Buffer Succeed!\n");
+        vkSemaphore_backbuffer = VK_NULL_HANDLE;
+    }
+
     // Destroy Frame Buffers
     for(uint32_t i = 0; i < swapchainImageCount; i++) {
         vkDestroyFramebuffer(vkDevice, vkFramebuffer_array[i], NULL);
         fprintf(fptr, "uninitialize(): vkDestroyFramebuffer() Succeed for {%d}!.\n", i);
         vkFramebuffer_array[i] = VK_NULL_HANDLE;
+    }
+
+    if(vkFramebuffer_array) {
+        free(vkFramebuffer_array);
+        fprintf(fptr, "uninitialize(): freed vkFramebuffer_array!.\n");
+        vkFramebuffer_array = NULL;
     }
 
     // Destroy Render Pass
@@ -1563,6 +1620,69 @@ VkResult createFramebuffers(void) {
             return (vkResult);
         } else {
             fprintf(fptr, "createFramebuffers(): vkCreateFramebuffer() Successful for {%d}!.\n", i);
+        }
+    }
+
+    return (vkResult);
+}
+
+VkResult createSemaphores(void) {
+    // Variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Create Semaphore info
+    VkSemaphoreCreateInfo vkSemaphoreCreateInfo;
+    memset((void*)&vkSemaphoreCreateInfo, 0, sizeof(VkSemaphoreCreateInfo));
+
+    vkSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    vkSemaphoreCreateInfo.pNext = NULL;
+    vkSemaphoreCreateInfo.flags = 0; // it's reserved must be zero
+
+    // By defualt if no type is specified, binary semaphore is created!
+
+    // create semaphore for backbuffer
+    vkResult = vkCreateSemaphore(vkDevice, &vkSemaphoreCreateInfo, NULL, &vkSemaphore_backbuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createSemaphores(): vkCreateSemaphore() Failed for Back Buffer Semaphore!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createSemaphores(): vkCreateSemaphore() Successful for Back Buffer Semaphore!.\n");
+    }
+
+    // create semaphore for render complete
+    vkResult = vkCreateSemaphore(vkDevice, &vkSemaphoreCreateInfo, NULL, &vkSemaphore_rendercomplete);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createSemaphores(): vkCreateSemaphore() Failed for Render Complete Semaphore!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createSemaphores(): vkCreateSemaphore() Successful for Render Complete+ Semaphore!.\n");
+    }
+
+    return (vkResult);
+}
+
+VkResult createFences(void) {
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // VkFenceCreateInfo
+    VkFenceCreateInfo vkFenceCreateInfo;
+    memset((void*)&vkFenceCreateInfo, 0, sizeof(VkFenceCreateInfo));
+
+    vkFenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    vkFenceCreateInfo.pNext = NULL;
+    vkFenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    vkFence_array = (VkFence*) malloc(sizeof(VkFence) * swapchainImageCount);
+
+
+    for(uint32_t i = 0; i < swapchainImageCount; i++) {
+        vkResult = vkCreateFence(vkDevice, &vkFenceCreateInfo, NULL, &vkFence_array[i]);
+        if(vkResult != VK_SUCCESS) {
+            fprintf(fptr, "createFences(): vkCreateFence() Failed at {%d}!.\n", i);
+            return (vkResult);
+        } else {
+            fprintf(fptr, "createFences(): vkCreateFence() Successful for {%d}!.\n", i);
         }
     }
 
