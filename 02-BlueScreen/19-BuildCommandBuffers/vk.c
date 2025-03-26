@@ -90,7 +90,6 @@ VkFence *vkFence_array = NULL;
 // Build Command Buffers
 VkClearColorValue vkClearColorValue;
 
-
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
@@ -500,10 +499,12 @@ void uninitialize(void){
     }
 
     // Destroy Fence
-    for(uint32_t i = 0; i < swapchainImageCount; i++) {
-        vkDestroyFence(vkDevice, vkFence_array[i], NULL);
-        fprintf(fptr, "uninitialize(): vkDestroyFence() Succeed for {%d}!.\n", i);
-        vkFence_array[i] = VK_NULL_HANDLE;
+    if(vkFence_array) {
+        for(uint32_t i = 0; i < swapchainImageCount; i++) {
+            vkDestroyFence(vkDevice, vkFence_array[i], NULL);
+            fprintf(fptr, "uninitialize(): vkDestroyFence() Succeed for {%d}!.\n", i);
+            vkFence_array[i] = VK_NULL_HANDLE;
+        }
     }
 
     if(vkFence_array) {
@@ -526,10 +527,12 @@ void uninitialize(void){
     }
 
     // Destroy Frame Buffers
-    for(uint32_t i = 0; i < swapchainImageCount; i++) {
-        vkDestroyFramebuffer(vkDevice, vkFramebuffer_array[i], NULL);
-        fprintf(fptr, "uninitialize(): vkDestroyFramebuffer() Succeed for {%d}!.\n", i);
-        vkFramebuffer_array[i] = VK_NULL_HANDLE;
+    if(vkFramebuffer_array) {
+        for(uint32_t i = 0; i < swapchainImageCount; i++) {
+            vkDestroyFramebuffer(vkDevice, vkFramebuffer_array[i], NULL);
+            fprintf(fptr, "uninitialize(): vkDestroyFramebuffer() Succeed for {%d}!.\n", i);
+            vkFramebuffer_array[i] = VK_NULL_HANDLE;
+        }
     }
 
     if(vkFramebuffer_array) {
@@ -1084,7 +1087,6 @@ VkResult fillDeviceExtensionNames (void) {
     return vkResult;
 }
 
-
 VkResult createVulkanDevice () {
     
     // function definations
@@ -1477,7 +1479,6 @@ VkResult createSwapchainImagesAndImageViews(void) {
     return (vkResult);
 }
 
-
 VkResult createCommandPool(void) {
     // variables
     VkResult vkResult = VK_SUCCESS;
@@ -1531,7 +1532,6 @@ VkResult createCommandBuffers(void) {
 
     return (vkResult);
 }
-
 
 VkResult createRenderPass(void) {
     // variables
