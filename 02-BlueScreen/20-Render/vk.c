@@ -90,12 +90,16 @@ VkFence *vkFence_array = NULL;
 // Build Command Buffers
 VkClearColorValue vkClearColorValue;
 
+// Render Variables
+BOOL bInitialized = FALSE;
+uint32_t currentImageIndex = UINT32_MAX;
+
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
     // Func
     VkResult initialize(void);
-    void display(void);
+    VkResult display(void);
     void update(void);
     void uninitialize(void);
     
@@ -472,6 +476,9 @@ VkResult initialize(void) {
         fprintf(fptr, "initialize(): buildCommandBuffers() Successful!.\n\n");
     }
 
+    // Initialization is completed!
+    bInitialized = TRUE;
+
     return (vkResult);
 }
 
@@ -479,8 +486,93 @@ void resize(int width, int height) {
 
 }
 
-void display(void) {
+VkResult display(void) {
+    // Variables
+    VkResult vkResult = VK_SUCCESS;
 
+    // Code
+    //if control comes here before initialization is done, then return false
+    if(bInitialized == FALSE) {
+        vkResult = (VkResult)VK_FALSE;
+        fprintf(fptr, "display(): bInitialized is FALSE!.\n");
+        return (vkResult);
+    }
+
+    // Acquire index of next swapchain image
+    vkResult = vkAcquireNextImageKHR(
+        vkDevice, 
+        vkSwapchainKHR,
+        UINT64_MAX, // timeout in nanoseconds
+        vkSemaphore_backbuffer,
+        VK_NULL_HANDLE,
+        &currentImageIndex
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "display(): vkAcquireNextImageKHR() Failed!.\n");
+        return (vkResult);
+    }
+
+    // Use Fence to allow host to wait for complition of execution of prev command buffer
+    vkResult = vkWaitForFences(vkDevice, 1, &vkFence_array[currentImageIndex], VK_TRUE, UINT64_MAX);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "display(): vkWaitForFences() Failed!.\n");
+        return (vkResult);
+    }
+
+    // Now ready the facnces for execution of next command buffer
+    vkResult = vkResetFences(vkDevice, 1, &vkFence_array[currentImageIndex]);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "display(): vkResetFences() Failed!.\n");
+        return (vkResult);
+    }
+
+    // One of the memeber of vkSubmitInfo structure requires array of pipeline stages, we haveonly one have of 
+    // complition of color attachment, so we need to create array of size 1
+    const VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    // declare, memset & initialize vkSubmitInfo structure
+    VkSubmitInfo vkSubmitInfo;
+    memset((void*)&vkSubmitInfo, 0, sizeof(VkSubmitInfo));
+
+    vkSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    vkSubmitInfo.pNext = NULL;
+    vkSubmitInfo.pWaitDstStageMask = &waitDstStageMask;
+    vkSubmitInfo.waitSemaphoreCount = 1;
+    vkSubmitInfo.pWaitSemaphores = &vkSemaphore_backbuffer;
+    vkSubmitInfo.commandBufferCount = 1;
+    vkSubmitInfo.pCommandBuffers = &vkCommandBuffer_array[currentImageIndex];
+    vkSubmitInfo.signalSemaphoreCount = 1;
+    vkSubmitInfo.pSignalSemaphores = &vkSemaphore_rendercomplete;
+
+    // Now submit command buffer to queue for execution
+    vkResult = vkQueueSubmit(vkQueue, 1, &vkSubmitInfo, vkFence_array[currentImageIndex]);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "display(): vkQueueSubmit() Failed!.\n");
+        return (vkResult);
+    }
+
+    // We are going to present rendered image after declaring & initializing vkPresentInfoKHR structure
+    VkPresentInfoKHR vkPresentInfoKHR;
+    memset((void*)&vkPresentInfoKHR, 0, sizeof(VkPresentInfoKHR));
+
+    vkPresentInfoKHR.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    vkPresentInfoKHR.pNext = NULL;
+    vkPresentInfoKHR.swapchainCount = 1;
+    vkPresentInfoKHR.pSwapchains = &vkSwapchainKHR;
+    vkPresentInfoKHR.pImageIndices = &currentImageIndex;
+    vkPresentInfoKHR.waitSemaphoreCount = 1;
+    vkPresentInfoKHR.pWaitSemaphores = &vkSemaphore_rendercomplete;
+    vkPresentInfoKHR.pResults = NULL; // this is optional, so we are not using it
+
+    // Present the queue!
+    vkResult = vkQueuePresentKHR(vkQueue, &vkPresentInfoKHR);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "display(): vkQueuePresentKHR() Failed!.\n");
+        return (vkResult);
+    }
+
+    return (vkResult);
 }
 
 void uninitialize(void){
