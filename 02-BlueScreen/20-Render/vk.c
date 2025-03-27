@@ -558,11 +558,11 @@ VkResult display(void) {
 
     vkPresentInfoKHR.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     vkPresentInfoKHR.pNext = NULL;
+    vkPresentInfoKHR.waitSemaphoreCount = 1;
+    vkPresentInfoKHR.pWaitSemaphores = &vkSemaphore_rendercomplete;
     vkPresentInfoKHR.swapchainCount = 1;
     vkPresentInfoKHR.pSwapchains = &vkSwapchainKHR;
     vkPresentInfoKHR.pImageIndices = &currentImageIndex;
-    vkPresentInfoKHR.waitSemaphoreCount = 1;
-    vkPresentInfoKHR.pWaitSemaphores = &vkSemaphore_rendercomplete;
     vkPresentInfoKHR.pResults = NULL; // this is optional, so we are not using it
 
     // Present the queue!
