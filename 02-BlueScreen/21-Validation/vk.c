@@ -27,7 +27,8 @@ const CHAR *gpszAppName = "ARTR: Vulkan";
 
 // instance extension related variables
 uint32_t enabledInstanceExtensionCount = 0; 
-const char *enabledInstanceExtensionNames_array[2]; // VK_KHR_SURFACE_EXTENSION_NAME & VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+// VK_KHR_SURFACE_EXTENSION_NAME & VK_KHR_WIN32_SURFACE_EXTENSION_NAME & VK_EXT_DEBUG_REPORT_EXTENSION_NAME
+const char *enabledInstanceExtensionNames_array[3]; 
 // vulkan instance
 VkInstance vkInstance = VK_NULL_HANDLE;
 
@@ -93,6 +94,13 @@ VkClearColorValue vkClearColorValue;
 // Render Variables
 BOOL bInitialized = FALSE;
 uint32_t currentImageIndex = UINT32_MAX;
+
+// Validation Layer
+BOOL bValidation = TRUE;
+uint32_t enabledValidationLayerCount = 0;
+const char *enabledValidationLayerNames_array[1]; //VK_LAYER_KHRONOS_validation
+VkDebugReportCallbackEXT vkDebugReportCallbackEXT;
+PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT_fnptr = NULL;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
@@ -572,6 +580,8 @@ VkResult display(void) {
         return (vkResult);
     }
 
+    vkDeviceWaitIdle(vkDevice); // VALIDATION USE CASE 1: Comment this line to see the error
+
     return (vkResult);
 }
 
@@ -591,6 +601,7 @@ void uninitialize(void){
     }
 
     // Destroy Fence
+    // VALIDATION USE CASE 3: Comment this line to see the error
     if(vkFence_array) {
         for(uint32_t i = 0; i < swapchainImageCount; i++) {
             vkDestroyFence(vkDevice, vkFence_array[i], NULL);
@@ -720,6 +731,13 @@ void uninitialize(void){
 		fprintf(fptr,"uninitialize(): vkDestroySurfaceKHR() Succeed\n");
     }
 
+    if(vkDebugReportCallbackEXT && vkDestroyDebugReportCallbackEXT_fnptr) {
+        vkDestroyDebugReportCallbackEXT_fnptr(vkInstance, vkDebugReportCallbackEXT, NULL);
+        vkDebugReportCallbackEXT = VK_NULL_HANDLE;
+        vkDestroyDebugReportCallbackEXT_fnptr = NULL;
+        fprintf(fptr,"uninitialize(): vkDestroyDebugReportCallbackEXT_fnptr() Succeed\n");
+    }
+
     // destroy vkInstance
     if(vkInstance) {
         vkDestroyInstance(vkInstance, NULL);
@@ -743,6 +761,8 @@ void update(void) {
 VkResult createVulkanInstance (void) {
     // function declarations
     VkResult fillInstanceExtensionNames(void);
+    VkResult fillValidationLayerNames(void);
+    VkResult createValidationCallbackFunction(void);
 
     // varibales
     VkResult vkResult = VK_SUCCESS;
@@ -753,7 +773,18 @@ VkResult createVulkanInstance (void) {
         fprintf(fptr, "createVulkanInstance(): fillInstanceExtensionNames() Failed!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "createVulkanInstance(): fillInstanceExtensionNames() Successful!.\n");
+        fprintf(fptr, "createVulkanInstance(): fillInstanceExtensionNames() Successful!.\n\n");
+    }
+
+    if(bValidation == TRUE) {
+        //fill validation layers names
+        vkResult = fillValidationLayerNames();
+        if(vkResult != VK_SUCCESS) {
+            fprintf(fptr, "createVulkanInstance(): fillValidationLayerNames() Failed!.\n");
+            return (vkResult);
+        } else {
+            fprintf(fptr, "createVulkanInstance(): fillValidationLayerNames() Successful!.\n");
+        }
     }
 
     // step 2:
@@ -778,6 +809,15 @@ VkResult createVulkanInstance (void) {
     vkInstanceCreateInfo.enabledExtensionCount = enabledInstanceExtensionCount;
     vkInstanceCreateInfo.ppEnabledExtensionNames = enabledInstanceExtensionNames_array;
 
+    // if validation layer is enabled/valid then fill data else keep it null
+    if(bValidation == TRUE) {
+        vkInstanceCreateInfo.enabledLayerCount = enabledValidationLayerCount;
+        vkInstanceCreateInfo.ppEnabledLayerNames = enabledValidationLayerNames_array;
+    } else {
+        vkInstanceCreateInfo.enabledLayerCount = 0;
+        vkInstanceCreateInfo.ppEnabledLayerNames = NULL;
+    }
+
     // Step 4: Create instance using vkCreateInstance
     vkResult = vkCreateInstance(&vkInstanceCreateInfo, NULL, &vkInstance);
     if(vkResult == VK_ERROR_INCOMPATIBLE_DRIVER) {
@@ -791,6 +831,17 @@ VkResult createVulkanInstance (void) {
         return (vkResult);
     } else {
         fprintf(fptr, "createVulkanInstance(): vkCreateInstance() Successful!.\n\n");
+    }
+
+    // Step 5: Create Validation Layer Callback Function [ Do this for validation callbaaks ]
+    if(bValidation == TRUE) {
+        vkResult = createValidationCallbackFunction();
+        if(vkResult != VK_SUCCESS) {
+            fprintf(fptr, "createVulkanInstance(): createValidationCallbackFunction() Failed!.\n");
+            return (vkResult);
+        } else {
+            fprintf(fptr, "createVulkanInstance(): createValidationCallbackFunction() Successful!.\n\n");
+        }
     }
 
     return (vkResult);
@@ -823,7 +874,7 @@ VkResult fillInstanceExtensionNames (void) {
         fprintf(fptr, "fillInstanceExtensionNames(): vkEnumerateInstanceExtensionProperties() Second Call Successful!.\n");
     }
 
-    // Step 3: 
+    // Step 3: fill all supoorted extensions names in array of char pointers
     char **instanceExtensionNames_array = NULL;
     instanceExtensionNames_array = (char**)malloc(sizeof(char*) * instanceExtensionCount);
     for(uint32_t i = 0; i < instanceExtensionCount; i++) {
@@ -842,6 +893,7 @@ VkResult fillInstanceExtensionNames (void) {
     // step 5
     VkBool32 surfaceExtensionFound = VK_FALSE;
     VkBool32 win32vulkanSurfaceExtensionFound = VK_FALSE;
+    VkBool32 debugReportExtensionFound = VK_FALSE;
     for(uint32_t i = 0; i < instanceExtensionCount; i++) {
         if(strcmp(instanceExtensionNames_array[i], VK_KHR_SURFACE_EXTENSION_NAME) == 0) {
             surfaceExtensionFound = VK_TRUE;
@@ -850,6 +902,14 @@ VkResult fillInstanceExtensionNames (void) {
         if(strcmp(instanceExtensionNames_array[i], VK_KHR_WIN32_SURFACE_EXTENSION_NAME) ==  0) {
             win32vulkanSurfaceExtensionFound = VK_TRUE;
             enabledInstanceExtensionNames_array[enabledInstanceExtensionCount++] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+        }
+        if(strcmp(instanceExtensionNames_array[i], VK_EXT_DEBUG_REPORT_EXTENSION_NAME) ==  0) {
+            debugReportExtensionFound = VK_TRUE;
+            if(bValidation == TRUE) {
+                enabledInstanceExtensionNames_array[enabledInstanceExtensionCount++] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+            } else {
+                // array will not have entry of VK_EXT_DEBUG_REPORT_EXTENSION_NAME
+            }
         }
     }
 
@@ -876,12 +936,156 @@ VkResult fillInstanceExtensionNames (void) {
         fprintf(fptr, "fillInstanceExtensionNames(): VK_KHR_WIN32_SURFACE_EXTENSION_NAME Found!.\n");
     }
 
-    // step 8:
+    if(debugReportExtensionFound == VK_FALSE) {
+        if(bValidation == TRUE) {
+            vkResult = VK_ERROR_INITIALIZATION_FAILED; // return hardcoded failure
+            fprintf(fptr, "fillInstanceExtensionNames(): Validation is ON but VK_EXT_DEBUG_REPORT_EXTENSION_NAME Not Supported!.\n");
+            return (vkResult);
+        } else {
+            fprintf(fptr, "fillInstanceExtensionNames(): Validation is OFF and VK_EXT_DEBUG_REPORT_EXTENSION_NAME Not Supported!.\n");
+        }
+    } else {
+        if(bValidation == TRUE) {
+            fprintf(fptr, "fillInstanceExtensionNames(): Validation is ON but VK_EXT_DEBUG_REPORT_EXTENSION_NAME is Supported!.\n");
+        } else {
+            fprintf(fptr, "fillInstanceExtensionNames(): Validation is OFF and VK_EXT_DEBUG_REPORT_EXTENSION_NAME is Supported!.\n");
+        }
+    }
+
+    // step 8: print all the supported extensions
     for(uint32_t i = 0; i < enabledInstanceExtensionCount; i++) {
         fprintf(fptr, "fillInstanceExtensionNames(): Enabled Vulkan Instance Extension Name = %s \n", enabledInstanceExtensionNames_array[i]);
     }
 
     return vkResult;
+}
+
+VkResult fillValidationLayerNames(void) {
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // code
+    // step 1: Find how many validation layers are supported by this vulkan driver & keep it in local variable
+    uint32_t validationLayerCount = 0;
+
+    vkResult = vkEnumerateInstanceLayerProperties(&validationLayerCount, NULL);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "fillValidationLayerNames(): vkEnumerateInstanceLayerProperties() First Call Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "fillValidationLayerNames(): vkEnumerateInstanceLayerProperties() First Call Successful!.\n");
+    }
+
+    // step 2: Allocate & fill struct vk Validation Layers array correspoinding to above acount
+    VkLayerProperties *vkLayerProperties_array = NULL;
+    vkLayerProperties_array = (VkLayerProperties*)malloc(sizeof(VkLayerProperties) * validationLayerCount);
+    vkResult = vkEnumerateInstanceLayerProperties(&validationLayerCount, vkLayerProperties_array);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "fillValidationLayerNames(): vkEnumerateInstanceLayerProperties() Second Call Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "fillValidationLayerNames(): vkEnumerateInstanceLayerProperties() Second Call Successful!.\n");
+    }
+
+    // step 3: fill all supoorted layers names in array of char pointers
+    char **validationLayerNames_array = NULL;
+    validationLayerNames_array = (char**)malloc(sizeof(char*) * validationLayerCount);
+    for(uint32_t i = 0; i < validationLayerCount; i++) {
+        validationLayerNames_array[i] = (char*)malloc(sizeof(char) * strlen(vkLayerProperties_array[i].layerName) + 1);
+        memcpy(
+            validationLayerNames_array[i], 
+            vkLayerProperties_array[i].layerName, 
+            strlen(vkLayerProperties_array[i].layerName) + 1
+        );
+        fprintf(fptr, "fillValidationLayerNames(): Vulkan Validation Layer Name = %s \n", validationLayerNames_array[i]);
+    }
+
+    // step 4: free vkLayerProperties_array
+    free(vkLayerProperties_array);
+
+    // step 5: check if validation layer is supported or not
+    VkBool32 validationLayerFound = VK_FALSE;
+    for(uint32_t i = 0; i < validationLayerCount; i++) {
+        if(strcmp(validationLayerNames_array[i], "VK_LAYER_KHRONOS_validation") == 0) {
+            validationLayerFound = VK_TRUE;
+            enabledValidationLayerNames_array[enabledValidationLayerCount++] = "VK_LAYER_KHRONOS_validation";
+        }
+    }
+
+    // step 6
+    for(uint32_t i = 0; i < validationLayerCount; i++) {
+        free(validationLayerNames_array[i]);
+    }
+    free(validationLayerNames_array);
+
+    // step 7
+    if(validationLayerFound == VK_FALSE) {
+        vkResult = VK_ERROR_INITIALIZATION_FAILED; // return hardcoded failure
+        fprintf(fptr, "fillValidationLayerNames(): VK_LAYER_KHRONOS_validation Not Supported!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "fillValidationLayerNames(): VK_LAYER_KHRONOS_validation Supported!.\n");
+    }
+
+    // step 8: print all the supported layers
+    for(uint32_t i = 0; i < enabledValidationLayerCount; i++) {
+        fprintf(fptr, "fillValidationLayerNames(): Enabled Vulkan Validation Layer Name = %s \n", enabledValidationLayerNames_array[i]);
+    }
+
+    return (vkResult);
+}
+
+VkResult createValidationCallbackFunction(void) {
+    // function declaratons
+    VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(
+        VkDebugReportFlagsEXT, VkDebugReportObjectTypeEXT,
+        uint64_t, size_t, int32_t, const char*, const char*,
+        void*
+    );
+
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+    PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT_fnptr = NULL;
+
+    // code
+    // get the required function pointers
+    vkCreateDebugReportCallbackEXT_fnptr = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(vkInstance, "vkCreateDebugReportCallbackEXT");
+    if(vkCreateDebugReportCallbackEXT_fnptr == NULL) {
+        vkResult = VK_ERROR_INITIALIZATION_FAILED; // return hardcoded failure
+        fprintf(fptr, "createValidationCallbackFunction(): vkGetInstanceProcAddr() for vkCreateDebugReportCallbackEXT Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createValidationCallbackFunction(): vkGetInstanceProcAddr() for vkCreateDebugReportCallbackEXT Successful!.\n");
+    }
+
+    vkDestroyDebugReportCallbackEXT_fnptr = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugReportCallbackEXT");
+    if(vkCreateDebugReportCallbackEXT_fnptr == NULL) {
+        vkResult = VK_ERROR_INITIALIZATION_FAILED; // return hardcoded failure
+        fprintf(fptr, "createValidationCallbackFunction(): vkGetInstanceProcAddr() for vkDestroyDebugReportCallbackEXT Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createValidationCallbackFunction(): vkGetInstanceProcAddr() for vkDestroyDebugReportCallbackEXT Successful!.\n");
+    }
+
+    // fill struct VkDebugReportCallbackCreateInfoEXT to get vulkan debug report callback object
+    VkDebugReportCallbackCreateInfoEXT vkDebugReportCallbackCreateInfoEXT;
+    memset((void*)&vkDebugReportCallbackCreateInfoEXT, 0, sizeof(VkDebugReportCallbackCreateInfoEXT));
+
+    vkDebugReportCallbackCreateInfoEXT.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+    vkDebugReportCallbackCreateInfoEXT.pNext = NULL;
+    vkDebugReportCallbackCreateInfoEXT.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
+    vkDebugReportCallbackCreateInfoEXT.pfnCallback = debugReportCallback;
+    vkDebugReportCallbackCreateInfoEXT.pUserData = NULL;
+
+    vkResult = vkCreateDebugReportCallbackEXT_fnptr(vkInstance, &vkDebugReportCallbackCreateInfoEXT, NULL, &vkDebugReportCallbackEXT);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createValidationCallbackFunction(): vkCreateDebugReportCallbackEXT_fnptr() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createValidationCallbackFunction(): vkCreateDebugReportCallbackEXT_fnptr() Successful!.\n");
+    }
+
+    return (vkResult);
 }
 
 // get supported surface
@@ -1719,7 +1923,7 @@ VkResult createFramebuffers(void) {
     vkFrameBufferCreateInfo.pAttachments = vkImageView_attachments_array;
     vkFrameBufferCreateInfo.width = vkExtent2D_swapchain.width;
     vkFrameBufferCreateInfo.height = vkExtent2D_swapchain.height;
-    vkFrameBufferCreateInfo.layers = 1;
+    vkFrameBufferCreateInfo.layers = 1; // VALIDATION USE CASE 2: Comment this line to see the error
 
     // allocate frame buffers array and creat efream buffers in loop with counts of allocated swapchain images
     vkFramebuffer_array = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * swapchainImageCount);
@@ -1876,4 +2080,19 @@ VkResult buildCommandBuffers(void) {
     }
 
     return (vkResult);
+}
+
+// Always Keep this function at the end of this file
+VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(
+    VkDebugReportFlagsEXT vkDebugReportFlagsEXIT, 
+    VkDebugReportObjectTypeEXT vkDebugReportObjectTypeEXIT, 
+    uint64_t object, 
+    size_t location, 
+    int32_t messageCode, 
+    const char* pLayerPrefix, 
+    const char* pMessage, 
+    void* pUserData
+) {
+    fprintf(fptr, "AMK_VALIDATION: debugReportCallback() :  %s (%d) = %s\n", pLayerPrefix, messageCode, pMessage);
+    return VK_FALSE; // return false to ignore this message
 }
