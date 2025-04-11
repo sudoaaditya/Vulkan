@@ -383,6 +383,8 @@ initialize(): buildCommandBuffers() Successful!.
 WinMain(): initialize() Successful!.
 
 uninitialize(): vkDeviceWaitIdle is done!
+uninitialize(): vkDestroyFence() Succeed for {0}!.
+uninitialize(): vkDestroyFence() Succeed for {1}!.
 uninitialize(): freed vkFence_array!.
 uninitialize(): vkDestroySemaphore() for Render Complete Succeed!
 uninitialize(): vkDestroySemaphore() for Back Buffer Succeed!
@@ -398,10 +400,6 @@ uninitialize(): vkDestroyImageView() Succeed for {0}
 uninitialize(): vkDestroyImageView() Succeed for {1}
 uninitialize(): freed swapchainImageView_array!.
 uninitialize(): freed swapchainImage_array!.
-AMK_VALIDATION: debugReportCallback() :  Validation (0) = Validation Error: [ VUID-vkDestroyDevice-device-05137 ] Object 0: handle = 0x967dd1000000000e, type = VK_OBJECT_TYPE_FENCE; | MessageID = 0x4872eaa0 | vkDestroyDevice():  OBJ ERROR : For VkDevice 0x1fdc75b92c0[], VkFence 0x967dd1000000000e[] has not been destroyed.
-The Vulkan spec states: All child objects created on device must have been destroyed prior to destroying device (https://vulkan.lunarg.com/doc/view/1.3.296.0/windows/1.3-extensions/vkspec.html#VUID-vkDestroyDevice-device-05137)
-AMK_VALIDATION: debugReportCallback() :  Validation (0) = Validation Error: [ VUID-vkDestroyDevice-device-05137 ] Object 0: handle = 0xe7e6d0000000000f, type = VK_OBJECT_TYPE_FENCE; | MessageID = 0x4872eaa0 | vkDestroyDevice():  OBJ ERROR : For VkDevice 0x1fdc75b92c0[], VkFence 0xe7e6d0000000000f[] has not been destroyed.
-The Vulkan spec states: All child objects created on device must have been destroyed prior to destroying device (https://vulkan.lunarg.com/doc/view/1.3.296.0/windows/1.3-extensions/vkspec.html#VUID-vkDestroyDevice-device-05137)
 uninitialize(): vkDestroySurfaceKHR() Succeed
 uninitialize(): vkDestroyDebugReportCallbackEXT_fnptr() Succeed
 uninitialize(): vkDestroyInstance() Succeed
