@@ -697,8 +697,8 @@ void uninitialize(void){
             if(swapchainImage_array[i]) {
                 vkDestroyImage(vkDevice, swapchainImage_array[i], NULL);
                 fprintf(fptr, "uninitialize(): vkDestroyImage() Succeed for {%d}\n", i);
+                fflush(fptr);
                 swapchainImage_array[i] = VK_NULL_HANDLE;
-                fclose(fptr);
             }
         }
     } */
