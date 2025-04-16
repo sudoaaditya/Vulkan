@@ -102,6 +102,15 @@ const char *enabledValidationLayerNames_array[1]; //VK_LAYER_KHRONOS_validation
 VkDebugReportCallbackEXT vkDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT_fnptr = NULL;
 
+// Vertex Buffer
+typedef struct {
+    VkBuffer vkBuffer;
+    VkDeviceMemory vkDeviceMemory;
+} VertexData;
+
+// Position
+VertexData vertexData_position;
+
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
@@ -340,6 +349,7 @@ VkResult initialize(void) {
     VkResult createSwapchainImagesAndImageViews(void);
     VkResult createCommandPool(void);
     VkResult createCommandBuffers(void);
+    VkResult createVertexBuffer(void);
     VkResult createRenderPass(void);
     VkResult createFramebuffers(void);
     VkResult createSemaphores(void);
@@ -430,6 +440,15 @@ VkResult initialize(void) {
         return (vkResult);
     } else {
         fprintf(fptr, "initialize(): createCommandBuffers() Successful!.\n\n");
+    }
+
+    // Create Vertex Buffer
+    vkResult = createVertexBuffer();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): createVertexBuffer() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): createVertexBuffer() Successful!.\n\n");
     }
 
     // Render Pass
@@ -649,6 +668,19 @@ void uninitialize(void){
         vkDestroyRenderPass(vkDevice, vkRenderPass, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyRenderPass() Succeed!\n");
         vkRenderPass = VK_NULL_HANDLE;
+    }
+
+    // Destroy Vertex Buffer
+    if(vertexData_position.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, vertexData_position.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer!\n");
+        vertexData_position.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+
+    if(vertexData_position.vkBuffer) {
+        vkDestroyBuffer(vkDevice, vertexData_position.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer!\n");
+        vertexData_position.vkBuffer = VK_NULL_HANDLE;
     }
 
     // Destroy  Command Buffers
@@ -1829,6 +1861,116 @@ VkResult createCommandBuffers(void) {
     }
 
     return (vkResult);
+}
+
+
+VkResult createVertexBuffer(void) {
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Step 1
+    float triangle_position[] = {
+        0.0f, 1.0f, 0.0f,
+        -1.0f, -1.0f, 0.0f,
+        1.0f, -1.0f, 0.0f
+    };
+
+    // Step 2
+    memset((void*)&vertexData_position, 0, sizeof(VertexData));
+
+    // Step 3
+    VkBufferCreateInfo vkBufferCreateInfo;
+    memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
+
+    vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCreateInfo.pNext = NULL;
+    vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
+    vkBufferCreateInfo.size = sizeof(triangle_position);
+    vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    
+    // Setp 4
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_position.vkBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Successful!.\n");
+    }
+
+    // Step 5
+    VkMemoryRequirements vkMemoryRequirements;
+    memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, vertexData_position.vkBuffer, &vkMemoryRequirements);
+
+    // Step 6
+    VkMemoryAllocateInfo vkMemoryAllocateInfo;
+    memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo.pNext = NULL;
+    vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
+    vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
+
+    // Step A 
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        // Step B
+        if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
+            // Step C
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+                // Step D
+                vkMemoryAllocateInfo.memoryTypeIndex = i;
+                break;
+            }
+        }
+        // Step E
+        vkMemoryRequirements.memoryTypeBits >>= 1;
+    }
+
+    //Setp 9
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_position.vkDeviceMemory);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Successful!.\n");
+    }
+
+    // Step 10
+    vkResult = vkBindBufferMemory(vkDevice, vertexData_position.vkBuffer, vertexData_position.vkDeviceMemory, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Successful!.\n");
+    }
+
+    // Step 11
+    void *data = NULL;
+
+    vkResult = vkMapMemory(
+        vkDevice,
+        vertexData_position.vkDeviceMemory,
+        0,
+        vkMemoryRequirements.size,
+        0,
+        &data
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Successful!.\n");
+    }
+
+    // Step 12
+    memcpy(data, triangle_position, sizeof(triangle_position));
+
+    // Step 13
+    vkUnmapMemory(vkDevice, vertexData_position.vkDeviceMemory);
+
+    return(vkResult);
 }
 
 VkResult createRenderPass(void) {
