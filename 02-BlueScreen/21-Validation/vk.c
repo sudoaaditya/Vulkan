@@ -690,13 +690,15 @@ void uninitialize(void){
         swapchainImageView_array = NULL;
     }
 
-    /* // Destroy vulkan Images
-    if(swapchainImage_array) {
+    // Destroy vulkan Images
+    // VALIDATION USE CASE 4: uncomment the given block to see the error
+    /* if(swapchainImage_array) {
         for(uint32_t i = 0; i < swapchainImageCount; i++) {
             if(swapchainImage_array[i]) {
                 vkDestroyImage(vkDevice, swapchainImage_array[i], NULL);
                 fprintf(fptr, "uninitialize(): vkDestroyImage() Succeed for {%d}\n", i);
                 swapchainImage_array[i] = VK_NULL_HANDLE;
+                fclose(fptr);
             }
         }
     } */
