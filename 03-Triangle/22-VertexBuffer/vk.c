@@ -1952,7 +1952,7 @@ VkResult createVertexBuffer(void) {
         vkDevice,
         vertexData_position.vkDeviceMemory,
         0,
-        vkMemoryRequirements.size,
+        vkMemoryAllocateInfo.allocationSize,
         0,
         &data
     );
