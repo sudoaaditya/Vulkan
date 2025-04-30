@@ -115,6 +115,9 @@ VertexData vertexData_position;
 VkShaderModule vkShaderModule_vertex = VK_NULL_HANDLE;
 VkShaderModule vkShaderModule_fragment = VK_NULL_HANDLE;
 
+// Descriptor Set Layout
+VkDescriptorSetLayout vkDescriptorSetLayout = VK_NULL_HANDLE;
+
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
@@ -355,6 +358,7 @@ VkResult initialize(void) {
     VkResult createCommandBuffers(void);
     VkResult createVertexBuffer(void);
     VkResult createShaders(void);
+    VkResult createDescriptorSetLayout(void);
     VkResult createRenderPass(void);
     VkResult createFramebuffers(void);
     VkResult createSemaphores(void);
@@ -463,6 +467,15 @@ VkResult initialize(void) {
         return (vkResult);
     } else {
         fprintf(fptr, "initialize(): createShaders() Successful!.\n\n");
+    }
+
+    // Create Descriptor Set Layout
+    vkResult = createDescriptorSetLayout();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): createDescriptorSetLayout() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): createDescriptorSetLayout() Successful!.\n\n");
     }
 
     // Render Pass
@@ -682,6 +695,13 @@ void uninitialize(void){
         vkDestroyRenderPass(vkDevice, vkRenderPass, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyRenderPass() Succeed!\n");
         vkRenderPass = VK_NULL_HANDLE;
+    }
+
+    // Destroy Descriptor Set Layout
+    if(vkDescriptorSetLayout) {
+        vkDestroyDescriptorSetLayout(vkDevice, vkDescriptorSetLayout, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyDescriptorSetLayout() Succeed!\n");
+        vkDescriptorSetLayout = VK_NULL_HANDLE;
     }
 
     // Destroy Shader
@@ -2121,6 +2141,33 @@ VkResult createShaders(void) {
         shaderData = NULL;
     }
     fprintf(fptr, "createShaders(): Fragment Shader Module Created Successful!.\n");
+
+    return (vkResult);
+}
+
+
+VkResult createDescriptorSetLayout(void) {
+    // Variables
+    VkResult vkResult = VK_SUCCESS;
+
+    //Create Descriptor Set Layout Create Info
+    VkDescriptorSetLayoutCreateInfo vkDescriptorSetLayoutCreateInfo;
+    memset((void*)&vkDescriptorSetLayoutCreateInfo, 0, sizeof(VkDescriptorSetLayoutCreateInfo));
+
+    vkDescriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    vkDescriptorSetLayoutCreateInfo.pNext = NULL;
+    vkDescriptorSetLayoutCreateInfo.flags = 0;
+    vkDescriptorSetLayoutCreateInfo.bindingCount = 0; // will change when we introduce resources/descriptors
+    vkDescriptorSetLayoutCreateInfo.pBindings = NULL; // will change when we introduce resources/descriptors
+    
+    // Create Descriptor Set Layout
+    vkResult = vkCreateDescriptorSetLayout(vkDevice, &vkDescriptorSetLayoutCreateInfo, NULL, &vkDescriptorSetLayout);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "vkCreateDescriptorSetLayout(): vkCreateDescriptorSetLayout() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "vkCreateDescriptorSetLayout(): vkCreateDescriptorSetLayout() Successful!.\n");
+    }
 
     return (vkResult);
 }
