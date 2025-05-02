@@ -118,6 +118,9 @@ VkShaderModule vkShaderModule_fragment = VK_NULL_HANDLE;
 // Descriptor Set Layout
 VkDescriptorSetLayout vkDescriptorSetLayout = VK_NULL_HANDLE;
 
+// Pipeline Layout
+VkPipelineLayout vkPipelineLayout = VK_NULL_HANDLE;
+
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
@@ -359,6 +362,7 @@ VkResult initialize(void) {
     VkResult createVertexBuffer(void);
     VkResult createShaders(void);
     VkResult createDescriptorSetLayout(void);
+    VkResult createPipelineLayout(void);
     VkResult createRenderPass(void);
     VkResult createFramebuffers(void);
     VkResult createSemaphores(void);
@@ -476,6 +480,15 @@ VkResult initialize(void) {
         return (vkResult);
     } else {
         fprintf(fptr, "initialize(): createDescriptorSetLayout() Successful!.\n\n");
+    }
+
+    // Create Pipeline Layout
+    vkResult = createPipelineLayout();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): createPipelineLayout() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): createPipelineLayout() Successful!.\n\n");
     }
 
     // Render Pass
@@ -702,6 +715,13 @@ void uninitialize(void){
         vkDestroyDescriptorSetLayout(vkDevice, vkDescriptorSetLayout, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyDescriptorSetLayout() Succeed!\n");
         vkDescriptorSetLayout = VK_NULL_HANDLE;
+    }
+
+    // Destroy Pipeline Layout
+    if(vkPipelineLayout) {
+        vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyPipelineLayout() Succeed!\n");
+        vkPipelineLayout = VK_NULL_HANDLE;
     }
 
     // Destroy Shader
@@ -2163,10 +2183,38 @@ VkResult createDescriptorSetLayout(void) {
     // Create Descriptor Set Layout
     vkResult = vkCreateDescriptorSetLayout(vkDevice, &vkDescriptorSetLayoutCreateInfo, NULL, &vkDescriptorSetLayout);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "vkCreateDescriptorSetLayout(): vkCreateDescriptorSetLayout() Failed!.\n");
+        fprintf(fptr, "createDescriptorSetLayout(): vkCreateDescriptorSetLayout() Failed!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "vkCreateDescriptorSetLayout(): vkCreateDescriptorSetLayout() Successful!.\n");
+        fprintf(fptr, "createDescriptorSetLayout(): vkCreateDescriptorSetLayout() Successful!.\n");
+    }
+
+    return (vkResult);
+}
+
+VkResult createPipelineLayout(void) {
+    // Variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Create Pipeline Layout Create Info
+    VkPipelineLayoutCreateInfo vkPipelineLayoutCreateInfo;
+    memset((void*)&vkPipelineLayoutCreateInfo, 0, sizeof(VkPipelineLayoutCreateInfo));
+
+    vkPipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    vkPipelineLayoutCreateInfo.pNext = NULL;
+    vkPipelineLayoutCreateInfo.flags = 0;
+    vkPipelineLayoutCreateInfo.setLayoutCount = 1; // we have only one descriptor set layout
+    vkPipelineLayoutCreateInfo.pSetLayouts = &vkDescriptorSetLayout;
+    vkPipelineLayoutCreateInfo.pushConstantRangeCount = 0; // no push constant range for now
+    vkPipelineLayoutCreateInfo.pPushConstantRanges = NULL;
+
+    // Create Pipeline Layout
+    vkResult = vkCreatePipelineLayout(vkDevice, &vkPipelineLayoutCreateInfo, NULL, &vkPipelineLayout);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createPipelineLayout(): vkCreatePipelineLayout() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createPipelineLayout(): vkCreatePipelineLayout() Successful!.\n");
     }
 
     return (vkResult);

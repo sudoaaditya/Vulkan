@@ -2163,10 +2163,10 @@ VkResult createDescriptorSetLayout(void) {
     // Create Descriptor Set Layout
     vkResult = vkCreateDescriptorSetLayout(vkDevice, &vkDescriptorSetLayoutCreateInfo, NULL, &vkDescriptorSetLayout);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "vkCreateDescriptorSetLayout(): vkCreateDescriptorSetLayout() Failed!.\n");
+        fprintf(fptr, "createDescriptorSetLayout(): vkCreateDescriptorSetLayout() Failed!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "vkCreateDescriptorSetLayout(): vkCreateDescriptorSetLayout() Successful!.\n");
+        fprintf(fptr, "createDescriptorSetLayout(): vkCreateDescriptorSetLayout() Successful!.\n");
     }
 
     return (vkResult);

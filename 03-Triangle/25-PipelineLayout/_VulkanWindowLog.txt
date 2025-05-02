@@ -376,6 +376,9 @@ initialize(): createShaders() Successful!.
 createDescriptorSetLayout(): vkCreateDescriptorSetLayout() Successful!.
 initialize(): createDescriptorSetLayout() Successful!.
 
+createPipelineLayout(): vkCreatePipelineLayout() Successful!.
+initialize(): createPipelineLayout() Successful!.
+
 createRenderPass(): vkCreateRenderPass() Successful!.
 initialize(): createRenderPass() Successful!.
 
@@ -412,6 +415,7 @@ uninitialize(): vkDestroyFramebuffer() Succeed for {1}!.
 uninitialize(): freed vkFramebuffer_array!.
 uninitialize(): vkDestroyRenderPass() Succeed!
 uninitialize(): vkDestroyDescriptorSetLayout() Succeed!
+uninitialize(): vkDestroyPipelineLayout() Succeed!
 uninitialize(): vkDestroyShaderModule() Succeed for Fragment Shader!
 uninitialize(): vkDestroyShaderModule() Succeed for Vertex Shader!
 uninitialize(): vkFreeMemory() Succeed for Vertex Buffer!
