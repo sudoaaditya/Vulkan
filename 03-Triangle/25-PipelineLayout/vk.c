@@ -710,18 +710,18 @@ void uninitialize(void){
         vkRenderPass = VK_NULL_HANDLE;
     }
 
-    // Destroy Descriptor Set Layout
-    if(vkDescriptorSetLayout) {
-        vkDestroyDescriptorSetLayout(vkDevice, vkDescriptorSetLayout, NULL);
-        fprintf(fptr, "uninitialize(): vkDestroyDescriptorSetLayout() Succeed!\n");
-        vkDescriptorSetLayout = VK_NULL_HANDLE;
-    }
-
     // Destroy Pipeline Layout
     if(vkPipelineLayout) {
         vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyPipelineLayout() Succeed!\n");
         vkPipelineLayout = VK_NULL_HANDLE;
+    }
+
+    // Destroy Descriptor Set Layout
+    if(vkDescriptorSetLayout) {
+        vkDestroyDescriptorSetLayout(vkDevice, vkDescriptorSetLayout, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyDescriptorSetLayout() Succeed!\n");
+        vkDescriptorSetLayout = VK_NULL_HANDLE;
     }
 
     // Destroy Shader
