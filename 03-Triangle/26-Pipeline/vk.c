@@ -2356,7 +2356,6 @@ VkResult createPipeline(void) {
     vkPipelineInputAssemblyStateCreateInfo.flags = 0;
     vkPipelineInputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
-
     // Rasterization State
     VkPipelineRasterizationStateCreateInfo vkPipelineRasterizationStateCreateInfo;
     memset((void*)&vkPipelineRasterizationStateCreateInfo, 0, sizeof(VkPipelineRasterizationStateCreateInfo));
@@ -2369,12 +2368,12 @@ VkResult createPipeline(void) {
     vkPipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     vkPipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
 
-
     // Color Blending State
     VkPipelineColorBlendAttachmentState vkPipelineColorBlendAttachmentState_array[1];
     memset((void*)vkPipelineColorBlendAttachmentState_array, 0, sizeof(VkPipelineColorBlendAttachmentState) * _ARRAYSIZE(vkPipelineColorBlendAttachmentState_array));
 
     vkPipelineColorBlendAttachmentState_array[0].blendEnable = VK_FALSE;
+    vkPipelineColorBlendAttachmentState_array[0].colorWriteMask = 0xF;
 
     VkPipelineColorBlendStateCreateInfo vkPipelineColorBlendStateCreateInfo;
     memset((void*)&vkPipelineColorBlendStateCreateInfo, 0, sizeof(VkPipelineColorBlendStateCreateInfo));
