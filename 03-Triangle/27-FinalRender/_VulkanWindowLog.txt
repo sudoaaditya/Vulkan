@@ -33,7 +33,6 @@ fillValidationLayerNames(): vkEnumerateInstanceLayerProperties() First Call Succ
 fillValidationLayerNames(): vkEnumerateInstanceLayerProperties() Second Call Successful!.
 fillValidationLayerNames(): Vulkan Validation Layer Name = VK_LAYER_NV_optimus 
 fillValidationLayerNames(): Vulkan Validation Layer Name = VK_LAYER_OBS_HOOK 
-fillValidationLayerNames(): Vulkan Validation Layer Name = VK_LAYER_RENDERDOC_Capture 
 fillValidationLayerNames(): Vulkan Validation Layer Name = VK_LAYER_VALVE_steam_overlay 
 fillValidationLayerNames(): Vulkan Validation Layer Name = VK_LAYER_VALVE_steam_fossilize 
 fillValidationLayerNames(): Vulkan Validation Layer Name = VK_LAYER_LUNARG_api_dump 
