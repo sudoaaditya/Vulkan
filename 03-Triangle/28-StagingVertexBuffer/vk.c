@@ -1956,18 +1956,102 @@ VkResult createCommandBuffers(void) {
 VkResult createVertexBuffer(void) {
     // variables
     VkResult vkResult = VK_SUCCESS;
+    VertexData vertexData_stagingBuffer_position;
 
-    // Step 1
     float triangle_position[] = {
         0.0f, 1.0f, 0.0f,
         -1.0f, -1.0f, 0.0f,
         1.0f, -1.0f, 0.0f
     };
 
-    // Step 2
+    // Code
+    //Step 1: Create Staging Buffer for Vertex Data
+    memset((void*)&vertexData_stagingBuffer_position, 0, sizeof(VertexData));
+
+    VkBufferCreateInfo vkBufferCreateInfo_stagingBuffer;
+    memset((void*)&vkBufferCreateInfo_stagingBuffer, 0, sizeof(VkBufferCreateInfo));
+
+    vkBufferCreateInfo_stagingBuffer.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCreateInfo_stagingBuffer.pNext = NULL;
+    vkBufferCreateInfo_stagingBuffer.flags = 0;
+    vkBufferCreateInfo_stagingBuffer.size = sizeof(triangle_position);
+    vkBufferCreateInfo_stagingBuffer.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    vkBufferCreateInfo_stagingBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // by mentioning this we are saying that this buffer can be used in multithreaded environment but only by one thread at a time
+
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo_stagingBuffer, NULL, &vertexData_stagingBuffer_position.vkBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() for Staging Buffer Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() for Staging Buffer Successful!.\n");
+    }
+
+    // Get Memory Requirements for Staging Buffer
+    VkMemoryRequirements vkMemoryRequirements_stagingBuffer;
+    memset((void*)&vkMemoryRequirements_stagingBuffer, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, vertexData_stagingBuffer_position.vkBuffer, &vkMemoryRequirements_stagingBuffer);
+
+    // Allocate Memory for Staging Buffer
+    VkMemoryAllocateInfo vkMemoryAllocateInfo_stagingBuffer;
+    memset((void*)&vkMemoryAllocateInfo_stagingBuffer, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo_stagingBuffer.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo_stagingBuffer.pNext = NULL;
+    vkMemoryAllocateInfo_stagingBuffer.allocationSize = vkMemoryRequirements_stagingBuffer.size;
+    vkMemoryAllocateInfo_stagingBuffer.memoryTypeIndex = 0;
+
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        if((vkMemoryRequirements_stagingBuffer.memoryTypeBits & 1) == 1) {
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+                vkMemoryAllocateInfo_stagingBuffer.memoryTypeIndex = i;
+                break;
+            }
+        }
+        vkMemoryRequirements_stagingBuffer.memoryTypeBits >>= 1;
+    }
+
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_stagingBuffer, NULL, &vertexData_stagingBuffer_position.vkDeviceMemory);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() for Staging Buffer Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() for Staging Buffer Successful!.\n");
+    }
+
+    vkResult = vkBindBufferMemory(vkDevice, vertexData_stagingBuffer_position.vkBuffer, vertexData_stagingBuffer_position.vkDeviceMemory, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() for Staging Buffer Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() for Staging Buffer Successful!.\n");
+    }
+
+    void *pData = NULL;
+
+    vkResult = vkMapMemory(
+        vkDevice,
+        vertexData_stagingBuffer_position.vkDeviceMemory,
+        0,
+        vkMemoryAllocateInfo_stagingBuffer.allocationSize,
+        0, 
+        &pData
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() for Staging Buffer Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() for Staging Buffer Successful!.\n");
+    }
+
+    memcpy(pData, triangle_position, sizeof(triangle_position));
+
+    vkUnmapMemory(vkDevice, vertexData_stagingBuffer_position.vkDeviceMemory);
+
+    // Step 2:  create Device Visible Vertex Buffer
     memset((void*)&vertexData_position, 0, sizeof(VertexData));
 
-    // Step 3
     VkBufferCreateInfo vkBufferCreateInfo;
     memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
 
@@ -1975,24 +2059,22 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
     vkBufferCreateInfo.size = sizeof(triangle_position);
-    vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    
-    // Setp 4
+    vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT; // we will use this buffer as destination buffer for transfer operation
+    vkBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // by mentioning this we are saying that this buffer can be used in multithreaded environment
+
     vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_position.vkBuffer);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() for Vertex Buffer Failed!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Successful!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() for Vertex Buffer Successful!.\n");
     }
 
-    // Step 5
     VkMemoryRequirements vkMemoryRequirements;
     memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
 
     vkGetBufferMemoryRequirements(vkDevice, vertexData_position.vkBuffer, &vkMemoryRequirements);
 
-    // Step 6
     VkMemoryAllocateInfo vkMemoryAllocateInfo;
     memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
 
@@ -2001,22 +2083,16 @@ VkResult createVertexBuffer(void) {
     vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
     vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
 
-    // Step A 
     for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
-        // Step B
         if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
-            // Step C
-            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-                // Step D
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
                 vkMemoryAllocateInfo.memoryTypeIndex = i;
                 break;
             }
         }
-        // Step E
         vkMemoryRequirements.memoryTypeBits >>= 1;
     }
 
-    //Setp 9
     vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_position.vkDeviceMemory);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed!.\n");
@@ -2025,7 +2101,6 @@ VkResult createVertexBuffer(void) {
         fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Successful!.\n");
     }
 
-    // Step 10
     vkResult = vkBindBufferMemory(vkDevice, vertexData_position.vkBuffer, vertexData_position.vkDeviceMemory, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed!.\n");
@@ -2034,30 +2109,111 @@ VkResult createVertexBuffer(void) {
         fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Successful!.\n");
     }
 
-    // Step 11
-    void *data = NULL;
+    // No need for VkMapMemory(), memcpy() and vkUnmapMemory() for Device Local Buffer
 
-    vkResult = vkMapMemory(
-        vkDevice,
-        vertexData_position.vkDeviceMemory,
-        0,
-        vkMemoryAllocateInfo.allocationSize,
-        0,
-        &data
-    );
+    // Step 3: Command Buffer for Copying Staging Buffer to Vertex Buffer
+    VkCommandBufferAllocateInfo vkCommandBufferAllocateInfo;
+    memset((void*)&vkCommandBufferAllocateInfo, 0, sizeof(VkCommandBufferAllocateInfo));
 
+    vkCommandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    vkCommandBufferAllocateInfo.pNext = NULL;
+    vkCommandBufferAllocateInfo.commandPool = vkCommandPool;
+    vkCommandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vkCommandBufferAllocateInfo.commandBufferCount = 1;
+
+    VkCommandBuffer vkCommandBuffer = VK_NULL_HANDLE;
+    vkResult = vkAllocateCommandBuffers(vkDevice, &vkCommandBufferAllocateInfo, &vkCommandBuffer);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Failed!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkAllocateCommandBuffers() Failed for Buffer Copy!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Successful!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkAllocateCommandBuffers() Successful for Buffer Copy!.\n");
     }
 
-    // Step 12
-    memcpy(data, triangle_position, sizeof(triangle_position));
+    // Step 4: Build Command Buffer
+    VkCommandBufferBeginInfo vkCommandBufferBeginInfo;
+    memset((void*)&vkCommandBufferBeginInfo, 0, sizeof(VkCommandBufferBeginInfo));
 
-    // Step 13
-    vkUnmapMemory(vkDevice, vertexData_position.vkDeviceMemory);
+    vkCommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    vkCommandBufferBeginInfo.pNext = NULL;
+    vkCommandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // we will submit this command buffer only once
+
+    vkResult = vkBeginCommandBuffer(vkCommandBuffer, &vkCommandBufferBeginInfo);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkBeginCommandBuffer() Failed for Copy Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkBeginCommandBuffer() Successful for Copy Buffer!.\n");
+    }
+
+    VkBufferCopy vkBufferCopy;
+    memset((void*)&vkBufferCopy, 0, sizeof(VkBufferCopy));
+
+    vkBufferCopy.srcOffset = 0;
+    vkBufferCopy.dstOffset = 0;
+    vkBufferCopy.size = sizeof(triangle_position);
+
+    vkCmdCopyBuffer(
+        vkCommandBuffer,
+        vertexData_stagingBuffer_position.vkBuffer,
+        vertexData_position.vkBuffer,
+        1, &vkBufferCopy
+    );
+
+
+    vkResult = vkEndCommandBuffer(vkCommandBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "buildCommandBuffers(): vkEndCommandBuffer() Failed for Copy Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "buildCommandBuffers(): vkEndCommandBuffer() Successful for Copy Buffer!.\n");
+    }
+
+    // Step 5: Submit Command Buffer
+    VkSubmitInfo vkSubmitInfo;
+    memset((void*)&vkSubmitInfo, 0, sizeof(VkSubmitInfo));
+
+    vkSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    vkSubmitInfo.pNext = NULL;
+    vkSubmitInfo.commandBufferCount = 1;
+    vkSubmitInfo.pCommandBuffers = &vkCommandBuffer;
+
+    vkResult = vkQueueSubmit(vkQueue, 1, &vkSubmitInfo, VK_NULL_HANDLE);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkQueueSubmit() Failed for Copy Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkQueueSubmit() Successful for Copy Buffer!.\n");
+    }
+
+    // Wait for Queue to be Idle
+    vkResult = vkQueueWaitIdle(vkQueue);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkQueueWaitIdle() Failed for Copy Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkQueueWaitIdle() Successful for Copy Buffer!.\n");
+    }
+
+    // Step 6: Free Command Buffer
+    if(vkCommandBuffer){ 
+        vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer);
+        fprintf(fptr, "createVertexBuffer(): vkFreeCommandBuffers() Successful for Copy Buffer!.\n");
+        vkCommandBuffer = VK_NULL_HANDLE;
+    }
+
+    // Step 7: Free Local Staging Buffer
+    if(vertexData_stagingBuffer_position.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, vertexData_stagingBuffer_position.vkDeviceMemory, NULL);
+        fprintf(fptr, "createVertexBuffer(): vkFreeMemory() Succeed for Vertex Buffer!\n");
+        vertexData_stagingBuffer_position.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+
+    if(vertexData_stagingBuffer_position.vkBuffer) {
+        vkDestroyBuffer(vkDevice, vertexData_stagingBuffer_position.vkBuffer, NULL);
+        fprintf(fptr, "createVertexBuffer(): vkDestroyBuffer() Succeed for Vertex Buffer!\n");
+        vertexData_stagingBuffer_position.vkBuffer = VK_NULL_HANDLE;
+    }
 
     return(vkResult);
 }
