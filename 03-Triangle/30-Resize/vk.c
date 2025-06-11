@@ -221,7 +221,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
             if(gbActiveWindow == TRUE) {
                 update();
             }
-            display();
+            vkResult = display();
+            if(vkResult != VK_FALSE && vkResult != VK_SUCCESS) {
+                fprintf(fptr, "WinMain(): display() Failed!.\n");
+                bDone = TRUE;
+            }
         }
     }
 
@@ -235,7 +239,7 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
 
     //func
     void ToggleFullScreen(void);
-    void resize(int, int);
+    VkResult resize(int, int);
 
     //var
     BOOL bIsMax = FALSE;
@@ -560,12 +564,200 @@ VkResult initialize(void) {
 
     // Initialization is completed!
     bInitialized = TRUE;
+    fprintf(fptr, "initialize(): Initialization Successful!.\n");
 
     return (vkResult);
 }
 
-void resize(int width, int height) {
+VkResult resize(int width, int height) {
+    // Function declarations
+    VkResult createSwapchain(VkBool32);
+    VkResult createSwapchainImagesAndImageViews(void);
+    VkResult createCommandBuffers(void);
+    VkResult createPipelineLayout(void);
+    VkResult createPipeline(void);
+    VkResult createFramebuffers(void);
+    VkResult createRenderPass(void);
+    VkResult buildCommandBuffers(void);
 
+
+    // Variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Code
+    if(height <= 0)
+        height = 1;
+
+    // If control comes here before initialization is done, then return false
+    if(bInitialized == FALSE) {
+        fprintf(fptr, "resize(): initialization is not completed or failed\n");
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return (vkResult);
+    }
+
+    // As recreation of swapchain is required, we are going to repeat many steps of initialization again
+    // hence set bInitialized to FALSE
+    bInitialized = FALSE; // this will prevent display() function to execute before resize() is done
+
+    // Set Global Width & Height
+    winWidth = width;
+    winHeight = height;
+
+    // Wait til vkDevice is idle
+    if(vkDevice) {
+        vkDeviceWaitIdle(vkDevice); // this basically waits on til all the operations are done using the device and then this function call returns
+    }
+
+    // Check if vkSwapchainKHR is NULL, if it is NULL then we cannot proceed
+    if(vkSwapchainKHR == VK_NULL_HANDLE) {
+        fprintf(fptr, "resize(): vkSwapchainKHR is NULL cannot proceed!.\n");
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return (vkResult);
+    }
+
+    // Destroy Frame Buffers
+    if(vkFramebuffer_array) {
+        for(uint32_t i = 0; i < swapchainImageCount; i++) {
+            vkDestroyFramebuffer(vkDevice, vkFramebuffer_array[i], NULL);
+            vkFramebuffer_array[i] = VK_NULL_HANDLE;
+        }
+    }
+
+    if(vkFramebuffer_array) {
+        free(vkFramebuffer_array);
+        vkFramebuffer_array = NULL;
+    }
+
+    // Destroy  Command Buffers
+    if(vkCommandBuffer_array) {
+        for(uint32_t i = 0; i < swapchainImageCount; i++) {
+            vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_array[i]);
+            vkCommandBuffer_array[i] = VK_NULL_HANDLE;
+        }
+    }
+
+    if(vkCommandBuffer_array) {
+        free(vkCommandBuffer_array);
+        vkCommandBuffer_array = NULL;
+    }
+
+    // Destroy Pipeline
+    if(vkPipeline) {
+        vkDestroyPipeline(vkDevice, vkPipeline, NULL);
+        vkPipeline = VK_NULL_HANDLE;
+    }
+
+    // Destroy Pipeline Layout
+    if(vkPipelineLayout) {
+        vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, NULL);
+        vkPipelineLayout = VK_NULL_HANDLE;
+    }
+
+    // Destroy Render Pass
+    if(vkRenderPass) {
+        vkDestroyRenderPass(vkDevice, vkRenderPass, NULL);
+        vkRenderPass = VK_NULL_HANDLE;
+    }
+
+    if(swapchainImageView_array) {
+        for(uint32_t i = 0; i < swapchainImageCount; i++) {
+            if(swapchainImageView_array[i]) {
+                vkDestroyImageView(vkDevice, swapchainImageView_array[i], NULL);
+                swapchainImageView_array[i] = VK_NULL_HANDLE;
+            }
+        }
+    }
+
+    if(swapchainImageView_array) {
+        free(swapchainImageView_array);
+        swapchainImageView_array = NULL;
+    }
+
+    // Destroy vulkan Images
+    // VALIDATION USE CASE 4: uncomment the given block to see the error
+    /* if(swapchainImage_array) {
+        for(uint32_t i = 0; i < swapchainImageCount; i++) {
+            if(swapchainImage_array[i]) {
+                vkDestroyImage(vkDevice, swapchainImage_array[i], NULL);
+                swapchainImage_array[i] = VK_NULL_HANDLE;
+            }
+        }
+    } */
+
+    if(swapchainImage_array) {
+        free(swapchainImage_array);
+        swapchainImage_array = NULL;
+    }
+
+    // Destroy Swapchain
+    if(vkSwapchainKHR) {
+        vkDestroySwapchainKHR(vkDevice, vkSwapchainKHR, NULL);
+        vkSwapchainKHR = VK_NULL_HANDLE;
+    }
+
+    // RECREATE FOR RESIZE
+    // Create Swapchain
+    vkResult = createSwapchain(VK_TRUE);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize(): createSwapchain() Failed!.\n");
+        return (VK_ERROR_INITIALIZATION_FAILED);
+    }
+
+    // Create Swapchain Images & Image Views
+    vkResult = createSwapchainImagesAndImageViews();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize(): createSwapchainImagesAndImageViews() Failed!.\n");
+        return (vkResult);
+    }
+
+    // Create Render Pass
+    vkResult = createRenderPass();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize(): createRenderPass() Failed!.\n");
+        return (vkResult);
+    }
+
+    // Create Pipeline Layout
+    vkResult = createPipelineLayout();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize(): createPipelineLayout() Failed!.\n");
+        return (vkResult);
+    }
+
+    // Create Pipeline
+    vkResult = createPipeline();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize(): createPipeline() Failed!.\n");
+        return (vkResult);
+    }
+
+    // Create Framebuffers
+    vkResult = createFramebuffers();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize(): createFramebuffers() Failed!.\n");
+        return (vkResult);
+    }
+    
+    // Create Command Buffer
+    vkResult = createCommandBuffers();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize(): createCommandBuffers() Failed!.\n");
+        return (vkResult);
+    }
+
+    // Build Command Buffers
+    vkResult = buildCommandBuffers();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize(): buildCommandBuffers() Failed!.\n");
+        return (vkResult);
+    }
+
+    // add extra new line for better readability
+    fprintf(fptr, "\n\n");
+
+    bInitialized = TRUE;
+
+    return (vkResult);
 }
 
 VkResult display(void) {
@@ -834,6 +1026,7 @@ void uninitialize(void){
     // Destroy Vulkan Swapchain
     if(vkSwapchainKHR) {
         vkDestroySwapchainKHR(vkDevice, vkSwapchainKHR, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroySwapchainKHR() Succeed!\n");
         vkSwapchainKHR = VK_NULL_HANDLE;
     }
     
@@ -842,6 +1035,7 @@ void uninitialize(void){
     // Destroy Vulkan Device
     if(vkDevice) {
         vkDestroyDevice(vkDevice, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyDevice() Succeed!\n");
         vkDevice = VK_NULL_HANDLE;
     }
     
