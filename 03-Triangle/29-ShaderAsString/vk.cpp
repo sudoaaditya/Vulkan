@@ -29,7 +29,7 @@ using namespace std;
 
 // global variables
 BOOL gbFullScreen = FALSE;
-DWORD dwStyle = NULL;
+DWORD dwStyle = 0;
 WINDOWPLACEMENT wpPrev;
 HWND ghwnd = NULL;
 BOOL gbActiveWindow = FALSE;

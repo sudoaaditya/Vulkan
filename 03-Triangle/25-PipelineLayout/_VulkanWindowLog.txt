@@ -413,8 +413,8 @@ uninitialize(): vkDestroyFramebuffer() Succeed for {0}!.
 uninitialize(): vkDestroyFramebuffer() Succeed for {1}!.
 uninitialize(): freed vkFramebuffer_array!.
 uninitialize(): vkDestroyRenderPass() Succeed!
-uninitialize(): vkDestroyDescriptorSetLayout() Succeed!
 uninitialize(): vkDestroyPipelineLayout() Succeed!
+uninitialize(): vkDestroyDescriptorSetLayout() Succeed!
 uninitialize(): vkDestroyShaderModule() Succeed for Fragment Shader!
 uninitialize(): vkDestroyShaderModule() Succeed for Vertex Shader!
 uninitialize(): vkFreeMemory() Succeed for Vertex Buffer!
