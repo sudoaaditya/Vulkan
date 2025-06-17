@@ -32,9 +32,6 @@ createVulkanInstance(): fillInstanceExtensionNames() Successful!.
 fillValidationLayerNames(): vkEnumerateInstanceLayerProperties() First Call Successful!.
 fillValidationLayerNames(): vkEnumerateInstanceLayerProperties() Second Call Successful!.
 fillValidationLayerNames(): Vulkan Validation Layer Name = VK_LAYER_NV_optimus 
-fillValidationLayerNames(): Vulkan Validation Layer Name = VK_LAYER_OBS_HOOK 
-fillValidationLayerNames(): Vulkan Validation Layer Name = VK_LAYER_VALVE_steam_overlay 
-fillValidationLayerNames(): Vulkan Validation Layer Name = VK_LAYER_VALVE_steam_fossilize 
 fillValidationLayerNames(): Vulkan Validation Layer Name = VK_LAYER_LUNARG_api_dump 
 fillValidationLayerNames(): Vulkan Validation Layer Name = VK_LAYER_LUNARG_gfxreconstruct 
 fillValidationLayerNames(): Vulkan Validation Layer Name = VK_LAYER_KHRONOS_synchronization2 

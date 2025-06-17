@@ -2432,7 +2432,7 @@ VkResult createRenderPass(void) {
     vkSubpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     vkSubpassDescription.inputAttachmentCount = 0;
     vkSubpassDescription.pInputAttachments = NULL;
-    vkSubpassDescription.colorAttachmentCount = _ARRAYSIZE(vkAttachmentDescription_array);
+    vkSubpassDescription.colorAttachmentCount = 1;
     vkSubpassDescription.pColorAttachments = &vkAttachmentReference;
     vkSubpassDescription.pResolveAttachments = NULL;
     vkSubpassDescription.pDepthStencilAttachment = NULL;
