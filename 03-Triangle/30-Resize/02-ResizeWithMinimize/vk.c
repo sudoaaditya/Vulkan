@@ -16,6 +16,7 @@
 
 // global variables
 BOOL gbFullScreen = FALSE;
+BOOL gbWindowMinimized = FALSE;
 DWORD dwStyle = 0;
 WINDOWPLACEMENT wpPrev;
 HWND ghwnd = NULL;
@@ -218,13 +219,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
                 DispatchMessage(&msg);
             }
         } else {
-            if(gbActiveWindow == TRUE) {
-                update();
-            }
-            vkResult = display();
-            if(vkResult != VK_FALSE && vkResult != VK_SUCCESS) {
-                fprintf(fptr, "WinMain(): display() Failed!.\n");
-                bDone = TRUE;
+            if(gbWindowMinimized == FALSE) {
+                if(gbActiveWindow == TRUE) {
+                    update();
+                }
+                vkResult = display();
+                if(vkResult != VK_FALSE && vkResult != VK_SUCCESS 
+                    && vkResult != VK_SUBOPTIMAL_KHR && vkResult != VK_ERROR_OUT_OF_DATE_KHR) {
+                    fprintf(fptr, "WinMain(): display() Failed!.\n");
+                    bDone = TRUE;
+                }
             }
         }
     }
@@ -260,7 +264,12 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
             break;
 
         case WM_SIZE:
-            resize(LOWORD(lParam), HIWORD(lParam));
+            if(wParam == SIZE_MINIMIZED) {
+                gbWindowMinimized = TRUE;
+            } else {
+                resize(LOWORD(lParam), HIWORD(lParam));
+                gbWindowMinimized = FALSE;
+            }
             break;
 
         case WM_KEYDOWN:
@@ -761,6 +770,10 @@ VkResult resize(int width, int height) {
 }
 
 VkResult display(void) {
+
+    // Function declarations
+    VkResult resize(int, int);
+
     // Variables
     VkResult vkResult = VK_SUCCESS;
 
@@ -783,8 +796,18 @@ VkResult display(void) {
     );
 
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "display(): vkAcquireNextImageKHR() Failed!.\n");
-        return (vkResult);
+        if(vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR) {
+            fprintf(fptr, "display(): vkAcquireNextImageKHR() Failed! Swapchain is out of date.\n");
+            // Resize the swapchain
+            vkResult = resize(winWidth, winHeight);
+            if(vkResult != VK_SUCCESS) {
+                fprintf(fptr, "display(): resize() Failed!.\n");
+                return (vkResult);
+            }
+        } else {
+            fprintf(fptr, "display(): vkAcquireNextImageKHR() Failed!.\n");
+            return (vkResult);
+        }
     }
 
     // Use Fence to allow host to wait for complition of execution of prev command buffer
@@ -842,8 +865,19 @@ VkResult display(void) {
     // Present the queue!
     vkResult = vkQueuePresentKHR(vkQueue, &vkPresentInfoKHR);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "display(): vkQueuePresentKHR() Failed!.\n");
-        return (vkResult);
+        if(vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR) {
+            fprintf(fptr, "display(): vkQueuePresentKHR() Failed! Swapchain is out of date.\n");
+            // Resize the swapchain
+            vkResult = resize(winWidth, winHeight);
+            if(vkResult != VK_SUCCESS) {
+                fprintf(fptr, "display(): resize() Failed!.\n");
+                return (vkResult);
+            }
+        }
+        else {
+            fprintf(fptr, "display(): vkQueuePresentKHR() Failed!.\n");
+            return (vkResult);
+        }
     }
 
     vkDeviceWaitIdle(vkDevice); // VALIDATION USE CASE 1: Comment this line to see the error
