@@ -8,6 +8,12 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #include<vulkan/vulkan.h>
 
+// glm related macros & header files
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE // clip space depth range is [0, 1]
+#include "../../glm/glm.hpp"
+#include "../../glm/gtc/matrix_transform.hpp"
+
 // vulkan related libraries
 #pragma comment(lib, "vulkan-1.lib")
 
@@ -1995,8 +2001,8 @@ VkResult createSwapchain (VkBool32 vSync) {
         vkExtent2D.width = (uint32_t)winWidth;
         vkExtent2D.height = (uint32_t)winHeight;
 
-        vkExtent2D_swapchain.width = max(vkSurfaceCapabilitiesKHR.minImageExtent.width, min(vkSurfaceCapabilitiesKHR.maxImageExtent.width, vkExtent2D.width));
-        vkExtent2D_swapchain.height = max(vkSurfaceCapabilitiesKHR.minImageExtent.height, min(vkSurfaceCapabilitiesKHR.maxImageExtent.height, vkExtent2D.height));
+        vkExtent2D_swapchain.width = glm::max(vkSurfaceCapabilitiesKHR.minImageExtent.width, glm::min(vkSurfaceCapabilitiesKHR.maxImageExtent.width, vkExtent2D.width));
+        vkExtent2D_swapchain.height = glm::max(vkSurfaceCapabilitiesKHR.minImageExtent.height, glm::min(vkSurfaceCapabilitiesKHR.maxImageExtent.height, vkExtent2D.height));
 
         fprintf(
             fptr, 

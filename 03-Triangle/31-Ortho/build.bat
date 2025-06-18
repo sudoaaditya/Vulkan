@@ -4,7 +4,7 @@ del *.txt
 
 cls
 
-cl.exe /c /EHsc /I C:\VulkanSDK\Vulkan\include vk.c
+cl.exe /c /EHsc /I C:\VulkanSDK\Vulkan\include vk.cpp
 
 rc.exe vk.rc
 
