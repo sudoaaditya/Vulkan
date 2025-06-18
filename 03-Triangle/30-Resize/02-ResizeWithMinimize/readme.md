@@ -1,0 +1,1 @@
+In technical term this is called "Recreation of swapchain"
