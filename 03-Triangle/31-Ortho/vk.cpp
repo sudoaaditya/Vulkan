@@ -118,6 +118,20 @@ typedef struct {
 // Position
 VertexData vertexData_position;
 
+// Uniform Related Declarations
+struct MyUniformData {
+    glm::mat4 modelMatrix;
+    glm::mat4 viewMatrix;
+    glm::mat4 projectionMatrix;
+};
+
+typedef struct {
+    VkBuffer vkBuffer;
+    VkDeviceMemory vkDeviceMemory;
+} UniformData;
+
+UniformData uniformData;
+
 // Shader Variables
 VkShaderModule vkShaderModule_vertex = VK_NULL_HANDLE;
 VkShaderModule vkShaderModule_fragment = VK_NULL_HANDLE;
@@ -127,6 +141,12 @@ VkDescriptorSetLayout vkDescriptorSetLayout = VK_NULL_HANDLE;
 
 // Pipeline Layout
 VkPipelineLayout vkPipelineLayout = VK_NULL_HANDLE;
+
+// Descriptor Pool
+VkDescriptorPool vkDescriptorPool = VK_NULL_HANDLE;
+
+// Descriptor Set
+VkDescriptorSet vkDescriptorSet = VK_NULL_HANDLE;
 
 // Pipeline
 VkViewport vkViewport;
@@ -384,15 +404,19 @@ VkResult initialize(void) {
     VkResult createCommandPool(void);
     VkResult createCommandBuffers(void);
     VkResult createVertexBuffer(void);
+    VkResult createUniformBuffer(void);
     VkResult createShaders(void);
     VkResult createDescriptorSetLayout(void);
     VkResult createPipelineLayout(void);
+    VkResult createDescriptorPool(void);
+    VkResult createDescriptorSet(void);
     VkResult createRenderPass(void);
     VkResult createPipeline(void);
     VkResult createFramebuffers(void);
     VkResult createSemaphores(void);
     VkResult createFences(void);
     VkResult buildCommandBuffers(void);
+
 
     // varibales
     VkResult vkResult = VK_SUCCESS;
@@ -489,6 +513,16 @@ VkResult initialize(void) {
         fprintf(fptr, "initialize(): createVertexBuffer() Successful!.\n\n");
     }
 
+    // Create Uniform Buffer
+    vkResult = createUniformBuffer();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): createUniformBuffer() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): createUniformBuffer() Successful!.\n\n");
+    }
+
+
     // Create Shaders
     vkResult = createShaders();
     if(vkResult != VK_SUCCESS) {
@@ -514,6 +548,24 @@ VkResult initialize(void) {
         return (vkResult);
     } else {
         fprintf(fptr, "initialize(): createPipelineLayout() Successful!.\n\n");
+    }
+
+    // Create Descriptor Pool
+    vkResult = createDescriptorPool();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): createDescriptorPool() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): createDescriptorPool() Successful!.\n\n");
+    }
+
+    // Create Descriptor Set
+    vkResult = createDescriptorSet();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): createDescriptorSet() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): createDescriptorSet() Successful!.\n\n");
     }
 
     // Render Pass
@@ -779,6 +831,7 @@ VkResult display(void) {
 
     // Function declarations
     VkResult resize(int, int);
+    VkResult updateUniformBuffer(void);
 
     // Variables
     VkResult vkResult = VK_SUCCESS;
@@ -886,6 +939,13 @@ VkResult display(void) {
         }
     }
 
+    // Update Uniform Buffer
+    vkResult = updateUniformBuffer();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "display(): updateUniformBuffer() Failed!.\n");
+        return (vkResult);
+    }
+
     vkDeviceWaitIdle(vkDevice); // VALIDATION USE CASE 1: Comment this line to see the error
 
     return (vkResult);
@@ -964,6 +1024,15 @@ void uninitialize(void){
         vkRenderPass = VK_NULL_HANDLE;
     }
 
+    // Destroy Descriptor Pool
+    // When descriptor pool is destroyed, all the descriptor sets created from it are destroyed internally
+    // so we  don't need to destroy descriptor set explicitly 
+    if(vkDescriptorPool) {
+        vkDestroyDescriptorPool(vkDevice, vkDescriptorPool, NULL);
+        fprintf(fptr, "uninitialize(): vkDescriptorPool & vkDescriptorSet Destroy Succeed!\n");
+        vkDescriptorPool = VK_NULL_HANDLE;
+    }
+
     // Destroy Pipeline Layout
     if(vkPipelineLayout) {
         vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, NULL);
@@ -989,6 +1058,19 @@ void uninitialize(void){
         vkDestroyShaderModule(vkDevice, vkShaderModule_vertex, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyShaderModule() Succeed for Vertex Shader!\n");
         vkShaderModule_vertex = VK_NULL_HANDLE;
+    }
+
+    // Destroy Uniform Buffer
+    if(uniformData.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, uniformData.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Uniform Buffer!\n");
+        uniformData.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+
+    if(uniformData.vkBuffer) {
+        vkDestroyBuffer(vkDevice, uniformData.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!\n");
+        uniformData.vkBuffer = VK_NULL_HANDLE;
     }
 
     // Destroy Vertex Buffer
@@ -2193,9 +2275,9 @@ VkResult createVertexBuffer(void) {
 
     // Step 1
     float triangle_position[] = {
-        0.0f, 1.0f, 0.0f,
-        -1.0f, -1.0f, 0.0f,
-        1.0f, -1.0f, 0.0f
+        0.0f, 50.0f, 0.0f,
+        -50.0f, -50.0f, 0.0f,
+        50.0f, -50.0f, 0.0f
     };
 
     // Step 2
@@ -2296,6 +2378,150 @@ VkResult createVertexBuffer(void) {
     return(vkResult);
 }
 
+
+VkResult createUniformBuffer (void) {
+    // functions
+    VkResult updateUniformBuffer(void);
+
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+
+    memset((void*)&uniformData, 0, sizeof(struct MyUniformData));
+
+    // Step 3
+    VkBufferCreateInfo vkBufferCreateInfo;
+    memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
+
+    vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCreateInfo.pNext = NULL;
+    vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
+    vkBufferCreateInfo.size = sizeof(struct MyUniformData);
+    vkBufferCreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    
+    // Setp 4
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &uniformData.vkBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createUniformBuffer(): vkCreateBuffer() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createUniformBuffer(): vkCreateBuffer() Successful!.\n");
+    }
+
+    // Step 5
+    VkMemoryRequirements vkMemoryRequirements;
+    memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, uniformData.vkBuffer, &vkMemoryRequirements);
+
+    // Step 6
+    VkMemoryAllocateInfo vkMemoryAllocateInfo;
+    memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo.pNext = NULL;
+    vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
+    vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
+
+    // Step A 
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        // Step B
+        if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
+            // Step C
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+                // Step D
+                vkMemoryAllocateInfo.memoryTypeIndex = i;
+                break;
+            }
+        }
+        // Step E
+        vkMemoryRequirements.memoryTypeBits >>= 1;
+    }
+
+    //Setp 9
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &uniformData.vkDeviceMemory);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createUniformBuffer(): vkAllocateMemory() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createUniformBuffer(): vkAllocateMemory() Successful!.\n");
+    }
+
+    // Step 10
+    vkResult = vkBindBufferMemory(vkDevice, uniformData.vkBuffer, uniformData.vkDeviceMemory, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createUniformBuffer(): vkBindBufferMemory() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createUniformBuffer(): vkBindBufferMemory() Successful!.\n");
+    }
+
+    // call updateUniformBuffer() to fill the uniform buffer with data
+    vkResult = updateUniformBuffer();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createUniformBuffer(): updateUniformBuffer() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createUniformBuffer(): updateUniformBuffer() Successful!.\n");
+    }
+
+    return (vkResult);
+}
+
+VkResult updateUniformBuffer(void) {
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+
+    struct MyUniformData myUniformData;
+    memset((void*)&myUniformData, 0, sizeof(struct MyUniformData));
+
+    myUniformData.modelMatrix = glm::mat4(1.0);
+    myUniformData.viewMatrix = glm::mat4(1.0);
+
+    glm::mat4 orthographicProjectionmatrix = glm::mat4(1.0);
+
+    if(winWidth <= winHeight) {
+        orthographicProjectionmatrix = glm::ortho(
+            -100.0f, 
+            100.0f,
+            -100.0f * (float)winHeight / (float)winWidth,
+            100.0f * (float)winHeight / (float)winWidth,
+            -100.0f,
+            100.0f
+        );
+    } else {
+        orthographicProjectionmatrix = glm::ortho(
+            -100.0f * (float)winWidth / (float)winHeight,
+            100.0f * (float)winWidth / (float)winHeight,
+            -100.0f,
+            100.0f,
+            -100.0f,
+            100.0f
+        );
+    }
+
+    myUniformData.projectionMatrix = orthographicProjectionmatrix;
+
+    void *data = NULL;
+
+    vkResult = vkMapMemory(
+        vkDevice,
+        uniformData.vkDeviceMemory,
+        0,
+        sizeof(struct MyUniformData),
+        0,
+        &data
+    );
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "updateUniformBuffer(): vkMapMemory() Failed!.\n");
+        return (vkResult);
+    }
+
+    memcpy(data, &myUniformData, sizeof(struct MyUniformData));
+
+    vkUnmapMemory(vkDevice, uniformData.vkDeviceMemory);
+
+    return (vkResult);
+}
 
 VkResult createShaders(void) {
 
@@ -2426,6 +2652,16 @@ VkResult createDescriptorSetLayout(void) {
     // Variables
     VkResult vkResult = VK_SUCCESS;
 
+    // Initialize Descriptor Set Binding
+    VkDescriptorSetLayoutBinding vkDescriptorSetLayoutBinding;
+    memset((void*)&vkDescriptorSetLayoutBinding, 0, sizeof(VkDescriptorSetLayoutBinding));
+
+    vkDescriptorSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    vkDescriptorSetLayoutBinding.binding = 0; // this 0 is  the binding index, we will use this index in shader
+    vkDescriptorSetLayoutBinding.descriptorCount = 1; 
+    vkDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // this binding will be used in vertex shader
+    vkDescriptorSetLayoutBinding.pImmutableSamplers = NULL; // we don't have any immutable samplers for now
+
     //Create Descriptor Set Layout Create Info
     VkDescriptorSetLayoutCreateInfo vkDescriptorSetLayoutCreateInfo;
     memset((void*)&vkDescriptorSetLayoutCreateInfo, 0, sizeof(VkDescriptorSetLayoutCreateInfo));
@@ -2433,8 +2669,8 @@ VkResult createDescriptorSetLayout(void) {
     vkDescriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     vkDescriptorSetLayoutCreateInfo.pNext = NULL;
     vkDescriptorSetLayoutCreateInfo.flags = 0;
-    vkDescriptorSetLayoutCreateInfo.bindingCount = 0; // will change when we introduce resources/descriptors
-    vkDescriptorSetLayoutCreateInfo.pBindings = NULL; // will change when we introduce resources/descriptors
+    vkDescriptorSetLayoutCreateInfo.bindingCount = 1; // we will atleast have one binding
+    vkDescriptorSetLayoutCreateInfo.pBindings = &vkDescriptorSetLayoutBinding; // we will atleast have one binding
     
     // Create Descriptor Set Layout
     vkResult = vkCreateDescriptorSetLayout(vkDevice, &vkDescriptorSetLayoutCreateInfo, NULL, &vkDescriptorSetLayout);
@@ -2472,6 +2708,97 @@ VkResult createPipelineLayout(void) {
     } else {
         fprintf(fptr, "createPipelineLayout(): vkCreatePipelineLayout() Successful!.\n");
     }
+
+    return (vkResult);
+}
+
+VkResult createDescriptorPool(void) {
+    // Variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Create Descriptor Pool Create Info
+    VkDescriptorPoolSize vkDescriptorPoolSize;
+    memset((void*)&vkDescriptorPoolSize, 0, sizeof(VkDescriptorPoolSize));
+
+    vkDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    vkDescriptorPoolSize.descriptorCount = 1; // we have only one uniform buffer
+
+    VkDescriptorPoolCreateInfo vkDescriptorPoolCreateInfo;
+    memset((void*)&vkDescriptorPoolCreateInfo, 0, sizeof(VkDescriptorPoolCreateInfo));
+
+    vkDescriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    vkDescriptorPoolCreateInfo.pNext = NULL;
+    vkDescriptorPoolCreateInfo.flags = 0;
+    vkDescriptorPoolCreateInfo.maxSets = 1; // we have only one descriptor set
+    vkDescriptorPoolCreateInfo.poolSizeCount = 1; // we have only one pool size
+    vkDescriptorPoolCreateInfo.pPoolSizes = &vkDescriptorPoolSize;
+
+    // Create Descriptor Pool
+    vkResult = vkCreateDescriptorPool(vkDevice, &vkDescriptorPoolCreateInfo, NULL, &vkDescriptorPool);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createDescriptorPool(): vkCreateDescriptorPool() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createDescriptorPool(): vkCreateDescriptorPool() Successful!.\n");
+    }
+
+    return (vkResult);
+}
+
+VkResult createDescriptorSet(void) {
+    // Variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Create Descriptor Set Allocate Info
+    VkDescriptorSetAllocateInfo vkDescriptorSetAllocateInfo;
+    memset((void*)&vkDescriptorSetAllocateInfo, 0, sizeof(VkDescriptorSetAllocateInfo));
+
+    vkDescriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    vkDescriptorSetAllocateInfo.pNext = NULL;
+    vkDescriptorSetAllocateInfo.descriptorPool = vkDescriptorPool;
+    vkDescriptorSetAllocateInfo.descriptorSetCount = 1; // we have only one descriptor set
+    vkDescriptorSetAllocateInfo.pSetLayouts = &vkDescriptorSetLayout; // we have only one descriptor set layout
+
+    // Allocate Descriptor Set
+    vkResult = vkAllocateDescriptorSets(vkDevice, &vkDescriptorSetAllocateInfo, &vkDescriptorSet);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createDescriptorSet(): vkAllocateDescriptorSets() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createDescriptorSet(): vkAllocateDescriptorSets() Successful!.\n");
+    }
+
+    // Describe whether we want buffer or image as uniform
+    // we want buffer as uniform
+    VkDescriptorBufferInfo vkDescriptorBufferInfo;
+    memset((void*)&vkDescriptorBufferInfo, 0, sizeof(VkDescriptorBufferInfo));
+
+    vkDescriptorBufferInfo.buffer = uniformData.vkBuffer; // this is the buffer we want to use as uniform
+    vkDescriptorBufferInfo.offset = 0; // offset is 0
+    vkDescriptorBufferInfo.range = sizeof(struct MyUniformData); // range is size of uniform
+
+    // Now update the descriptor set with the buffer directly to the shader
+    // we will write to the shader
+    VkWriteDescriptorSet vkWriteDescriptorSet;
+    memset((void*)&vkWriteDescriptorSet, 0, sizeof(VkWriteDescriptorSet));
+
+    vkWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    vkWriteDescriptorSet.pNext = NULL;
+    vkWriteDescriptorSet.dstSet = vkDescriptorSet; // this is the descriptor set we want to update
+    vkWriteDescriptorSet.dstArrayElement = 0; // we have only one descriptor set, so array element is 0
+    vkWriteDescriptorSet.descriptorCount = 1; // we are only gonna write one descriptor set
+    vkWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; 
+    vkWriteDescriptorSet.pBufferInfo = &vkDescriptorBufferInfo;
+    vkWriteDescriptorSet.pImageInfo = NULL; // we'll use this during texture
+    vkWriteDescriptorSet.pTexelBufferView = NULL; // using for tiling of texture but we're not using it now
+    vkWriteDescriptorSet.dstBinding = 0; // this is the binding index we used in descriptor set layout & shader
+
+    // Update Descriptor Set
+    vkUpdateDescriptorSets(vkDevice, 1, &vkWriteDescriptorSet, 0, NULL); 
+    // we have only one descriptor set to update, so count is 1
+    // last two parameters are for copy descriptor sets, which are used while copying
+
+    fprintf(fptr, "createDescriptorSet(): vkUpdateDescriptorSets() Successful!.\n");
 
     return (vkResult);
 }
@@ -2914,6 +3241,16 @@ VkResult buildCommandBuffers(void) {
 
         // Bind with the pipeline
         vkCmdBindPipeline(vkCommandBuffer_array[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline);
+
+        // Bind Descriptor Set
+        vkCmdBindDescriptorSets(
+            vkCommandBuffer_array[i],
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            vkPipelineLayout,
+            0, 1,
+            &vkDescriptorSet, // this is the descriptor set we want to bind
+            0, NULL
+        );
 
         // Bind with the vertex buffer
         VkDeviceSize vkDeviceSize_offset_array[1];
