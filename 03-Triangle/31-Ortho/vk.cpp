@@ -2386,7 +2386,7 @@ VkResult createUniformBuffer (void) {
     // variables
     VkResult vkResult = VK_SUCCESS;
 
-    memset((void*)&uniformData, 0, sizeof(struct MyUniformData));
+    memset((void*)&uniformData, 0, sizeof(UniformData));
 
     // Step 3
     VkBufferCreateInfo vkBufferCreateInfo;
@@ -2519,6 +2519,9 @@ VkResult updateUniformBuffer(void) {
     memcpy(data, &myUniformData, sizeof(struct MyUniformData));
 
     vkUnmapMemory(vkDevice, uniformData.vkDeviceMemory);
+
+    // Free Data / Set it to NULL
+    data = NULL;
 
     return (vkResult);
 }
