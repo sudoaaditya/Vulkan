@@ -11,8 +11,8 @@
 // glm related macros & header files
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE // clip space depth range is [0, 1]
-#include "../../glm/glm.hpp"
-#include "../../glm/gtc/matrix_transform.hpp"
+#include "../../../glm/glm.hpp"
+#include "../../../glm/gtc/matrix_transform.hpp"
 
 // vulkan related libraries
 #pragma comment(lib, "vulkan-1.lib")
@@ -2275,9 +2275,9 @@ VkResult createVertexBuffer(void) {
 
     // Step 1
     float triangle_position[] = {
-        0.0f, 50.0f, 0.0f,
-        -50.0f, -50.0f, 0.0f,
-        50.0f, -50.0f, 0.0f
+        0.0f, 1.0f, 0.0f,
+        -1.0f, -1.0f, 0.0f,
+        1.0f, -1.0f, 0.0f
     };
 
     // Step 2
@@ -2474,32 +2474,25 @@ VkResult updateUniformBuffer(void) {
     struct MyUniformData myUniformData;
     memset((void*)&myUniformData, 0, sizeof(struct MyUniformData));
 
-    myUniformData.modelMatrix = glm::mat4(1.0);
-    myUniformData.viewMatrix = glm::mat4(1.0);
+    myUniformData.modelMatrix = glm::mat4(1.0f);
+    myUniformData.modelMatrix = glm::translate(
+        glm::mat4(1.0f),
+        glm::vec3(0.0f, 0.0f, -3.0f)
+    );
 
-    glm::mat4 orthographicProjectionmatrix = glm::mat4(1.0);
+    myUniformData.viewMatrix = glm::mat4(1.0f);
+    myUniformData.projectionMatrix = glm::mat4(1.0f);
 
-    if(winWidth <= winHeight) {
-        orthographicProjectionmatrix = glm::ortho(
-            -100.0f, 
-            100.0f,
-            -100.0f * (float)winHeight / (float)winWidth,
-            100.0f * (float)winHeight / (float)winWidth,
-            -100.0f,
-            100.0f
-        );
-    } else {
-        orthographicProjectionmatrix = glm::ortho(
-            -100.0f * (float)winWidth / (float)winHeight,
-            100.0f * (float)winWidth / (float)winHeight,
-            -100.0f,
-            100.0f,
-            -100.0f,
-            100.0f
-        );
-    }
+    glm::mat4 perspectiveProjectionMatrix = glm::mat4(1.0f);
 
-    myUniformData.projectionMatrix = orthographicProjectionmatrix;
+    perspectiveProjectionMatrix = glm::perspective(
+        glm::radians(45.0f),
+        (float)winWidth / (float)winHeight,
+        0.1f,
+        100.0f
+    );
+
+    myUniformData.projectionMatrix = perspectiveProjectionMatrix;
 
     void *data = NULL;
 
