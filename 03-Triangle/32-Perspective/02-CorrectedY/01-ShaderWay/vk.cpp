@@ -2922,7 +2922,7 @@ VkResult createPipeline(void) {
     vkPipelineRasterizationStateCreateInfo.flags = 0;
     vkPipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
     vkPipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-    vkPipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    vkPipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE; // We are using anti-clockwise winding order to correct triangle y
     vkPipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
 
     // Color Blending State

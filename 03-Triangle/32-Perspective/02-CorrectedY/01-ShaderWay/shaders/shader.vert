@@ -13,4 +13,5 @@ void main (void) {
 
     // code
     gl_Position = uMVP.projectionMatrix * uMVP.viewMatrix * uMVP.modelMatrix * vPosition;
+    gl_Position.y = -gl_Position.y; // flip y coordinate to correct perspective
 }
