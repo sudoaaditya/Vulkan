@@ -118,6 +118,11 @@ typedef struct {
 // Position
 VertexData vertexData_position;
 
+// Triangle Vertex Data
+VertexData vertexData_position_index;
+const uint32_t triangle_position_indices[3] = { 0, 1, 2 };
+
+
 // Uniform Related Declarations
 struct MyUniformData {
     glm::mat4 modelMatrix;
@@ -1071,6 +1076,19 @@ void uninitialize(void){
         vkDestroyBuffer(vkDevice, uniformData.vkBuffer, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!\n");
         uniformData.vkBuffer = VK_NULL_HANDLE;
+    }
+
+    // Destroy Vertex Buffer
+    if(vertexData_position_index.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, vertexData_position_index.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer!\n");
+        vertexData_position_index.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+
+    if(vertexData_position_index.vkBuffer) {
+        vkDestroyBuffer(vkDevice, vertexData_position_index.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer!\n");
+        vertexData_position_index.vkBuffer = VK_NULL_HANDLE;
     }
 
     // Destroy Vertex Buffer
@@ -2280,6 +2298,7 @@ VkResult createVertexBuffer(void) {
         1.0f, -1.0f, 0.0f
     };
 
+    // Vertex Position Buffer!
     // Step 2
     memset((void*)&vertexData_position, 0, sizeof(VertexData));
 
@@ -2369,11 +2388,106 @@ VkResult createVertexBuffer(void) {
         fprintf(fptr, "createVertexBuffer(): vkMapMemory() Successful!.\n");
     }
 
+    fprintf(fptr, "\n");
+
     // Step 12
     memcpy(data, triangle_position, sizeof(triangle_position));
 
     // Step 13
     vkUnmapMemory(vkDevice, vertexData_position.vkDeviceMemory);
+
+    // Position Index Buffer!
+    // Step 2
+    memset((void*)&vertexData_position_index, 0, sizeof(VertexData));
+
+    // Step 3
+    memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
+
+    vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCreateInfo.pNext = NULL;
+    vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
+    vkBufferCreateInfo.size = sizeof(triangle_position_indices);
+    vkBufferCreateInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    
+    // Setp 4
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_position_index.vkBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for Index Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Successful for Index Buffer!.\n");
+    }
+
+    // Step 5
+    memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, vertexData_position_index.vkBuffer, &vkMemoryRequirements);
+
+    // Step 6
+    memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo.pNext = NULL;
+    vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
+    vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
+
+    // Step A 
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        // Step B
+        if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
+            // Step C
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+                // Step D
+                vkMemoryAllocateInfo.memoryTypeIndex = i;
+                break;
+            }
+        }
+        // Step E
+        vkMemoryRequirements.memoryTypeBits >>= 1;
+    }
+
+    //Setp 9
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_position_index.vkDeviceMemory);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for Index Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Successful for Index Buffer!.\n");
+    }
+
+    // Step 10
+    vkResult = vkBindBufferMemory(vkDevice, vertexData_position_index.vkBuffer, vertexData_position_index.vkDeviceMemory, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for Index Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Successful for Index Buffer!.\n");
+    }
+
+    // Step 11
+    data = NULL;
+
+    vkResult = vkMapMemory(
+        vkDevice,
+        vertexData_position_index.vkDeviceMemory,
+        0,
+        vkMemoryAllocateInfo.allocationSize,
+        0,
+        &data
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Failed for Index Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Successful for Index Buffer!.\n");
+    }
+
+    // Step 12
+    memcpy(data, triangle_position_indices, sizeof(triangle_position_indices));
+
+    // Step 13
+    vkUnmapMemory(vkDevice, vertexData_position_index.vkDeviceMemory);
 
     return(vkResult);
 }
@@ -3250,7 +3364,7 @@ VkResult buildCommandBuffers(void) {
             0, NULL
         );
 
-        // Bind with the vertex buffer
+        // Bind with the vertex buffer position
         VkDeviceSize vkDeviceSize_offset_array[1];
         memset((void*)vkDeviceSize_offset_array, 0, sizeof(VkDeviceSize) * _ARRAYSIZE(vkDeviceSize_offset_array));
 
@@ -3261,8 +3375,27 @@ VkResult buildCommandBuffers(void) {
             vkDeviceSize_offset_array
         );
 
+        // Bind our index buffer
+        vkCmdBindIndexBuffer(
+            vkCommandBuffer_array[i],
+            vertexData_position_index.vkBuffer,
+            0, // offset is 0
+            VK_INDEX_TYPE_UINT32 // we are using 32 bit unsigned integer index matches with declared array in vertexData_position_index
+        );
+
         // Here we should call vulkan drawing functions!
-        vkCmdDraw(vkCommandBuffer_array[i], 3, 1, 0, 0);
+        unsigned int numIndices = (unsigned int)(sizeof(triangle_position_indices) / sizeof(triangle_position_indices[0]));
+
+        // Draw Indexed
+        vkCmdDrawIndexed(
+            vkCommandBuffer_array[i],
+            numIndices, // number of indices to draw
+            1, // number of instances to draw
+            0, // first index to draw from index buffer
+            0, // if we want to add offset to starting index of vertex buffer, we can add here
+            1  // nth instance, but we have only one instance so 1 
+        );
+
 
         // End Render Pass
         vkCmdEndRenderPass(vkCommandBuffer_array[i]);
