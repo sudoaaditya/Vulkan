@@ -32,6 +32,12 @@ HGLRC ghrc = NULL;
 FILE *fptr = NULL;
 const CHAR *gpszAppName = "ARTR: Vulkan";
 
+// Vertex Attributes Enum
+enum {
+    AMK_ATTRIBUTE_POSITION = 0,
+    AMK_ATTRIBUTE_COLOR = 1,
+};
+
 // instance extension related variables
 uint32_t enabledInstanceExtensionCount = 0; 
 // VK_KHR_SURFACE_EXTENSION_NAME & VK_KHR_WIN32_SURFACE_EXTENSION_NAME & VK_EXT_DEBUG_REPORT_EXTENSION_NAME
@@ -3000,11 +3006,11 @@ VkResult createPipeline(void) {
     VkVertexInputBindingDescription vkVertexInputBindingDescription_array[2];
     memset((void*)vkVertexInputBindingDescription_array, 0, sizeof(VkVertexInputBindingDescription) * _ARRAYSIZE(vkVertexInputBindingDescription_array));
 
-    vkVertexInputBindingDescription_array[0].binding = 0; // 0th binding index for position
+    vkVertexInputBindingDescription_array[0].binding = AMK_ATTRIBUTE_POSITION; // 0th binding index for position
     vkVertexInputBindingDescription_array[0].stride = sizeof(float) * 3;
     vkVertexInputBindingDescription_array[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    vkVertexInputBindingDescription_array[1].binding = 1; // 1st binding index for color
+    vkVertexInputBindingDescription_array[1].binding = AMK_ATTRIBUTE_COLOR; // 1st binding index for color
     vkVertexInputBindingDescription_array[1].stride = sizeof(float) * 3;
     vkVertexInputBindingDescription_array[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
@@ -3012,14 +3018,14 @@ VkResult createPipeline(void) {
     memset((void*)vkVertexInputAttributeDescription_array, 0, sizeof(VkVertexInputAttributeDescription) * _ARRAYSIZE(vkVertexInputAttributeDescription_array));
 
     // Position Attribute
-    vkVertexInputAttributeDescription_array[0].binding = 0;
-    vkVertexInputAttributeDescription_array[0].location = 0;
+    vkVertexInputAttributeDescription_array[0].binding = AMK_ATTRIBUTE_POSITION;
+    vkVertexInputAttributeDescription_array[0].location = AMK_ATTRIBUTE_POSITION;
     vkVertexInputAttributeDescription_array[0].format = VK_FORMAT_R32G32B32_SFLOAT;
     vkVertexInputAttributeDescription_array[0].offset = 0;
 
     // Color Attribute
-    vkVertexInputAttributeDescription_array[1].binding = 1;
-    vkVertexInputAttributeDescription_array[1].location = 1;
+    vkVertexInputAttributeDescription_array[1].binding = AMK_ATTRIBUTE_COLOR;
+    vkVertexInputAttributeDescription_array[1].location = AMK_ATTRIBUTE_COLOR;
     vkVertexInputAttributeDescription_array[1].format = VK_FORMAT_R32G32B32_SFLOAT;
     vkVertexInputAttributeDescription_array[1].offset = 0; 
     
@@ -3384,7 +3390,7 @@ VkResult buildCommandBuffers(void) {
 
         vkCmdBindVertexBuffers(
             vkCommandBuffer_array[i], 
-            0, 1,
+            AMK_ATTRIBUTE_POSITION, 1,
             &vertexData_position.vkBuffer,
             vkDeviceSize_offset_position_array
         );
@@ -3395,7 +3401,7 @@ VkResult buildCommandBuffers(void) {
 
         vkCmdBindVertexBuffers(
             vkCommandBuffer_array[i], 
-            1, 1,
+            AMK_ATTRIBUTE_COLOR, 1,
             &vertexData_color.vkBuffer,
             vkDeviceSize_offset_color_array
         );
