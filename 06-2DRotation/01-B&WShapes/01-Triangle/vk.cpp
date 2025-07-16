@@ -11,8 +11,8 @@
 // glm related macros & header files
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE // clip space depth range is [0, 1]
-#include "../../../../glm/glm.hpp"
-#include "../../../../glm/gtc/matrix_transform.hpp"
+#include "../../../glm/glm.hpp"
+#include "../../../glm/gtc/matrix_transform.hpp"
 
 // vulkan related libraries
 #pragma comment(lib, "vulkan-1.lib")
@@ -152,6 +152,9 @@ VkDescriptorSet vkDescriptorSet = VK_NULL_HANDLE;
 VkViewport vkViewport;
 VkRect2D vkRect2D_scissor;
 VkPipeline vkPipeline = VK_NULL_HANDLE;
+
+// For Rotation
+float angle = 0.0f;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
@@ -1193,6 +1196,10 @@ void uninitialize(void){
 
 void update(void) {
 
+    angle += 0.1f;
+    if(angle >= 360.0f) {
+        angle = 0.0f;
+    }
 }
 
 //! //////////////////////////////////////// Definations of vulkan Related Functions ///////////////////////////////////////////////
@@ -2475,10 +2482,21 @@ VkResult updateUniformBuffer(void) {
     memset((void*)&myUniformData, 0, sizeof(struct MyUniformData));
 
     myUniformData.modelMatrix = glm::mat4(1.0f);
-    myUniformData.modelMatrix = glm::translate(
+    glm::mat4 translateMat = glm::mat4(1.0f);
+    glm::mat4 rotateMat = glm::mat4(1.0f);
+    
+    translateMat *= glm::translate(
         glm::mat4(1.0f),
-        glm::vec3(0.0f, 0.0f, -3.0f)
+        glm::vec3(0.0f, 0.0f, -4.0f)
     );
+
+    rotateMat *= glm::rotate(
+        glm::mat4(1.0f),
+        glm::radians(angle),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    myUniformData.modelMatrix = translateMat * rotateMat;
 
     myUniformData.viewMatrix = glm::mat4(1.0f);
     myUniformData.projectionMatrix = glm::mat4(1.0f);
@@ -2923,7 +2941,7 @@ VkResult createPipeline(void) {
     vkPipelineRasterizationStateCreateInfo.pNext = NULL;
     vkPipelineRasterizationStateCreateInfo.flags = 0;
     vkPipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-    vkPipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+    vkPipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_NONE;
     vkPipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     vkPipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
 
