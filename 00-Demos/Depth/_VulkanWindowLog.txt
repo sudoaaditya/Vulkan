@@ -394,6 +394,12 @@ createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
 createDescriptorSet(): vkUpdateDescriptorSets() Successful!.
 initialize(): createDescriptorSet() Successful!.
 
+createDepthStencilBuffer(): vkCreateImage() Successful!.
+createDepthStencilBuffer(): vkAllocateMemory() Successful for Depth!.
+createDepthStencilBuffer(): vkBindBufferMemory() Successful for Depth!.
+createDepthStencilBuffer(): vkCreateImageView() Successful!.
+initialize(): createDepthStencilBuffer() Successful!.
+
 createRenderPass(): vkCreateRenderPass() Successful!.
 initialize(): createRenderPass() Successful!.
 
@@ -435,6 +441,9 @@ uninitialize(): vkDestroyFramebuffer() Succeed for {1}!.
 uninitialize(): freed vkFramebuffer_array!.
 uninitialize(): vkDestroyPipeline() Succeed!
 uninitialize(): vkDestroyRenderPass() Succeed!
+uninitialize(): vkDestroyImageView() Succeed for depthStencilImage
+uninitialize(): vkFreeMemory() Succeed for depthStencilImage
+uninitialize(): vkDestroyImage() Succeed for depthStencilImage
 uninitialize(): vkDescriptorPool & vkDescriptorSet Destroy Succeed!
 uninitialize(): vkDestroyPipelineLayout() Succeed!
 uninitialize(): vkDestroyDescriptorSetLayout() Succeed!
