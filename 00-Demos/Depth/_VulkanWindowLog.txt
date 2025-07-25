@@ -354,22 +354,20 @@ createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
 createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
 initialize(): createCommandBuffers() Successful!.
 
-createVertexBuffer(): vkCreateBuffer() Successful for Triangle!.
-createVertexBuffer(): vkAllocateMemory() Successful for Triangle!.
-createVertexBuffer(): vkBindBufferMemory() Successful for Triangle!.
-createVertexBuffer(): vkMapMemory() Successful for Triangle!.
-createVertexBuffer(): vkCreateBuffer() Successful for Rectangle!.
-createVertexBuffer(): vkAllocateMemory() Successful for Rectangle!.
-createVertexBuffer(): vkBindBufferMemory() Successful for Rectangle!.
-createVertexBuffer(): vkMapMemory() Successful for Rectangle!.
+createVertexBuffer(): vkCreateBuffer() Successful for Position!.
+createVertexBuffer(): vkAllocateMemory() Successful for Position!.
+createVertexBuffer(): vkBindBufferMemory() Successful for Position!.
+createVertexBuffer(): vkMapMemory() Successful for Position!.
+
+createVertexBuffer(): vkCreateBuffer() Successful for Color!.
+createVertexBuffer(): vkAllocateMemory() Successful for Color!.
+createVertexBuffer(): vkBindBufferMemory() Successful for Color!.
+createVertexBuffer(): vkMapMemory() Successful for Color!.
 initialize(): createVertexBuffer() Successful!.
 
-createUniformBuffer(): vkCreateBuffer() Successful for Triangle!.
-createUniformBuffer(): vkAllocateMemory() Successful for Triangle!.
-createUniformBuffer(): vkBindBufferMemory() Successful for Triangle!.
-createUniformBuffer(): vkCreateBuffer() Successful for Rectangle!.
-createUniformBuffer(): vkAllocateMemory() Successful for Rectangle!.
-createUniformBuffer(): vkBindBufferMemory() Successful for Rectangle!.
+createUniformBuffer(): vkCreateBuffer() Successful!.
+createUniformBuffer(): vkAllocateMemory() Successful!.
+createUniformBuffer(): vkBindBufferMemory() Successful!.
 createUniformBuffer(): updateUniformBuffer() Successful!.
 initialize(): createUniformBuffer() Successful!.
 
@@ -392,10 +390,8 @@ initialize(): createPipelineLayout() Successful!.
 createDescriptorPool(): vkCreateDescriptorPool() Successful!.
 initialize(): createDescriptorPool() Successful!.
 
-createDescriptorSet(): vkAllocateDescriptorSets() Successful for Triangle!.
-createDescriptorSet(): vkUpdateDescriptorSets() Successful for Triangle!.
 createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
-createDescriptorSet(): vkUpdateDescriptorSets() Successful for Reactangle!.
+createDescriptorSet(): vkUpdateDescriptorSets() Successful!.
 initialize(): createDescriptorSet() Successful!.
 
 createRenderPass(): vkCreateRenderPass() Successful!.
@@ -444,14 +440,12 @@ uninitialize(): vkDestroyPipelineLayout() Succeed!
 uninitialize(): vkDestroyDescriptorSetLayout() Succeed!
 uninitialize(): vkDestroyShaderModule() Succeed for Fragment Shader!
 uninitialize(): vkDestroyShaderModule() Succeed for Vertex Shader!
-uninitialize(): vkFreeMemory() Succeed for Uniform Buffer for Triangle!
-uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for Triangle!
-uninitialize(): vkFreeMemory() Succeed for Uniform Buffer for Rectangle!
-uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for Rectangle!
-uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for triangle!
-uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for triangle!
-uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Rectangle!
-uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Rectangle!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Color!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Color!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Position!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Position!
 uninitialize(): vkFreeCommandBuffers() Succeed for {0}
 uninitialize(): vkFreeCommandBuffers() Succeed for {1}
 uninitialize(): freed vkCommandBuffer_array!.
