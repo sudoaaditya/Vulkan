@@ -2797,7 +2797,7 @@ VkResult updateUniformBuffer(void) {
     myUniformData.modelMatrix = glm::mat4(1.0f);
     myUniformData.modelMatrix = glm::translate(
         glm::mat4(1.0f),
-        glm::vec3(0.0f, -2.0f, -14.0f)
+        glm::vec3(0.0f, -2.0f, -10.0f)
     );
 
     myUniformData.modelMatrix *= glm::scale(
@@ -2824,7 +2824,7 @@ VkResult updateUniformBuffer(void) {
     glm::mat4 perspectiveProjectionMatrix = glm::mat4(1.0f);
 
     perspectiveProjectionMatrix = glm::perspective(
-        glm::radians(60.0f),
+        glm::radians(90.0f),
         (float)winWidth / (float)winHeight,
         0.01f,
         100.0f

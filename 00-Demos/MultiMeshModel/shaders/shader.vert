@@ -3,6 +3,8 @@
 
 layout(location = 0) in vec4 vPosition;
 
+layout(location = 1) out vec4 fPosition;
+
 layout(binding = 0) uniform mvpMatrix {
     mat4 modelMatrix;
     mat4 viewMatrix;
@@ -13,4 +15,6 @@ void main (void) {
 
     // code
     gl_Position = uMVP.projectionMatrix * uMVP.viewMatrix * uMVP.modelMatrix * vPosition;
+
+    fPosition = normalize(vPosition);
 }
