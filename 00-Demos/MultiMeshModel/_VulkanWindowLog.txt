@@ -1,7 +1,8 @@
 Log Created Successful!!
 
 WinMain(): StaticModel::LoadModel() Successful!.
-WinMain(): StaticModel::LoadModel() Mesh Count: 6
+WinMain(): StaticModel::LoadModel() Mesh Count: 3
+
 resize(): initialization is not completed or failed
 fillInstanceExtensionNames(): vkEnumerateInstanceExtensionProperties() First Call Successful!.
 fillInstanceExtensionNames(): vkEnumerateInstanceExtensionProperties() Second Call Successful!.
@@ -362,15 +363,39 @@ createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
 createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
 initialize(): createCommandBuffers() Successful!.
 
-createVertexBuffer(): vkCreateBuffer() Successful!.
-createVertexBuffer(): vkAllocateMemory() Successful!.
-createVertexBuffer(): vkBindBufferMemory() Successful!.
-createVertexBuffer(): vkMapMemory() Successful!.
+createVertexBuffer(): vkCreateBuffer() Successful for Mesh 0!.
+createVertexBuffer(): vkAllocateMemory() Successful for Mesh 0!.
+createVertexBuffer(): vkBindBufferMemory() Successful for Mesh 0!.
+createVertexBuffer(): vkMapMemory() Successful for Mesh 0!.
 
-createVertexBuffer(): vkCreateBuffer() Successful for Index Buffer!.
-createVertexBuffer(): vkAllocateMemory() Successful for Index Buffer!.
-createVertexBuffer(): vkBindBufferMemory() Successful for Index Buffer!.
-createVertexBuffer(): vkMapMemory() Successful for Index Buffer!.
+createVertexBuffer(): vkCreateBuffer() Successful for Index Buffer for Mesh 0!.
+createVertexBuffer(): vkAllocateMemory() Successful for Index Buffer for Mesh 0!.
+createVertexBuffer(): vkBindBufferMemory() Successful for Index Buffer for Mesh 0!.
+createVertexBuffer(): vkMapMemory() Successful for Index Buffer for Mesh 0!.
+
+
+createVertexBuffer(): vkCreateBuffer() Successful for Mesh 1!.
+createVertexBuffer(): vkAllocateMemory() Successful for Mesh 1!.
+createVertexBuffer(): vkBindBufferMemory() Successful for Mesh 1!.
+createVertexBuffer(): vkMapMemory() Successful for Mesh 1!.
+
+createVertexBuffer(): vkCreateBuffer() Successful for Index Buffer for Mesh 1!.
+createVertexBuffer(): vkAllocateMemory() Successful for Index Buffer for Mesh 1!.
+createVertexBuffer(): vkBindBufferMemory() Successful for Index Buffer for Mesh 1!.
+createVertexBuffer(): vkMapMemory() Successful for Index Buffer for Mesh 1!.
+
+
+createVertexBuffer(): vkCreateBuffer() Successful for Mesh 2!.
+createVertexBuffer(): vkAllocateMemory() Successful for Mesh 2!.
+createVertexBuffer(): vkBindBufferMemory() Successful for Mesh 2!.
+createVertexBuffer(): vkMapMemory() Successful for Mesh 2!.
+
+createVertexBuffer(): vkCreateBuffer() Successful for Index Buffer for Mesh 2!.
+createVertexBuffer(): vkAllocateMemory() Successful for Index Buffer for Mesh 2!.
+createVertexBuffer(): vkBindBufferMemory() Successful for Index Buffer for Mesh 2!.
+createVertexBuffer(): vkMapMemory() Successful for Index Buffer for Mesh 2!.
+
+
 initialize(): createVertexBuffer() Successful!.
 
 createUniformBuffer(): vkCreateBuffer() Successful!.
@@ -433,6 +458,88 @@ initialize(): buildCommandBuffers() Successful!.
 
 initialize(): Initialization Successful!.
 WinMain(): initialize() Successful!.
+getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() first Call Successful!. [Found 5 Formats]
+getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() Second Call Successful!.
+getPhysicalDeviceSurfaceFormatAndColorSpace(): vkSurfaceFormatKHR_array freed.
+createSwapchain(): getPhysicalDeviceSurfaceFormatAndColorSpace() Successful!.
+createSwapchain(): vkGetPhysicalDeviceSurfaceCapabilitiesKHR() Successful!.
+createSwapchain(): desiredNumberOfSwapchainImages is : 2, [Min: 2, Max: 8]
+createSwapchain(): Swapchain Image Width : 1536 X Height : 864
+getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() first Call Successful!. [Found 4 Present Modes]
+getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() Second Call Successful!.
+getPhysicalDeviceSurfacePresentMode(): VK_PRESENT_MODE_MAILBOX_KHR Present Mode found!.
+getPhysicalDeviceSurfacePresentMode(): vkPresentModeKHR_array freed.
+createSwapchain(): getPhysicalDeviceSurfacePresentMode() Successful!.
+createSwapchain(): vkCreateSwapchainKHR() Successful!.
+createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Successful!. : Swapchain Image Count : [2]
+createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Second Call Successful!.
+createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {0}!.
+createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {1}!.
+getSupportedDepthFormat(): Supported Depth Format Found: 130
+createSwapchainImagesAndImageViews(): getSupportedDepthFormat() Successful!.
+createSwapchainImagesAndImageViews(): vkCreateImage() Successful for Depth Image!.
+createSwapchainImagesAndImageViews(): vkAllocateMemory() Successful!.
+createSwapchainImagesAndImageViews(): vkBindDev() Successful!.
+createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for Depth Image!.
+createRenderPass(): vkCreateRenderPass() Successful!.
+createPipelineLayout(): vkCreatePipelineLayout() Successful!.
+createPipeline(): vkCreatePipelineCache() Successful!.
+AMK_VALIDATION: debugReportCallback() :  Validation (0) = Validation Error: [ VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507 ] | MessageID = 0x7a8a9b39 | vkCreateGraphicsPipelines(): pCreateInfos[0].pRasterizationState->polygonMode is VK_POLYGON_MODE_LINE, but fillModeNonSolid feature is not enabled.
+The Vulkan spec states: If the fillModeNonSolid feature is not enabled, polygonMode must be VK_POLYGON_MODE_FILL or VK_POLYGON_MODE_FILL_RECTANGLE_NV (https://vulkan.lunarg.com/doc/view/1.3.296.0/windows/1.3-extensions/vkspec.html#VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507)
+createPipeline(): vkCreateGraphicsPipelines() Successful!.
+createFramebuffers(): vkCreateFramebuffer() Successful for {0}!.
+createFramebuffers(): vkCreateFramebuffer() Successful for {1}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
+buildCommandBuffers(): vkResetCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkBeginCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkEndCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkResetCommandBuffer() Successful for {1}!.
+buildCommandBuffers(): vkBeginCommandBuffer() Successful for {1}!.
+buildCommandBuffers(): vkEndCommandBuffer() Successful for {1}!.
+
+
+getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() first Call Successful!. [Found 5 Formats]
+getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() Second Call Successful!.
+getPhysicalDeviceSurfaceFormatAndColorSpace(): vkSurfaceFormatKHR_array freed.
+createSwapchain(): getPhysicalDeviceSurfaceFormatAndColorSpace() Successful!.
+createSwapchain(): vkGetPhysicalDeviceSurfaceCapabilitiesKHR() Successful!.
+createSwapchain(): desiredNumberOfSwapchainImages is : 2, [Min: 2, Max: 8]
+createSwapchain(): Swapchain Image Width : 784 X Height : 561
+getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() first Call Successful!. [Found 4 Present Modes]
+getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() Second Call Successful!.
+getPhysicalDeviceSurfacePresentMode(): VK_PRESENT_MODE_MAILBOX_KHR Present Mode found!.
+getPhysicalDeviceSurfacePresentMode(): vkPresentModeKHR_array freed.
+createSwapchain(): getPhysicalDeviceSurfacePresentMode() Successful!.
+createSwapchain(): vkCreateSwapchainKHR() Successful!.
+createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Successful!. : Swapchain Image Count : [2]
+createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Second Call Successful!.
+createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {0}!.
+createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {1}!.
+getSupportedDepthFormat(): Supported Depth Format Found: 130
+createSwapchainImagesAndImageViews(): getSupportedDepthFormat() Successful!.
+createSwapchainImagesAndImageViews(): vkCreateImage() Successful for Depth Image!.
+createSwapchainImagesAndImageViews(): vkAllocateMemory() Successful!.
+createSwapchainImagesAndImageViews(): vkBindDev() Successful!.
+createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for Depth Image!.
+createRenderPass(): vkCreateRenderPass() Successful!.
+createPipelineLayout(): vkCreatePipelineLayout() Successful!.
+createPipeline(): vkCreatePipelineCache() Successful!.
+AMK_VALIDATION: debugReportCallback() :  Validation (0) = Validation Error: [ VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507 ] | MessageID = 0x7a8a9b39 | vkCreateGraphicsPipelines(): pCreateInfos[0].pRasterizationState->polygonMode is VK_POLYGON_MODE_LINE, but fillModeNonSolid feature is not enabled.
+The Vulkan spec states: If the fillModeNonSolid feature is not enabled, polygonMode must be VK_POLYGON_MODE_FILL or VK_POLYGON_MODE_FILL_RECTANGLE_NV (https://vulkan.lunarg.com/doc/view/1.3.296.0/windows/1.3-extensions/vkspec.html#VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507)
+createPipeline(): vkCreateGraphicsPipelines() Successful!.
+createFramebuffers(): vkCreateFramebuffer() Successful for {0}!.
+createFramebuffers(): vkCreateFramebuffer() Successful for {1}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
+buildCommandBuffers(): vkResetCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkBeginCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkEndCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkResetCommandBuffer() Successful for {1}!.
+buildCommandBuffers(): vkBeginCommandBuffer() Successful for {1}!.
+buildCommandBuffers(): vkEndCommandBuffer() Successful for {1}!.
+
+
 
 uninitialize(): vkDeviceWaitIdle is done!
 uninitialize(): vkDestroyFence() Succeed for {0}!.
@@ -452,10 +559,18 @@ uninitialize(): vkDestroyShaderModule() Succeed for Fragment Shader!
 uninitialize(): vkDestroyShaderModule() Succeed for Vertex Shader!
 uninitialize(): vkFreeMemory() Succeed for Uniform Buffer!
 uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!
-uninitialize(): vkFreeMemory() Succeed for Vertex Buffer!
-uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer!
-uninitialize(): vkFreeMemory() Succeed for Vertex Buffer!
-uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer of Mesh 0!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer of Mesh 0!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer of Mesh 0!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer of Mesh 0!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer of Mesh 1!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer of Mesh 1!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer of Mesh 1!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer of Mesh 1!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer of Mesh 2!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer of Mesh 2!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer of Mesh 2!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer of Mesh 2!
 uninitialize(): vkFreeCommandBuffers() Succeed for {0}
 uninitialize(): vkFreeCommandBuffers() Succeed for {1}
 uninitialize(): freed vkCommandBuffer_array!.

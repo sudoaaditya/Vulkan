@@ -1,4 +1,6 @@
 del *.exe
+del *.obj
+del *.res
 del *.txt
 
 cls
