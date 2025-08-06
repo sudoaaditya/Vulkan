@@ -4,6 +4,10 @@
 
 #include "vk.h"
 
+// header & macros for texture
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 // vulkan related header files
 #define VK_USE_PLATFORM_WIN32_KHR
 #include<vulkan/vulkan.h>
@@ -11,8 +15,8 @@
 // glm related macros & header files
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE // clip space depth range is [0, 1]
-#include "../../../glm/glm.hpp"
-#include "../../../glm/gtc/matrix_transform.hpp"
+#include "../../glm/glm.hpp"
+#include "../../glm/gtc/matrix_transform.hpp"
 
 // vulkan related libraries
 #pragma comment(lib, "vulkan-1.lib")
@@ -35,7 +39,7 @@ const CHAR *gpszAppName = "ARTR: Vulkan";
 // Vertex Attributes Enum
 enum {
     AMK_ATTRIBUTE_POSITION = 0,
-    AMK_ATTRIBUTE_COLOR = 1,
+    AMK_ATTRIBUTE_TEXCOORD = 1,
 };
 
 // instance extension related variables
@@ -132,7 +136,7 @@ typedef struct {
 VertexData vertexData_position;
 
 // Color
-VertexData vertexData_color;
+VertexData vertexData_texcoord;
 
 // Uniform Related Declarations
 struct MyUniformData {
@@ -1117,16 +1121,16 @@ void uninitialize(void){
     }
 
     // Destroy Vertex Buffer Color
-    if(vertexData_color.vkDeviceMemory) {
-        vkFreeMemory(vkDevice, vertexData_color.vkDeviceMemory, NULL);
-        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Color!\n");
-        vertexData_color.vkDeviceMemory = VK_NULL_HANDLE;
+    if(vertexData_texcoord.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, vertexData_texcoord.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for TexCoord!\n");
+        vertexData_texcoord.vkDeviceMemory = VK_NULL_HANDLE;
     }
 
-    if(vertexData_color.vkBuffer) {
-        vkDestroyBuffer(vkDevice, vertexData_color.vkBuffer, NULL);
-        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Color!\n");
-        vertexData_color.vkBuffer = VK_NULL_HANDLE;
+    if(vertexData_texcoord.vkBuffer) {
+        vkDestroyBuffer(vkDevice, vertexData_texcoord.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for TexCoord!\n");
+        vertexData_texcoord.vkBuffer = VK_NULL_HANDLE;
     }
 
     // Destroy Vertex Buffer Position
@@ -2516,26 +2520,26 @@ VkResult createVertexBuffer(void) {
         -1.0f, -1.0f,  1.0f, // left-right
     };
 
-    float pyramid_color[] = {
+    float pyramid_texCoords[] = {
         // front
-        1.0f, 0.0f, 0.0f, // front-top
-        0.0f, 1.0f, 0.0f, // front-left
-        0.0f, 0.0f, 1.0f, // front-right
-        
+        0.5, 1.0, // front-top
+        0.0, 0.0, // front-left
+        1.0, 0.0, // front-right
+
         // right
-        1.0f, 0.0f, 0.0f, // right-top
-        0.0f, 0.0f, 1.0f, // right-left
-        0.0f, 1.0f, 0.0f, // right-right
-        
+        0.5, 1.0, // right-top
+        1.0, 0.0, // right-left
+        0.0, 0.0, // right-right
+
         // back
-        1.0f, 0.0f, 0.0f, // back-top
-        0.0f, 1.0f, 0.0f, // back-left
-        0.0f, 0.0f, 1.0f, // back-right
-        
+        0.5, 1.0, // back-top
+        0.0, 0.0, // back-left
+        1.0, 0.0, // back-right
+
         // left
-        1.0f, 0.0f, 0.0f, // left-top
-        0.0f, 0.0f, 1.0f, // left-left
-        0.0f, 1.0f, 0.0f, // left-right
+        0.5, 1.0, // left-top
+        1.0, 0.0, // left-left
+        0.0, 0.0, // left-right
     };
 
     // VertexData for Triangle Position
@@ -2637,7 +2641,7 @@ VkResult createVertexBuffer(void) {
     fprintf(fptr, "\n");
 
     // VertexData for Triangle Color
-    memset((void*)&vertexData_color, 0, sizeof(VertexData));
+    memset((void*)&vertexData_texcoord, 0, sizeof(VertexData));
 
     // Step 3
     memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
@@ -2645,22 +2649,22 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-    vkBufferCreateInfo.size = sizeof(pyramid_color);
+    vkBufferCreateInfo.size = sizeof(pyramid_texCoords);
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
-    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_color.vkBuffer);
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_texcoord.vkBuffer);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for Color!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for TexCoord!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Successful for Color!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Successful for TexCoord!.\n");
     }
 
     // Step 5
     memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
 
-    vkGetBufferMemoryRequirements(vkDevice, vertexData_color.vkBuffer, &vkMemoryRequirements);
+    vkGetBufferMemoryRequirements(vkDevice, vertexData_texcoord.vkBuffer, &vkMemoryRequirements);
 
     // Step 6
     memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
@@ -2686,21 +2690,21 @@ VkResult createVertexBuffer(void) {
     }
 
     //Setp 9
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_color.vkDeviceMemory);
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_texcoord.vkDeviceMemory);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for Color!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for TexCoord!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Successful for Color!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Successful for TexCoord!.\n");
     }
 
     // Step 10
-    vkResult = vkBindBufferMemory(vkDevice, vertexData_color.vkBuffer, vertexData_color.vkDeviceMemory, 0);
+    vkResult = vkBindBufferMemory(vkDevice, vertexData_texcoord.vkBuffer, vertexData_texcoord.vkDeviceMemory, 0);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for Color!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for TexCoord!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Successful for Color!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Successful for TexCoord!.\n");
     }
 
     // Step 11
@@ -2708,7 +2712,7 @@ VkResult createVertexBuffer(void) {
 
     vkResult = vkMapMemory(
         vkDevice,
-        vertexData_color.vkDeviceMemory,
+        vertexData_texcoord.vkDeviceMemory,
         0,
         vkMemoryAllocateInfo.allocationSize,
         0,
@@ -2716,17 +2720,17 @@ VkResult createVertexBuffer(void) {
     );
 
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Failed for Color!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Failed for TexCoord!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Successful for Color!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Successful for TexCoord!.\n");
     }
 
     // Step 12
-    memcpy(data, pyramid_color, sizeof(pyramid_color));
+    memcpy(data, pyramid_texCoords, sizeof(pyramid_texCoords));
 
     // Step 13
-    vkUnmapMemory(vkDevice, vertexData_color.vkDeviceMemory);
+    vkUnmapMemory(vkDevice, vertexData_texcoord.vkDeviceMemory);
 
     return(vkResult);
 }
@@ -3269,8 +3273,8 @@ VkResult createPipeline(void) {
     vkVertexInputBindingDescription_array[0].stride = sizeof(float) * 3;
     vkVertexInputBindingDescription_array[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    vkVertexInputBindingDescription_array[1].binding = AMK_ATTRIBUTE_COLOR; // 1st binding index for color
-    vkVertexInputBindingDescription_array[1].stride = sizeof(float) * 3;
+    vkVertexInputBindingDescription_array[1].binding = AMK_ATTRIBUTE_TEXCOORD; // 1st binding index for texcoord
+    vkVertexInputBindingDescription_array[1].stride = sizeof(float) * 2;
     vkVertexInputBindingDescription_array[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     VkVertexInputAttributeDescription vkVertexInputAttributeDescription_array[2];
@@ -3283,9 +3287,9 @@ VkResult createPipeline(void) {
     vkVertexInputAttributeDescription_array[0].offset = 0;
 
     // Color Attribute
-    vkVertexInputAttributeDescription_array[1].binding = AMK_ATTRIBUTE_COLOR;
-    vkVertexInputAttributeDescription_array[1].location = AMK_ATTRIBUTE_COLOR;
-    vkVertexInputAttributeDescription_array[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    vkVertexInputAttributeDescription_array[1].binding = AMK_ATTRIBUTE_TEXCOORD;
+    vkVertexInputAttributeDescription_array[1].location = AMK_ATTRIBUTE_TEXCOORD;
+    vkVertexInputAttributeDescription_array[1].format = VK_FORMAT_R32G32_SFLOAT;
     vkVertexInputAttributeDescription_array[1].offset = 0; 
     
     VkPipelineVertexInputStateCreateInfo vkPipelineVertexInputStateCreateInfo;
@@ -3672,15 +3676,15 @@ VkResult buildCommandBuffers(void) {
             vkDeviceSize_offset_position_array
         );
 
-        // Color Buffer Binding
-        VkDeviceSize vkDeviceSize_offset_color_array[1];
-        memset((void*)vkDeviceSize_offset_color_array, 0, sizeof(VkDeviceSize) * _ARRAYSIZE(vkDeviceSize_offset_color_array));
+        // TexCoord Buffer Binding
+        VkDeviceSize vkDeviceSize_offset_texcoord_array[1];
+        memset((void*)vkDeviceSize_offset_texcoord_array, 0, sizeof(VkDeviceSize) * _ARRAYSIZE(vkDeviceSize_offset_texcoord_array));
 
         vkCmdBindVertexBuffers(
             vkCommandBuffer_array[i], 
-            AMK_ATTRIBUTE_COLOR, 1,
-            &vertexData_color.vkBuffer,
-            vkDeviceSize_offset_color_array
+            AMK_ATTRIBUTE_TEXCOORD, 1,
+            &vertexData_texcoord.vkBuffer,
+            vkDeviceSize_offset_texcoord_array
         );
 
         // Here we should call vulkan drawing functions!
