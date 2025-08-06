@@ -222,7 +222,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
     hwnd = CreateWindowEx(WS_EX_APPWINDOW,
             szAppName,
-            TEXT("AMK_Vulkan : Rotating Pyramid"),
+            TEXT("AMK_Vulkan : Rotating Cube"),
             WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE,
             xPos,
             yPos,
@@ -2477,26 +2477,63 @@ VkResult createVertexBuffer(void) {
     VkResult vkResult = VK_SUCCESS;
 
     // Step 1
-    float pyramid_position[] = {
+    float cube_position[] = {
         // front
-        0.0f,  1.0f,  0.0f, // front-top
-        -1.0f, -1.0f,  1.0f, // front-left
-        1.0f, -1.0f,  1.0f, // front-right
-        
+        1.0f,  1.0f,  1.0f, // top-right of front
+        -1.0f,  1.0f,  1.0f, // top-left of front
+        -1.0f, -1.0f,  1.0f, // bottom-left of front
+
+        -1.0f, -1.0f,  1.0f, // bottom-left of front
+        1.0f, -1.0f,  1.0f, // bottom-right of front
+        1.0f,  1.0f,  1.0f, // top-right of front
+
+
         // right
-        0.0f,  1.0f,  0.0f, // right-top
-        1.0f, -1.0f,  1.0f, // right-left
-        1.0f, -1.0f, -1.0f, // right-right
+        1.0f,  1.0f, -1.0f, // top-right of right
+        1.0f,  1.0f,  1.0f, // top-left of right
+        1.0f, -1.0f,  1.0f, // bottom-left of right
+        
+        1.0f, -1.0f,  1.0f, // bottom-left of right
+        1.0f, -1.0f, -1.0f, // bottom-right of right
+        1.0f,  1.0f, -1.0f, // top-right of right
 
         // back
-        0.0f,  1.0f,  0.0f, // back-top
-        1.0f, -1.0f, -1.0f, // back-left
-        -1.0f, -1.0f, -1.0f, // back-right
+        1.0f,  1.0f, -1.0f, // top-right of back
+        -1.0f,  1.0f, -1.0f, // top-left of back
+        -1.0f, -1.0f, -1.0f, // bottom-left of back
+
+        -1.0f, -1.0f, -1.0f, // bottom-left of back
+        1.0f, -1.0f, -1.0f, // bottom-right of back
+        1.0f,  1.0f, -1.0f, // top-right of back
+
 
         // left
-        0.0f,  1.0f,  0.0f, // left-top
-        -1.0f, -1.0f, -1.0f, // left-left
-        -1.0f, -1.0f,  1.0f, // left-right
+        -1.0f,  1.0f,  1.0f, // top-right of left
+        -1.0f,  1.0f, -1.0f, // top-left of left
+        -1.0f, -1.0f, -1.0f, // bottom-left of left
+
+        -1.0f, -1.0f, -1.0f, // bottom-left of left
+        -1.0f, -1.0f,  1.0f, // bottom-right of left
+        -1.0f,  1.0f,  1.0f, // top-right of left
+
+        // top
+        1.0f,  1.0f, -1.0f, // top-right of top
+        -1.0f,  1.0f, -1.0f, // top-left of top
+        -1.0f,  1.0f,  1.0f, // bottom-left of top
+
+        -1.0f,  1.0f,  1.0f, // bottom-left of top
+        1.0f,  1.0f,  1.0f, // bottom-right of top
+        1.0f,  1.0f, -1.0f, // top-right of top
+
+        // bottom
+        1.0f, -1.0f,  1.0f, // top-right of bottom
+        -1.0f, -1.0f,  1.0f, // top-left of bottom
+        -1.0f, -1.0f, -1.0f, // bottom-left of bottom
+
+        -1.0f, -1.0f, -1.0f, // bottom-left of bottom
+        1.0f, -1.0f, -1.0f, // bottom-right of bottom
+        1.0f, -1.0f,  1.0f, // top-right of bottom
+        
     };
 
     // VertexData for Triangle Position
@@ -2510,7 +2547,7 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-    vkBufferCreateInfo.size = sizeof(pyramid_position);
+    vkBufferCreateInfo.size = sizeof(cube_position);
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
@@ -2590,7 +2627,7 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 12
-    memcpy(data, pyramid_position, sizeof(pyramid_position));
+    memcpy(data, cube_position, sizeof(cube_position));
 
     // Step 13
     vkUnmapMemory(vkDevice, vertexData_position.vkDeviceMemory);
@@ -2700,13 +2737,25 @@ VkResult updateUniformBuffer(void) {
     
     translateMat *= glm::translate(
         glm::mat4(1.0f),
-        glm::vec3(0.0f, 0.0f, -4.0f)
+        glm::vec3(0.0f, 0.0f, -6.0f)
     );
 
-    rotateMat *= glm::rotate(
-        glm::mat4(1.0f),
+    rotateMat = glm::rotate(
+        rotateMat,
+        glm::radians(angle),
+        glm::vec3(1.0f, 0.0f, 0.0f)
+    );
+
+    rotateMat = glm::rotate(
+        rotateMat,
         glm::radians(angle),
         glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    rotateMat = glm::rotate(
+        rotateMat,
+        glm::radians(angle),
+        glm::vec3(0.0f, 0.0f, 1.0f)
     );
 
     myUniformData.modelMatrix = translateMat * rotateMat;
@@ -3530,7 +3579,7 @@ VkResult buildCommandBuffers(void) {
         );
 
         // Here we should call vulkan drawing functions!
-        vkCmdDraw(vkCommandBuffer_array[i], 12, 1, 0, 0);
+        vkCmdDraw(vkCommandBuffer_array[i], 36, 1, 0, 0);
 
         // End Render Pass
         vkCmdEndRenderPass(vkCommandBuffer_array[i]);
