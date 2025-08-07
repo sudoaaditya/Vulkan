@@ -26,6 +26,7 @@
 
 #include "resource.h"
 #include "ModelLoading.h"
+#include "VertexBuffer.h"
 
 // vulkan related libraries
 #pragma comment(lib, "vulkan-1.lib")

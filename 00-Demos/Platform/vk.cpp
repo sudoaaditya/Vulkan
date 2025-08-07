@@ -113,6 +113,13 @@ typedef struct {
 
 VertexAttributes* vertexAttributes_array;
 
+// Rectangle
+VertexAttributes vertexAttributes_platform;
+uint32_t rectangle_index[] = {
+    0, 1, 2, // First Triangle
+    3, 4, 5 // Second Triangle
+};
+
 // Uniform Related Declarations
 struct MyUniformData {
     glm::mat4 modelMatrix;
@@ -125,7 +132,8 @@ typedef struct {
     VkDeviceMemory vkDeviceMemory;
 } UniformData;
 
-UniformData uniformData;
+UniformData uniformData_model;
+UniformData uniformData_platform;
 
 // Shader Variables
 VkShaderModule vkShaderModule_vertex = VK_NULL_HANDLE;
@@ -141,7 +149,8 @@ VkPipelineLayout vkPipelineLayout = VK_NULL_HANDLE;
 VkDescriptorPool vkDescriptorPool = VK_NULL_HANDLE;
 
 // Descriptor Set
-VkDescriptorSet vkDescriptorSet = VK_NULL_HANDLE;
+VkDescriptorSet vkDescriptorSet_model = VK_NULL_HANDLE;
+VkDescriptorSet vkDescriptorSet_platform = VK_NULL_HANDLE;
 
 // Pipeline
 VkViewport vkViewport;
@@ -1095,17 +1104,55 @@ void uninitialize(void){
         vkShaderModule_vertex = VK_NULL_HANDLE;
     }
 
-    // Destroy Uniform Buffer
-    if(uniformData.vkDeviceMemory) {
-        vkFreeMemory(vkDevice, uniformData.vkDeviceMemory, NULL);
-        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Uniform Buffer!\n");
-        uniformData.vkDeviceMemory = VK_NULL_HANDLE;
+    // Destroy Uniform Buffer for Platform
+    if(uniformData_platform.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, uniformData_platform.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Uniform Buffer for Platform!\n");
+        uniformData_platform.vkDeviceMemory = VK_NULL_HANDLE;
     }
 
-    if(uniformData.vkBuffer) {
-        vkDestroyBuffer(vkDevice, uniformData.vkBuffer, NULL);
-        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!\n");
-        uniformData.vkBuffer = VK_NULL_HANDLE;
+    if(uniformData_platform.vkBuffer) {
+        vkDestroyBuffer(vkDevice, uniformData_platform.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for Platform!\n");
+        uniformData_platform.vkBuffer = VK_NULL_HANDLE;
+    }
+
+    // Destroy Uniform Buffer for model
+    if(uniformData_model.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, uniformData_model.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Uniform Buffer for Model!\n");
+        uniformData_model.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+
+    if(uniformData_model.vkBuffer) {
+        vkDestroyBuffer(vkDevice, uniformData_model.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for Model!\n");
+        uniformData_model.vkBuffer = VK_NULL_HANDLE;
+    }
+
+    if(vertexAttributes_platform.vkVertexIndex.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, vertexAttributes_platform.vkVertexIndex.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer of Mesh for Platform!\n");
+        vertexAttributes_platform.vkVertexIndex.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+
+    if(vertexAttributes_platform.vkVertexIndex.vkBuffer) {
+        vkDestroyBuffer(vkDevice, vertexAttributes_platform.vkVertexIndex.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer of Mesh for Platform!\n");
+        vertexAttributes_platform.vkVertexIndex.vkBuffer = VK_NULL_HANDLE;
+    }
+
+    // Destroy Vertex Buffer
+    if(vertexAttributes_platform.vkVertexPosition.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, vertexAttributes_platform.vkVertexPosition.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer of Mesh for Platform!\n");
+        vertexAttributes_platform.vkVertexPosition.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+
+    if(vertexAttributes_platform.vkVertexPosition.vkBuffer) {
+        vkDestroyBuffer(vkDevice, vertexAttributes_platform.vkVertexPosition.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer of Mesh for Platform!\n");
+        vertexAttributes_platform.vkVertexPosition.vkBuffer = VK_NULL_HANDLE;
     }
 
     for(uint32_t i = 0; i < multiMeshModel.m_Mesh.size(); i++) {
@@ -2492,208 +2539,94 @@ VkResult createVertexBuffer(void) {
     VkResult vkResult = VK_SUCCESS;
 
     for(uint32_t i = 0; i < multiMeshModel.m_Mesh.size(); i++) {
-    
         // Vertex Position Buffer!
-        // Step 2
         memset((void*)&vertexAttributes_array[i].vkVertexPosition, 0, sizeof(VertexData));
 
-        // Step 3
-        VkBufferCreateInfo vkBufferCreateInfo;
-        memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
-
-        vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        vkBufferCreateInfo.pNext = NULL;
-        vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-        vkBufferCreateInfo.size = multiMeshModel.m_Mesh[i].GetPosDataSize();
-        vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        
-        // Setp 4
-        vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexAttributes_array[i].vkVertexPosition.vkBuffer);
-        if(vkResult != VK_SUCCESS) {
-            fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for Mesh %d!.\n", i);
-            return (vkResult);
-        } else {
-            fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Successful for Mesh %d!.\n", i);
-        }
-        
-        fflush(fptr);
-
-        // Step 5
-        VkMemoryRequirements vkMemoryRequirements;
-        memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
-
-        vkGetBufferMemoryRequirements(vkDevice, vertexAttributes_array[i].vkVertexPosition.vkBuffer, &vkMemoryRequirements);
-
-        // Step 6
-        VkMemoryAllocateInfo vkMemoryAllocateInfo;
-        memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
-
-        vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        vkMemoryAllocateInfo.pNext = NULL;
-        vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
-        vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
-
-        // Step A 
-        for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
-            // Step B
-            if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
-                // Step C
-                if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-                    // Step D
-                    vkMemoryAllocateInfo.memoryTypeIndex = i;
-                    break;
-                }
-            }
-            // Step E
-            vkMemoryRequirements.memoryTypeBits >>= 1;
-        }
-
-        //Setp 9
-        vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexAttributes_array[i].vkVertexPosition.vkDeviceMemory);
-        if(vkResult != VK_SUCCESS) {
-            fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for Mesh %d!.\n", i);
-            return (vkResult);
-        } else {
-            fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Successful for Mesh %d!.\n", i);
-        }
-
-        // Step 10
-        vkResult = vkBindBufferMemory(vkDevice, vertexAttributes_array[i].vkVertexPosition.vkBuffer, vertexAttributes_array[i].vkVertexPosition.vkDeviceMemory, 0);
-        if(vkResult != VK_SUCCESS) {
-            fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for Mesh %d!.\n", i);
-            return (vkResult);
-        } else {
-            fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Successful for Mesh %d!.\n", i);
-        }
-
-        // Step 11
-        void *data = NULL;
-
-        vkResult = vkMapMemory(
-            vkDevice,
-            vertexAttributes_array[i].vkVertexPosition.vkDeviceMemory,
-            0,
-            vkMemoryAllocateInfo.allocationSize,
-            0,
-            &data
+        vkResult = setVertexBuffer(
+            "Position",
+            multiMeshModel.m_Mesh[i].GetPosData(),
+            multiMeshModel.m_Mesh[i].GetPosDataSize(),
+            vertexAttributes_array[i].vkVertexPosition.vkBuffer,
+            vertexAttributes_array[i].vkVertexPosition.vkDeviceMemory
         );
 
         if(vkResult != VK_SUCCESS) {
-            fprintf(fptr, "createVertexBuffer(): vkMapMemory() Failed for Mesh %d!.\n", i);
+            fprintf(fptr, "createVertexBuffer(): setVertexBuffer() Failed for Position Data at {%d}!.\n", i);
             return (vkResult);
         } else {
-            fprintf(fptr, "createVertexBuffer(): vkMapMemory() Successful for Mesh %d!.\n", i);
+            fprintf(fptr, "createVertexBuffer(): setVertexBuffer() Successful for Position Data at {%d}!.\n", i);
         }
 
         fprintf(fptr, "\n");
 
-        /* float * positionData = (float*)multiMeshModel.m_Mesh[i].GetPosData();
-
-        for(uint32_t j = 0; j < multiMeshModel.m_Mesh[i].GetPosDataSize() / sizeof(float); j++) {
-            fprintf(fptr, "createVertexBuffer(): Position Data[%d] = %f\n", j, positionData[j]);
-        } */
-
-        // Step 12
-        memcpy(data, multiMeshModel.m_Mesh[i].GetPosData(), multiMeshModel.m_Mesh[i].GetPosDataSize());
-
-        // Step 13
-        vkUnmapMemory(vkDevice, vertexAttributes_array[i].vkVertexPosition.vkDeviceMemory);
-
         // Position Index Buffer!
-        // Step 2
         memset((void*)&vertexAttributes_array[i].vkVertexIndex, 0, sizeof(VertexData));
 
-        // Step 3
-        memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
-
-        vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        vkBufferCreateInfo.pNext = NULL;
-        vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-        vkBufferCreateInfo.size = multiMeshModel.m_Mesh[i].GetIndicesDataSize();
-        vkBufferCreateInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-        
-        // Setp 4
-        vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexAttributes_array[i].vkVertexIndex.vkBuffer);
-        if(vkResult != VK_SUCCESS) {
-            fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for Index Buffer for Mesh %d!.\n", i);
-            return (vkResult);
-        } else {
-            fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Successful for Index Buffer for Mesh %d!.\n", i);
-        }
-
-        // Step 5
-        memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
-
-        vkGetBufferMemoryRequirements(vkDevice, vertexAttributes_array[i].vkVertexIndex.vkBuffer, &vkMemoryRequirements);   
-
-        // Step 6
-        memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
-
-        vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        vkMemoryAllocateInfo.pNext = NULL;
-        vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
-        vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
-
-        // Step A 
-        for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
-            // Step B
-            if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
-                // Step C
-                if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-                    // Step D
-                    vkMemoryAllocateInfo.memoryTypeIndex = i;
-                    break;
-                }
-            }
-            // Step E
-            vkMemoryRequirements.memoryTypeBits >>= 1;
-        }
-
-        //Setp 9
-        vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexAttributes_array[i].vkVertexIndex.vkDeviceMemory);
-        if(vkResult != VK_SUCCESS) {
-            fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for Index Buffer for Mesh %d!.\n", i);
-            return (vkResult);
-        } else {
-            fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Successful for Index Buffer for Mesh %d!.\n", i);
-        }
-
-        // Step 10
-        vkResult = vkBindBufferMemory(vkDevice, vertexAttributes_array[i].vkVertexIndex.vkBuffer, vertexAttributes_array[i].vkVertexIndex.vkDeviceMemory, 0);
-        if(vkResult != VK_SUCCESS) {
-            fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for Index Buffer for Mesh %d!.\n", i);
-            return (vkResult);
-        } else {
-            fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Successful for Index Buffer for Mesh %d!.\n", i);
-        }
-
-        // Step 11
-        data = NULL;
-
-        vkResult = vkMapMemory(
-            vkDevice,
-            vertexAttributes_array[i].vkVertexIndex.vkDeviceMemory,
-            0,
-            vkMemoryAllocateInfo.allocationSize,
-            0,
-            &data
+        vkResult = setIndexBuffer(
+            "Index",
+            multiMeshModel.m_Mesh[i].GetIndicesData(),
+            multiMeshModel.m_Mesh[i].GetIndicesDataSize(),
+            vertexAttributes_array[i].vkVertexIndex.vkBuffer,
+            vertexAttributes_array[i].vkVertexIndex.vkDeviceMemory
         );
 
         if(vkResult != VK_SUCCESS) {
-            fprintf(fptr, "createVertexBuffer(): vkMapMemory() Failed for Index Buffer for Mesh %d!.\n", i);
+            fprintf(fptr, "createVertexBuffer(): setIndexBuffer() Failed for Index Data at {%d}!.\n", i);
             return (vkResult);
         } else {
-            fprintf(fptr, "createVertexBuffer(): vkMapMemory() Successful for Index Buffer for Mesh %d!.\n", i);
+            fprintf(fptr, "createVertexBuffer(): setIndexBuffer() Successful for Index Data at {%d}!.\n", i);
         }
 
-        // Step 12
-        memcpy(data, multiMeshModel.m_Mesh[i].GetIndicesData(), multiMeshModel.m_Mesh[i].GetIndicesDataSize());
-
-        // Step 13
-        vkUnmapMemory(vkDevice, vertexAttributes_array[i].vkVertexIndex.vkDeviceMemory);
-
         fprintf(fptr, "\n\n");
+    }
 
+    // Create A Plane
+    float rectangle_position[] = {
+        // First Triangle
+        1.0f, 1.0f, 0.0f, // Top Right
+        -1.0f, 1.0f, 0.0f, // Top Left
+        -1.0, -1.0, 0.0f, // Bottom Left
+        // Second Triangle
+        -1.0f, -1.0f, 0.0f, // Bottom Left
+        1.0f, -1.0f, 0.0f, // Bottom Right
+        1.0f, 1.0f, 0.0f // Top Right
+    };
+
+    memset((void*)&vertexAttributes_platform.vkVertexPosition, 0, sizeof(VertexData));
+
+    vkResult = setVertexBuffer(
+        "Position",
+        rectangle_position,
+        _ARRAYSIZE(rectangle_position) * sizeof(float),
+        vertexAttributes_platform.vkVertexPosition.vkBuffer,
+        vertexAttributes_platform.vkVertexPosition.vkDeviceMemory
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): setVertexBuffer() Failed for Position Data for Platform!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): setVertexBuffer() Successful for Position Data for Platform!.\n");
+    }
+
+    fprintf(fptr, "\n");
+
+    // Position Index Buffer!
+    memset((void*)&vertexAttributes_platform.vkVertexIndex, 0, sizeof(VertexData));
+
+    vkResult = setIndexBuffer(
+        "Index",
+        rectangle_index,
+        _ARRAYSIZE(rectangle_index) * sizeof(uint32_t),
+        vertexAttributes_platform.vkVertexIndex.vkBuffer,
+        vertexAttributes_platform.vkVertexIndex.vkDeviceMemory
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): setIndexBuffer() Failed for Index Data for Platform!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): setIndexBuffer() Successful for Index Data for Platform!.\n");
     }
 
     return(vkResult);
@@ -2706,9 +2639,6 @@ VkResult createUniformBuffer (void) {
     // variables
     VkResult vkResult = VK_SUCCESS;
 
-    memset((void*)&uniformData, 0, sizeof(UniformData));
-
-    // Step 3
     VkBufferCreateInfo vkBufferCreateInfo;
     memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
 
@@ -2717,21 +2647,24 @@ VkResult createUniformBuffer (void) {
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
     vkBufferCreateInfo.size = sizeof(struct MyUniformData);
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    
+
+    // For Model
+    memset((void*)&uniformData_model, 0, sizeof(UniformData));
+
     // Setp 4
-    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &uniformData.vkBuffer);
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &uniformData_model.vkBuffer);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createUniformBuffer(): vkCreateBuffer() Failed!.\n");
+        fprintf(fptr, "createUniformBuffer(): vkCreateBuffer() Failed for Model!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "createUniformBuffer(): vkCreateBuffer() Successful!.\n");
+        fprintf(fptr, "createUniformBuffer(): vkCreateBuffer() Successful for Model!.\n");
     }
 
     // Step 5
     VkMemoryRequirements vkMemoryRequirements;
     memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
 
-    vkGetBufferMemoryRequirements(vkDevice, uniformData.vkBuffer, &vkMemoryRequirements);
+    vkGetBufferMemoryRequirements(vkDevice, uniformData_model.vkBuffer, &vkMemoryRequirements);
 
     // Step 6
     VkMemoryAllocateInfo vkMemoryAllocateInfo;
@@ -2758,7 +2691,7 @@ VkResult createUniformBuffer (void) {
     }
 
     //Setp 9
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &uniformData.vkDeviceMemory);
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &uniformData_model.vkDeviceMemory);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createUniformBuffer(): vkAllocateMemory() Failed!.\n");
         return (vkResult);
@@ -2767,12 +2700,71 @@ VkResult createUniformBuffer (void) {
     }
 
     // Step 10
-    vkResult = vkBindBufferMemory(vkDevice, uniformData.vkBuffer, uniformData.vkDeviceMemory, 0);
+    vkResult = vkBindBufferMemory(vkDevice, uniformData_model.vkBuffer, uniformData_model.vkDeviceMemory, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createUniformBuffer(): vkBindBufferMemory() Failed!.\n");
         return (vkResult);
     } else {
         fprintf(fptr, "createUniformBuffer(): vkBindBufferMemory() Successful!.\n");
+    }
+
+    // For Rectangle
+    fprintf(fptr, "\n");
+    memset((void*)&uniformData_platform, 0, sizeof(UniformData));
+    
+    // Setp 4
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &uniformData_platform.vkBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createUniformBuffer(): vkCreateBuffer() Failed for Platform!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createUniformBuffer(): vkCreateBuffer() Successful for Platform!.\n");
+    }
+
+    // Step 5
+    memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, uniformData_platform.vkBuffer, &vkMemoryRequirements);
+
+    // Step 6
+    memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo.pNext = NULL;
+    vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
+    vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
+
+    // Step A 
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        // Step B
+        if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
+            // Step C
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+                // Step D
+                vkMemoryAllocateInfo.memoryTypeIndex = i;
+                break;
+            }
+        }
+        // Step E
+        vkMemoryRequirements.memoryTypeBits >>= 1;
+    }
+
+    //Setp 9
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &uniformData_platform.vkDeviceMemory);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createUniformBuffer(): vkAllocateMemory() Failed for Platform!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createUniformBuffer(): vkAllocateMemory() Successful for Platform!.\n");
+    }
+
+    // Step 10
+    vkResult = vkBindBufferMemory(vkDevice, uniformData_platform.vkBuffer, uniformData_platform.vkDeviceMemory, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createUniformBuffer(): vkBindBufferMemory() Failed for Platform!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createUniformBuffer(): vkBindBufferMemory() Successful for Platform!.\n");
     }
 
     // call updateUniformBuffer() to fill the uniform buffer with data
@@ -2838,7 +2830,7 @@ VkResult updateUniformBuffer(void) {
 
     vkResult = vkMapMemory(
         vkDevice,
-        uniformData.vkDeviceMemory,
+        uniformData_model.vkDeviceMemory,
         0,
         sizeof(struct MyUniformData),
         0,
@@ -2851,7 +2843,62 @@ VkResult updateUniformBuffer(void) {
 
     memcpy(data, &myUniformData, sizeof(struct MyUniformData));
 
-    vkUnmapMemory(vkDevice, uniformData.vkDeviceMemory);
+    vkUnmapMemory(vkDevice, uniformData_model.vkDeviceMemory);
+
+    // Free Data / Set it to NULL
+    data = NULL;
+
+    // RECTANGLE
+    memset((void*)&myUniformData, 0, sizeof(struct MyUniformData));
+
+    myUniformData.modelMatrix = glm::mat4(1.0f);
+    myUniformData.modelMatrix = glm::translate(
+        glm::mat4(1.0f),
+        glm::vec3(0.0f, -4.5f, -10.0f)
+    );
+
+    myUniformData.modelMatrix *= glm::scale(
+        glm::mat4(1.0f),
+        glm::vec3(80.0f, 1.0f, 80.0f)
+    );
+
+    myUniformData.modelMatrix *= glm::rotate(
+        glm::mat4(1.0f),
+        glm::radians(-90.0f),
+        glm::vec3(1.0f, 0.0f, 0.0f) 
+    );
+
+    myUniformData.viewMatrix = glm::mat4(1.0f);
+    myUniformData.projectionMatrix = glm::mat4(1.0f);
+    perspectiveProjectionMatrix = glm::mat4(1.0f);
+
+    perspectiveProjectionMatrix = glm::perspective(
+        glm::radians(45.0f),
+        (float)winWidth / (float)winHeight,
+        0.1f,
+        100.0f
+    );
+
+    perspectiveProjectionMatrix[1][1] *= -1.0f; // Invert Y axis for Vulkan
+
+    myUniformData.projectionMatrix = perspectiveProjectionMatrix;
+
+    vkResult = vkMapMemory(
+        vkDevice,
+        uniformData_platform.vkDeviceMemory,
+        0,
+        sizeof(struct MyUniformData),
+        0,
+        &data
+    );
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "updateUniformBuffer(): vkMapMemory() Failed for Rectangle!.\n");
+        return (vkResult);
+    }
+
+    memcpy(data, &myUniformData, sizeof(struct MyUniformData));
+
+    vkUnmapMemory(vkDevice, uniformData_platform.vkDeviceMemory);
 
     // Free Data / Set it to NULL
     data = NULL;
@@ -3057,7 +3104,7 @@ VkResult createDescriptorPool(void) {
     memset((void*)&vkDescriptorPoolSize, 0, sizeof(VkDescriptorPoolSize));
 
     vkDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    vkDescriptorPoolSize.descriptorCount = 1; // we have only one uniform buffer
+    vkDescriptorPoolSize.descriptorCount = 2; // we now have two uniform buffers, one for model and one for platform
 
     VkDescriptorPoolCreateInfo vkDescriptorPoolCreateInfo;
     memset((void*)&vkDescriptorPoolCreateInfo, 0, sizeof(VkDescriptorPoolCreateInfo));
@@ -3065,7 +3112,7 @@ VkResult createDescriptorPool(void) {
     vkDescriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     vkDescriptorPoolCreateInfo.pNext = NULL;
     vkDescriptorPoolCreateInfo.flags = 0;
-    vkDescriptorPoolCreateInfo.maxSets = 1; // we have only one descriptor set
+    vkDescriptorPoolCreateInfo.maxSets = 2; // we have two descriptor sets, one for model and one for platform
     vkDescriptorPoolCreateInfo.poolSizeCount = 1; // we have only one pool size
     vkDescriptorPoolCreateInfo.pPoolSizes = &vkDescriptorPoolSize;
 
@@ -3095,13 +3142,14 @@ VkResult createDescriptorSet(void) {
     vkDescriptorSetAllocateInfo.descriptorSetCount = 1; // we have only one descriptor set
     vkDescriptorSetAllocateInfo.pSetLayouts = &vkDescriptorSetLayout; // we have only one descriptor set layout
 
+    // For Model
     // Allocate Descriptor Set
-    vkResult = vkAllocateDescriptorSets(vkDevice, &vkDescriptorSetAllocateInfo, &vkDescriptorSet);
+    vkResult = vkAllocateDescriptorSets(vkDevice, &vkDescriptorSetAllocateInfo, &vkDescriptorSet_model);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createDescriptorSet(): vkAllocateDescriptorSets() Failed!.\n");
+        fprintf(fptr, "createDescriptorSet(): vkAllocateDescriptorSets() Failed For Model!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "createDescriptorSet(): vkAllocateDescriptorSets() Successful!.\n");
+        fprintf(fptr, "createDescriptorSet(): vkAllocateDescriptorSets() Successful for Model!.\n");
     }
 
     // Describe whether we want buffer or image as uniform
@@ -3109,7 +3157,7 @@ VkResult createDescriptorSet(void) {
     VkDescriptorBufferInfo vkDescriptorBufferInfo;
     memset((void*)&vkDescriptorBufferInfo, 0, sizeof(VkDescriptorBufferInfo));
 
-    vkDescriptorBufferInfo.buffer = uniformData.vkBuffer; // this is the buffer we want to use as uniform
+    vkDescriptorBufferInfo.buffer = uniformData_model.vkBuffer; // this is the buffer we want to use as uniform
     vkDescriptorBufferInfo.offset = 0; // offset is 0
     vkDescriptorBufferInfo.range = sizeof(struct MyUniformData); // range is size of uniform
 
@@ -3120,7 +3168,7 @@ VkResult createDescriptorSet(void) {
 
     vkWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     vkWriteDescriptorSet.pNext = NULL;
-    vkWriteDescriptorSet.dstSet = vkDescriptorSet; // this is the descriptor set we want to update
+    vkWriteDescriptorSet.dstSet = vkDescriptorSet_model; // this is the descriptor set we want to update
     vkWriteDescriptorSet.dstArrayElement = 0; // we have only one descriptor set, so array element is 0
     vkWriteDescriptorSet.descriptorCount = 1; // we are only gonna write one descriptor set
     vkWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; 
@@ -3134,7 +3182,47 @@ VkResult createDescriptorSet(void) {
     // we have only one descriptor set to update, so count is 1
     // last two parameters are for copy descriptor sets, which are used while copying
 
-    fprintf(fptr, "createDescriptorSet(): vkUpdateDescriptorSets() Successful!.\n");
+    fprintf(fptr, "createDescriptorSet(): vkUpdateDescriptorSets() Successful for Model!.\n");
+
+    // For Platform
+    // Allocate Descriptor Set
+    vkResult = vkAllocateDescriptorSets(vkDevice, &vkDescriptorSetAllocateInfo, &vkDescriptorSet_platform);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createDescriptorSet(): vkAllocateDescriptorSets() Failed for Platform!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createDescriptorSet(): vkAllocateDescriptorSets() Successful for Platform!.\n");
+    }
+
+    // Describe whether we want buffer or image as uniform
+    // we want buffer as uniform
+    memset((void*)&vkDescriptorBufferInfo, 0, sizeof(VkDescriptorBufferInfo));
+
+    vkDescriptorBufferInfo.buffer = uniformData_platform.vkBuffer; // this is the buffer we want to use as uniform
+    vkDescriptorBufferInfo.offset = 0; // offset is 0
+    vkDescriptorBufferInfo.range = sizeof(struct MyUniformData); // range is size of uniform
+
+    // Now update the descriptor set with the buffer directly to the shader
+    // we will write to the shader
+    memset((void*)&vkWriteDescriptorSet, 0, sizeof(VkWriteDescriptorSet));
+
+    vkWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    vkWriteDescriptorSet.pNext = NULL;
+    vkWriteDescriptorSet.dstSet = vkDescriptorSet_platform; // this is the descriptor set we want to update
+    vkWriteDescriptorSet.dstArrayElement = 0; // we have only one descriptor set, so array element is 0
+    vkWriteDescriptorSet.descriptorCount = 1; // we are only gonna write one descriptor set
+    vkWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; 
+    vkWriteDescriptorSet.pBufferInfo = &vkDescriptorBufferInfo;
+    vkWriteDescriptorSet.pImageInfo = NULL; // we'll use this during texture
+    vkWriteDescriptorSet.pTexelBufferView = NULL; // using for tiling of texture but we're not using it now
+    vkWriteDescriptorSet.dstBinding = 0; // this is the binding index we used in descriptor set layout & shader
+
+    // Update Descriptor Set
+    vkUpdateDescriptorSets(vkDevice, 1, &vkWriteDescriptorSet, 0, NULL); 
+    // we have only one descriptor set to update, so count is 1
+    // last two parameters are for copy descriptor sets, which are used while copying
+
+    fprintf(fptr, "createDescriptorSet(): vkUpdateDescriptorSets() Successful for Platform!.\n");
 
     return (vkResult);
 }
@@ -3279,7 +3367,7 @@ VkResult createPipeline(void) {
     vkPipelineRasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     vkPipelineRasterizationStateCreateInfo.pNext = NULL;
     vkPipelineRasterizationStateCreateInfo.flags = 0;
-    vkPipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_LINE;
+    vkPipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
     vkPipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
     vkPipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     vkPipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
@@ -3622,7 +3710,7 @@ VkResult buildCommandBuffers(void) {
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             vkPipelineLayout,
             0, 1,
-            &vkDescriptorSet, // this is the descriptor set we want to bind
+            &vkDescriptorSet_model, // this is the descriptor set we want to bind
             0, NULL
         );
 
@@ -3661,8 +3749,49 @@ VkResult buildCommandBuffers(void) {
                 0, // if we want to add offset to starting index of vertex buffer, we can add here
                 1  // nth instance, but we have only one instance so 1 
             );
-
         }
+
+        // For Platform
+        // Bind Descriptor Set
+        vkCmdBindDescriptorSets(
+            vkCommandBuffer_array[i],
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            vkPipelineLayout,
+            0, 1,
+            &vkDescriptorSet_platform, // this is the descriptor set we want to bind
+            0, NULL
+        );
+
+        // Bind with the vertex buffer
+        memset((void*)vkDeviceSize_offset_array, 0, sizeof(VkDeviceSize) * _ARRAYSIZE(vkDeviceSize_offset_array));
+
+        vkCmdBindVertexBuffers(
+            vkCommandBuffer_array[i], 
+            0, 1,
+            &vertexAttributes_platform.vkVertexPosition.vkBuffer,
+            vkDeviceSize_offset_array
+        );
+
+        // Bind our index buffer
+        vkCmdBindIndexBuffer(
+            vkCommandBuffer_array[i],
+            vertexAttributes_platform.vkVertexIndex.vkBuffer,
+            0, // offset is 0
+            VK_INDEX_TYPE_UINT32 // we are using 32 bit unsigned integer index matches with declared array in vertexData_position_index
+        );
+
+        unsigned int numIndices = (unsigned int)(sizeof(rectangle_index) / sizeof(rectangle_index[0]));
+
+        // Here we should call vulkan drawing functions!
+        // Draw Indexed
+        vkCmdDrawIndexed(
+            vkCommandBuffer_array[i],
+            numIndices, // number of indices to draw
+            1, // number of instances to draw
+            0, // first index to draw from index buffer
+            0, // if we want to add offset to starting index of vertex buffer, we can add here
+            1  // nth instance, but we have only one instance so 1 
+        );
 
         // End Render Pass
         vkCmdEndRenderPass(vkCommandBuffer_array[i]);
@@ -3693,4 +3822,204 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(
 ) {
     fprintf(fptr, "AMK_VALIDATION: debugReportCallback() :  %s (%d) = %s\n", pLayerPrefix, messageCode, pMessage);
     return VK_FALSE; // return false to ignore this message
+}
+
+
+//!!!!!!!!!!!!!!!! ALL THE UDF TO MAKE LIVES EASIER !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+VkResult setVertexBuffer(const char* pMessage, void *pData, size_t iDataSize, VkBuffer &vkBuffer, VkDeviceMemory &vkDeviceMemory) {
+    //Variables
+    VkResult vkResult = VK_SUCCESS;
+
+    VkBufferCreateInfo vkBufferCreateInfo;
+    memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
+
+    vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCreateInfo.pNext = NULL;
+    vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
+    vkBufferCreateInfo.size = iDataSize;
+    vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    
+    // Setp 4
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vkBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for Mesh %s!.\n", pMessage);
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Successful for Mesh %s!.\n", pMessage);
+    }
+
+    // Step 5
+    VkMemoryRequirements vkMemoryRequirements;
+    memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, vkBuffer, &vkMemoryRequirements);
+
+    // Step 6
+    VkMemoryAllocateInfo vkMemoryAllocateInfo;
+    memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo.pNext = NULL;
+    vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
+    vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
+
+    // Step A 
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        // Step B
+        if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
+            // Step C
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+                // Step D
+                vkMemoryAllocateInfo.memoryTypeIndex = i;
+                break;
+            }
+        }
+        // Step E
+        vkMemoryRequirements.memoryTypeBits >>= 1;
+    }
+
+    //Setp 9
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vkDeviceMemory);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for Mesh %s!.\n", pMessage);
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Successful for Mesh %s!.\n", pMessage);
+    }
+
+    // Step 10
+    vkResult = vkBindBufferMemory(vkDevice, vkBuffer, vkDeviceMemory, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for Mesh %s!.\n", pMessage);
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Successful for Mesh %s!.\n", pMessage);
+    }
+
+    // Step 11
+    void *data = NULL;
+
+    vkResult = vkMapMemory(
+        vkDevice,
+        vkDeviceMemory,
+        0,
+        vkMemoryAllocateInfo.allocationSize,
+        0,
+        &data
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Failed for Mesh %s!.\n", pMessage);
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Successful for Mesh %s!.\n", pMessage);
+    }
+
+    // Step 12
+    memcpy(data, pData, iDataSize);
+
+    // Step 13
+    vkUnmapMemory(vkDevice, vkDeviceMemory);
+
+    return (vkResult);
+}
+
+VkResult setIndexBuffer(const char* pMessage, void *pData, size_t iDataSize, VkBuffer &vkBuffer, VkDeviceMemory &vkDeviceMemory) {
+    //Variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Step 3
+    VkBufferCreateInfo vkBufferCreateInfo;
+    memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
+
+    vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCreateInfo.pNext = NULL;
+    vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
+    vkBufferCreateInfo.size = iDataSize;
+    vkBufferCreateInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    
+    // Setp 4
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vkBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for Index Buffer for Mesh %s!.\n", pMessage);
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Successful for Index Buffer for Mesh %s!.\n", pMessage);
+    }
+
+    // Step 5
+    VkMemoryRequirements vkMemoryRequirements;
+    memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, vkBuffer, &vkMemoryRequirements);   
+
+    // Step 6
+    VkMemoryAllocateInfo vkMemoryAllocateInfo;
+    memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo.pNext = NULL;
+    vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
+    vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
+
+    // Step A 
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        // Step B
+        if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
+            // Step C
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+                // Step D
+                vkMemoryAllocateInfo.memoryTypeIndex = i;
+                break;
+            }
+        }
+        // Step E
+        vkMemoryRequirements.memoryTypeBits >>= 1;
+    }
+
+    //Setp 9
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vkDeviceMemory);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for Index Buffer for Mesh %s!.\n", pMessage);
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Successful for Index Buffer for Mesh %s!.\n", pMessage);
+    }
+
+    // Step 10
+    vkResult = vkBindBufferMemory(vkDevice, vkBuffer, vkDeviceMemory, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for Index Buffer for Mesh %s!.\n", pMessage);
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Successful for Index Buffer for Mesh %s!.\n", pMessage);
+    }
+
+    // Step 11
+    void* data = NULL;
+
+    vkResult = vkMapMemory(
+        vkDevice,
+        vkDeviceMemory,
+        0,
+        vkMemoryAllocateInfo.allocationSize,
+        0,
+        &data
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Failed for Index Buffer for Mesh %s!.\n", pMessage);
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Successful for Index Buffer for Mesh %s!.\n", pMessage);
+    }
+
+    // Step 12
+    memcpy(data, pData, iDataSize);
+
+    // Step 13
+    vkUnmapMemory(vkDevice, vkDeviceMemory);
+
+    return (vkResult);
 }
