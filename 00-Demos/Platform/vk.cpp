@@ -161,6 +161,9 @@ VkPipeline vkPipeline = VK_NULL_HANDLE;
 StaticModel multiMeshModel;
 float fRotateAngle = 0.0f;
 
+// Camera
+CameraInfo camera_global;
+
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
@@ -199,6 +202,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
     // initialize vertexAttributes_array
     vertexAttributes_array = (VertexAttributes*)malloc(sizeof(VertexAttributes) * multiMeshModel.m_Mesh.size());
+
+    // Camera Initialization
+    InitCamera(
+        camera_global,
+        glm::vec3(0.0f, 2.0f, 0.0f),
+        glm::vec3(0.0f, 2.0f, -1.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
 
     wsprintf(szAppName, TEXT("%s"), gpszAppName);
 
@@ -331,9 +342,24 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
             }
             break;
 
+        case WM_MOUSEMOVE:
+            {
+                float xPos = (float)LOWORD(lParam) / (float)winWidth;
+                float yPos = (float)HIWORD(lParam) / (float)winHeight;
+
+                camera_global.bMoveMouse = true;
+                camera_global.v2CurrentMousePos = glm::vec2(xPos, yPos);
+
+                UpdateCamera(camera_global);
+                
+                camera_global.bMoveMouse = false;
+
+            }
+            break;
+
         case WM_CHAR:
             switch(LOWORD(wParam)) {
-                case 's':
+                /* case 's':
                 case 'S':
                     if(!bIsMax) {
                         ShowWindow(hwnd, SW_MAXIMIZE);
@@ -343,12 +369,37 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
                         ShowWindow(hwnd, SW_SHOWNORMAL);
                         bIsMax = FALSE;
                     }
-                break;
+                break; */
 
                 case 'f':
                 case 'F':
                     ToggleFullScreen();
                     break;
+
+                case 'W': // Up
+                case 'w':
+                    camera_global.dwCamMovementFlag = CAM_MOVE_FORWARD;
+                    UpdateCamera(camera_global);
+                    break;
+
+                case 'S': // Down
+                case 's':
+                    camera_global.dwCamMovementFlag = CAM_MOVE_BACKWARD;
+                    UpdateCamera(camera_global);
+                    break;
+
+                case 'A': // Left
+                case 'a':
+                    camera_global.dwCamMovementFlag = CAM_MOVE_LEFT;
+                    UpdateCamera(camera_global);
+                    break;
+
+                case 'D': // Right
+                case 'd':
+                    camera_global.dwCamMovementFlag = CAM_MOVE_RIGHT;
+                    UpdateCamera(camera_global);
+                    break;
+
                 
                 default:
                     break;
@@ -2789,12 +2840,12 @@ VkResult updateUniformBuffer(void) {
     myUniformData.modelMatrix = glm::mat4(1.0f);
     myUniformData.modelMatrix = glm::translate(
         glm::mat4(1.0f),
-        glm::vec3(0.0f, -2.0f, -10.0f)
+        glm::vec3(0.0f, 1.2f, -1.5f)
     );
 
     myUniformData.modelMatrix *= glm::scale(
         glm::mat4(1.0f),
-        glm::vec3(0.1f, 0.1f, 0.1f)
+        glm::vec3(0.01f, 0.01f, 0.01f)
     );
 
     myUniformData.modelMatrix *= glm::rotate(
@@ -2803,28 +2854,29 @@ VkResult updateUniformBuffer(void) {
         glm::vec3(1.0f, 0.0f, 0.0f)
     );
 
-
     myUniformData.modelMatrix *= glm::rotate(
         glm::mat4(1.0f),
         glm::radians(-fRotateAngle),
         glm::vec3(0.0f, 0.0f, 1.0f)
     );
 
-    myUniformData.viewMatrix = glm::mat4(1.0f);
+    // myUniformData.viewMatrix = glm::mat4(1.0f);
     myUniformData.projectionMatrix = glm::mat4(1.0f);
 
     glm::mat4 perspectiveProjectionMatrix = glm::mat4(1.0f);
 
     perspectiveProjectionMatrix = glm::perspective(
-        glm::radians(90.0f),
+        glm::radians(45.0f),
         (float)winWidth / (float)winHeight,
         0.01f,
-        100.0f
+        1000.0f
     );
 
     perspectiveProjectionMatrix[1][1] *= -1.0f; // Invert Y axis for Vulkan
 
     myUniformData.projectionMatrix = perspectiveProjectionMatrix;
+
+    myUniformData.viewMatrix = GetCameraViewMatrix(camera_global);
 
     void *data = NULL;
 
@@ -2854,12 +2906,12 @@ VkResult updateUniformBuffer(void) {
     myUniformData.modelMatrix = glm::mat4(1.0f);
     myUniformData.modelMatrix = glm::translate(
         glm::mat4(1.0f),
-        glm::vec3(0.0f, -4.5f, -10.0f)
+        glm::vec3(0.0f, -5.0f, -15.0f)
     );
 
     myUniformData.modelMatrix *= glm::scale(
         glm::mat4(1.0f),
-        glm::vec3(80.0f, 1.0f, 80.0f)
+        glm::vec3(10.0f, 10.0f, 10.0f)
     );
 
     myUniformData.modelMatrix *= glm::rotate(
@@ -2868,7 +2920,7 @@ VkResult updateUniformBuffer(void) {
         glm::vec3(1.0f, 0.0f, 0.0f) 
     );
 
-    myUniformData.viewMatrix = glm::mat4(1.0f);
+    // myUniformData.viewMatrix = glm::mat4(1.0f);
     myUniformData.projectionMatrix = glm::mat4(1.0f);
     perspectiveProjectionMatrix = glm::mat4(1.0f);
 
@@ -2876,12 +2928,14 @@ VkResult updateUniformBuffer(void) {
         glm::radians(45.0f),
         (float)winWidth / (float)winHeight,
         0.1f,
-        100.0f
+        1000.0f
     );
 
     perspectiveProjectionMatrix[1][1] *= -1.0f; // Invert Y axis for Vulkan
 
     myUniformData.projectionMatrix = perspectiveProjectionMatrix;
+
+    myUniformData.viewMatrix = GetCameraViewMatrix(camera_global);
 
     vkResult = vkMapMemory(
         vkDevice,

@@ -18,6 +18,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE // clip space depth range is [0, 1]
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
+#include <gtc/quaternion.hpp>
 
 // assimp related header files
 #include <assimp/Importer.hpp>
@@ -27,6 +28,7 @@
 #include "resource.h"
 #include "ModelLoading.h"
 #include "VertexBuffer.h"
+#include "Camera.h"
 
 // vulkan related libraries
 #pragma comment(lib, "vulkan-1.lib")
