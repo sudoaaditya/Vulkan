@@ -379,19 +379,19 @@ createTexture(): vkBeginCommandBuffer() Successful for Transition Image Layout!.
 createTexture(): vkEndCommandBuffer() Successful for Transition Image Layout!.
 createTexture(): vkQueueSubmit() Successful for Transition Image Layout!.
 createTexture(): vkQueueWaitIdle() Successful for Transition Image Layout!.
-createVertexBuffer(): vkFreeCommandBuffers() Successful for Transition Image Layout!.
+createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout!.
 createTexture(): vkAllocateCommandBuffers() Successful for Buffer to Image Copy!.
 createTexture(): vkBeginCommandBuffer() Successful for Buffer to Image Copy!.
 createTexture(): vkEndCommandBuffer() Successful for Buffer to Image Copy!.
 createTexture(): vkQueueSubmit() Successful for Buffer to Image Copy!.
 createTexture(): vkQueueWaitIdle() Successful for Buffer to Image Copy!.
-createVertexBuffer(): vkFreeCommandBuffers() Successful for Buffer to Image Copy!.
+createTexture(): vkFreeCommandBuffers() Successful for Buffer to Image Copy!.
 createTexture(): vkAllocateCommandBuffers() Successful for Transition Image Layout for Shaders!.
 createTexture(): vkBeginCommandBuffer() Successful for Transition Image Layout for Shaders!.
 createTexture(): vkEndCommandBuffer() Successful for Transition Image Layout for Shaders!.
 createTexture(): vkQueueSubmit() Successful for Transition Image Layout for Shaders!.
 createTexture(): vkQueueWaitIdle() Successful for Transition Image Layout for Shaders!.
-createVertexBuffer(): vkFreeCommandBuffers() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout for Shaders!.
 createTexture(): vkFreeMemory() Successful for Staging Buffer!.
 createTexture(): vkDestroyBuffer() Successful for Staging Buffer!.
 createTexture(): vkCreateImageView() Successful for Texture Image!.

@@ -83,7 +83,7 @@ int winWidth = WIN_WIDTH, winHeight = WIN_HEIGHT;
 VkSwapchainKHR vkSwapchainKHR = VK_NULL_HANDLE;
 VkExtent2D vkExtent2D_swapchain;
 
-// Swapchain Images & Image Views [ For color Images ]
+// Swapchain Images & Image Views
 uint32_t swapchainImageCount = UINT32_MAX;
 VkImage *swapchainImage_array = NULL;
 VkImageView *swapchainImageView_array = NULL;
@@ -237,7 +237,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
     hwnd = CreateWindowEx(WS_EX_APPWINDOW,
             szAppName,
-            TEXT("AMK_Vulkan : Textured Pyramid"),
+            TEXT("AMK_Vulkan : Kundali Texture"),
             WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE,
             xPos,
             yPos,
@@ -545,7 +545,7 @@ VkResult initialize(void) {
     }
 
     // Create Texture
-    vkResult = createTexture("Stone.png");
+    vkResult = createTexture("Vijay_Kundali.png");
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "initialize(): createTexture() Failed!.\n");
         return (vkResult);
@@ -1165,7 +1165,7 @@ void uninitialize(void){
         vkImage_texture = VK_NULL_HANDLE;
     }
 
-    // Destroy Vertex Buffer Color
+    // Destroy Vertex Buffer Texcoord
     if(vertexData_texcoord.vkDeviceMemory) {
         vkFreeMemory(vkDevice, vertexData_texcoord.vkDeviceMemory, NULL);
         fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for TexCoord!\n");
@@ -2543,48 +2543,119 @@ VkResult createVertexBuffer(void) {
     VkResult vkResult = VK_SUCCESS;
 
     // Step 1
-    float pyramid_position[] = {
+    float cube_position[] = {
         // front
-        0.0f,  1.0f,  0.0f, // front-top
-        -1.0f, -1.0f,  1.0f, // front-left
-        1.0f, -1.0f,  1.0f, // front-right
-        
+        1.0f,  1.0f,  1.0f, // top-right of front
+        -1.0f,  1.0f,  1.0f, // top-left of front
+        -1.0f, -1.0f,  1.0f, // bottom-left of front
+
+        -1.0f, -1.0f,  1.0f, // bottom-left of front
+        1.0f, -1.0f,  1.0f, // bottom-right of front
+        1.0f,  1.0f,  1.0f, // top-right of front
+
+
         // right
-        0.0f,  1.0f,  0.0f, // right-top
-        1.0f, -1.0f,  1.0f, // right-left
-        1.0f, -1.0f, -1.0f, // right-right
+        1.0f,  1.0f, -1.0f, // top-right of right
+        1.0f,  1.0f,  1.0f, // top-left of right
+        1.0f, -1.0f,  1.0f, // bottom-left of right
+        
+        1.0f, -1.0f,  1.0f, // bottom-left of right
+        1.0f, -1.0f, -1.0f, // bottom-right of right
+        1.0f,  1.0f, -1.0f, // top-right of right
 
         // back
-        0.0f,  1.0f,  0.0f, // back-top
-        1.0f, -1.0f, -1.0f, // back-left
-        -1.0f, -1.0f, -1.0f, // back-right
+        1.0f,  1.0f, -1.0f, // top-right of back
+        -1.0f,  1.0f, -1.0f, // top-left of back
+        -1.0f, -1.0f, -1.0f, // bottom-left of back
+
+        -1.0f, -1.0f, -1.0f, // bottom-left of back
+        1.0f, -1.0f, -1.0f, // bottom-right of back
+        1.0f,  1.0f, -1.0f, // top-right of back
+
 
         // left
-        0.0f,  1.0f,  0.0f, // left-top
-        -1.0f, -1.0f, -1.0f, // left-left
-        -1.0f, -1.0f,  1.0f, // left-right
+        -1.0f,  1.0f,  1.0f, // top-right of left
+        -1.0f,  1.0f, -1.0f, // top-left of left
+        -1.0f, -1.0f, -1.0f, // bottom-left of left
+
+        -1.0f, -1.0f, -1.0f, // bottom-left of left
+        -1.0f, -1.0f,  1.0f, // bottom-right of left
+        -1.0f,  1.0f,  1.0f, // top-right of left
+
+        // top
+        1.0f,  1.0f, -1.0f, // top-right of top
+        -1.0f,  1.0f, -1.0f, // top-left of top
+        -1.0f,  1.0f,  1.0f, // bottom-left of top
+
+        -1.0f,  1.0f,  1.0f, // bottom-left of top
+        1.0f,  1.0f,  1.0f, // bottom-right of top
+        1.0f,  1.0f, -1.0f, // top-right of top
+
+        // bottom
+        1.0f, -1.0f,  1.0f, // top-right of bottom
+        -1.0f, -1.0f,  1.0f, // top-left of bottom
+        -1.0f, -1.0f, -1.0f, // bottom-left of bottom
+
+        -1.0f, -1.0f, -1.0f, // bottom-left of bottom
+        1.0f, -1.0f, -1.0f, // bottom-right of bottom
+        1.0f, -1.0f,  1.0f, // top-right of bottom
+        
     };
 
-    float pyramid_texCoords[] = {
+    float cube_texcoord[] = {
         // front
-        0.5, 1.0, // front-top
-        0.0, 0.0, // front-left
-        1.0, 0.0, // front-right
+        1.0f, 1.0f, // top-right of front
+        0.0f, 1.0f, // top-left of front
+        0.0f, 0.0f, // bottom-left of front
+
+        0.0f, 0.0f, // bottom-left of front
+        1.0f, 0.0f, // bottom-right of front
+        1.0f, 1.0f, // top-right of front
 
         // right
-        0.5, 1.0, // right-top
-        1.0, 0.0, // right-left
-        0.0, 0.0, // right-right
+        1.0f, 1.0f, // top-right of right
+        0.0f, 1.0f, // top-left of right
+        0.0f, 0.0f, // bottom-left of right
+
+        0.0f, 0.0f, // bottom-left of right
+        1.0f, 0.0f, // bottom-right of right
+        1.0f, 1.0f, // top-right of right
 
         // back
-        0.5, 1.0, // back-top
-        0.0, 0.0, // back-left
-        1.0, 0.0, // back-right
+        1.0f, 1.0f, // top-right of back
+        0.0f, 1.0f, // top-left of back
+        0.0f, 0.0f, // bottom-left of back
+
+        0.0f, 0.0f, // bottom-left of back
+        1.0f, 0.0f, // bottom-right of back
+        1.0f, 1.0f, // top-right of back
 
         // left
-        0.5, 1.0, // left-top
-        1.0, 0.0, // left-left
-        0.0, 0.0, // left-right
+        1.0f, 1.0f, // top-right of left
+        0.0f, 1.0f, // top-left of left
+        0.0f, 0.0f, // bottom-left of left
+
+        0.0f, 0.0f, // bottom-left of left
+        1.0f, 0.0f, // bottom-right of left
+        1.0f, 1.0f, // top-right of left
+
+        // top
+        1.0f, 1.0f, // top-right of top
+        0.0f, 1.0f, // top-left of top
+        0.0f, 0.0f, // bottom-left of top
+
+        0.0f, 0.0f, // bottom-left of top
+        1.0f, 0.0f, // bottom-right of top
+        1.0f, 1.0f, // top-right of top
+
+        // bottom
+        1.0f, 1.0f, // top-right of bottom
+        0.0f, 1.0f, // top-left of bottom
+        0.0f, 0.0f, // bottom-left of bottom
+
+        0.0f, 0.0f, // bottom-left of bottom
+        1.0f, 0.0f, // bottom-right of bottom
+        1.0f, 1.0f, // top-right of bottom
     };
 
     // VertexData for Triangle Position
@@ -2598,7 +2669,7 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-    vkBufferCreateInfo.size = sizeof(pyramid_position);
+    vkBufferCreateInfo.size = sizeof(cube_position);
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
@@ -2678,14 +2749,14 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 12
-    memcpy(data, pyramid_position, sizeof(pyramid_position));
+    memcpy(data, cube_position, sizeof(cube_position));
 
     // Step 13
     vkUnmapMemory(vkDevice, vertexData_position.vkDeviceMemory);
 
     fprintf(fptr, "\n");
 
-    // VertexData for Triangle Color
+    // VertexData for Triangle TexCoord
     memset((void*)&vertexData_texcoord, 0, sizeof(VertexData));
 
     // Step 3
@@ -2694,7 +2765,7 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-    vkBufferCreateInfo.size = sizeof(pyramid_texCoords);
+    vkBufferCreateInfo.size = sizeof(cube_texcoord);
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
@@ -2772,7 +2843,7 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 12
-    memcpy(data, pyramid_texCoords, sizeof(pyramid_texCoords));
+    memcpy(data, cube_texcoord, sizeof(cube_texcoord));
 
     // Step 13
     vkUnmapMemory(vkDevice, vertexData_texcoord.vkDeviceMemory);
@@ -2827,8 +2898,6 @@ VkResult createTexture(const char*  textureFileName) {
     vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo_stagingBuffer, NULL, &vkBuffer_stagingBuffer);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkCreateBuffer() Failed for Staging Buffer!.\n");
-        /* stbi_image_free(image_data);
-        fclose(fp); */
         return(vkResult);
     } else {
         fprintf(fptr, "createTexture(): vkCreateBuffer() Successful for Staging Buffer!.\n");
@@ -2862,9 +2931,6 @@ VkResult createTexture(const char*  textureFileName) {
     vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_stagingBuffer, NULL, &vkDeviceMemory_stagingBuffer);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkAllocateMemory() Failed for Staging Buffer!.\n");
-        /* vkDestroyBuffer(vkDevice, vkBuffer_stagingBuffer, NULL);
-        stbi_image_free(image_data);
-        fclose(fp); */
         return(vkResult);
     } else {
         fprintf(fptr, "createTexture(): vkAllocateMemory() Successful for Staging Buffer!.\n");
@@ -2873,10 +2939,6 @@ VkResult createTexture(const char*  textureFileName) {
     vkBindBufferMemory(vkDevice, vkBuffer_stagingBuffer, vkDeviceMemory_stagingBuffer, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkBindBufferMemory() Failed for Staging Buffer!.\n");
-        /* vkFreeMemory(vkDevice, vkDeviceMemory_stagingBuffer, NULL);
-        vkDestroyBuffer(vkDevice, vkBuffer_stagingBuffer, NULL);
-        stbi_image_free(image_data);
-        fclose(fp); */
         return(vkResult);
     } else {
         fprintf(fptr, "createTexture(): vkBindBufferMemory() Successful for Staging Buffer!.\n");
@@ -2895,10 +2957,6 @@ VkResult createTexture(const char*  textureFileName) {
 
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkMapMemory() Failed for Staging Buffer!.\n");
-        /* vkFreeMemory(vkDevice, vkDeviceMemory_stagingBuffer, NULL);
-        vkDestroyBuffer(vkDevice, vkBuffer_stagingBuffer, NULL);
-        stbi_image_free(image_data);
-        fclose(fp); */
         return(vkResult);
     } else {
         fprintf(fptr, "createTexture(): vkMapMemory() Successful for Staging Buffer!.\n");
@@ -2937,8 +2995,6 @@ VkResult createTexture(const char*  textureFileName) {
     vkResult = vkCreateImage(vkDevice, &vkImageCreateInfo, NULL, &vkImage_texture);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkCreateImage() Failed for Texture Image!.\n");
-        /* vkFreeMemory(vkDevice, vkDeviceMemory_stagingBuffer, NULL);
-        vkDestroyBuffer(vkDevice, vkBuffer_stagingBuffer, NULL); */
         return(vkResult);
     } else {
         fprintf(fptr, "createTexture(): vkCreateImage() Successful for Texture Image!.\n");
@@ -2970,9 +3026,6 @@ VkResult createTexture(const char*  textureFileName) {
     vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_image, NULL, &vkDeviceMemory_texture);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkAllocateMemory() Failed for Texture Image!.\n");
-        /* vkFreeMemory(vkDevice, vkDeviceMemory_stagingBuffer, NULL);
-        vkDestroyBuffer(vkDevice, vkBuffer_stagingBuffer, NULL);
-        vkDestroyImage(vkDevice, vkImage_texture, NULL); */
         return(vkResult);
     } else {
         fprintf(fptr, "createTexture(): vkAllocateMemory() Successful for Texture Image!.\n");
@@ -2981,9 +3034,6 @@ VkResult createTexture(const char*  textureFileName) {
     vkResult = vkBindImageMemory(vkDevice, vkImage_texture, vkDeviceMemory_texture, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkBindImageMemory() Failed for Texture Image!.\n");
-        /* vkFreeMemory(vkDevice, vkDeviceMemory_stagingBuffer, NULL);
-        vkDestroyBuffer(vkDevice, vkBuffer_stagingBuffer, NULL);
-        vkDestroyImage(vkDevice, vkImage_texture, NULL); */
         return(vkResult);
     } else {
         fprintf(fptr, "createTexture(): vkBindImageMemory() Successful for Texture Image!.\n");
@@ -3003,10 +3053,6 @@ VkResult createTexture(const char*  textureFileName) {
     vkResult = vkAllocateCommandBuffers(vkDevice, &vkCommandBufferAllocateInfo_transition_image_layout, &vkCommandBuffer_transition_image_layout);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Failed for Transition Image Layout!.\n");
-        /* vkFreeMemory(vkDevice, vkDeviceMemory_stagingBuffer, NULL);
-        vkDestroyBuffer(vkDevice, vkBuffer_stagingBuffer, NULL);
-        vkDestroyImage(vkDevice, vkImage_texture, NULL);
-        vkFreeMemory(vkDevice, vkDeviceMemory_texture, NULL); */
         return(vkResult);
     } else {
         fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Successful for Transition Image Layout!.\n");
@@ -3497,13 +3543,25 @@ VkResult updateUniformBuffer(void) {
     
     translateMat *= glm::translate(
         glm::mat4(1.0f),
-        glm::vec3(0.0f, 0.0f, -4.0f)
+        glm::vec3(0.0f, 0.0f, -6.0f)
     );
 
-    rotateMat *= glm::rotate(
-        glm::mat4(1.0f),
+    rotateMat = glm::rotate(
+        rotateMat,
+        glm::radians(angle),
+        glm::vec3(1.0f, 0.0f, 0.0f)
+    );
+
+    rotateMat = glm::rotate(
+        rotateMat,
         glm::radians(angle),
         glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    rotateMat = glm::rotate(
+        rotateMat,
+        glm::radians(angle),
+        glm::vec3(0.0f, 0.0f, 1.0f)
     );
 
     myUniformData.modelMatrix = translateMat * rotateMat;
@@ -3968,7 +4026,7 @@ VkResult createPipeline(void) {
     vkVertexInputBindingDescription_array[0].stride = sizeof(float) * 3;
     vkVertexInputBindingDescription_array[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    vkVertexInputBindingDescription_array[1].binding = AMK_ATTRIBUTE_TEXCOORD; // 1st binding index for texcoord
+    vkVertexInputBindingDescription_array[1].binding = AMK_ATTRIBUTE_TEXCOORD; // 1st binding index for TexCoord
     vkVertexInputBindingDescription_array[1].stride = sizeof(float) * 2;
     vkVertexInputBindingDescription_array[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
@@ -4383,7 +4441,7 @@ VkResult buildCommandBuffers(void) {
         );
 
         // Here we should call vulkan drawing functions!
-        vkCmdDraw(vkCommandBuffer_array[i], 12, 1, 0, 0);
+        vkCmdDraw(vkCommandBuffer_array[i], 36, 1, 0, 0);
 
         // End Render Pass
         vkCmdEndRenderPass(vkCommandBuffer_array[i]);

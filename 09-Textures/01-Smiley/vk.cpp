@@ -2874,7 +2874,7 @@ VkResult createTexture(const char*  textureFileName) {
 
     if(vkCommandBuffer_transition_image_layout){ 
         vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_transition_image_layout);
-        fprintf(fptr, "createVertexBuffer(): vkFreeCommandBuffers() Successful for Transition Image Layout!.\n");
+        fprintf(fptr, "createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout!.\n");
         vkCommandBuffer_transition_image_layout = VK_NULL_HANDLE;
     }
 
@@ -2972,7 +2972,7 @@ VkResult createTexture(const char*  textureFileName) {
 
     if(vkCommandBuffer_buffer_to_image_copy){ 
         vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_buffer_to_image_copy);
-        fprintf(fptr, "createVertexBuffer(): vkFreeCommandBuffers() Successful for Buffer to Image Copy!.\n");
+        fprintf(fptr, "createTexture(): vkFreeCommandBuffers() Successful for Buffer to Image Copy!.\n");
         vkCommandBuffer_buffer_to_image_copy = VK_NULL_HANDLE;
     }
 
@@ -3089,7 +3089,7 @@ VkResult createTexture(const char*  textureFileName) {
 
     if(vkCommandBuffer_transition_image_layout){ 
         vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_transition_image_layout);
-        fprintf(fptr, "createVertexBuffer(): vkFreeCommandBuffers() Successful for Transition Image Layout for Shaders!.\n");
+        fprintf(fptr, "createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout for Shaders!.\n");
         vkCommandBuffer_transition_image_layout = VK_NULL_HANDLE;
     }
 
