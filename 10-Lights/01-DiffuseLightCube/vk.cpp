@@ -35,6 +35,7 @@ const CHAR *gpszAppName = "ARTR: Vulkan";
 // Vertex Attributes Enum
 enum {
     AMK_ATTRIBUTE_POSITION = 0,
+    AMK_ATTRIBUTES_NORMAL = 1,
 };
 
 // instance extension related variables
@@ -129,12 +130,20 @@ typedef struct {
 
 // Position
 VertexData vertexData_position;
+VertexData vertexData_normal;
 
 // Uniform Related Declarations
 struct MyUniformData {
+    // Matrices Related Uniform
     glm::mat4 modelMatrix;
     glm::mat4 viewMatrix;
     glm::mat4 projectionMatrix;
+    // Light Related Uniform
+    float lightDiffuse[4];
+    float lightPosition[4];
+    float materialDiffuse[4];
+    // Key Pressed Related Uniform
+    unsigned int lKeyPressed;
 };
 
 typedef struct {
@@ -167,6 +176,9 @@ VkPipeline vkPipeline = VK_NULL_HANDLE;
 
 // For Rotation
 float angle = 0.0f;
+
+// For Lights
+BOOL bLight = FALSE;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
@@ -342,6 +354,11 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
                 case 'f':
                 case 'F':
                     ToggleFullScreen();
+                    break;
+
+                case 'l':
+                case 'L':
+                    bLight = !bLight;
                     break;
                 
                 default:
@@ -1110,6 +1127,19 @@ void uninitialize(void){
         vkDestroyBuffer(vkDevice, uniformData.vkBuffer, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!\n");
         uniformData.vkBuffer = VK_NULL_HANDLE;
+    }
+
+    // Destroy Vertex Buffer Normal
+    if(vertexData_normal.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, vertexData_normal.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Normal!\n");
+        vertexData_normal.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+
+    if(vertexData_normal.vkBuffer) {
+        vkDestroyBuffer(vkDevice, vertexData_normal.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Normal!\n");
+        vertexData_normal.vkBuffer = VK_NULL_HANDLE;
     }
 
     // Destroy Vertex Buffer Position
@@ -2632,6 +2662,157 @@ VkResult createVertexBuffer(void) {
     // Step 13
     vkUnmapMemory(vkDevice, vertexData_position.vkDeviceMemory);
 
+    // VertexData for Triangle Normal
+    float cube_normals[] =
+    {
+	    // front surface
+        0.0f,  0.0f,  1.0f, // top-right of front
+        0.0f,  0.0f,  1.0f, // top-left of front
+        0.0f,  0.0f,  1.0f, // bottom-left of front
+
+        0.0f,  0.0f,  1.0f, // bottom-left of front
+        0.0f,  0.0f,  1.0f, // bottom-right of front
+        0.0f,  0.0f,  1.0f, // top-right of front
+
+        // right surface
+        1.0f,  0.0f,  0.0f, // top-right of right
+        1.0f,  0.0f,  0.0f, // top-left of right
+        1.0f,  0.0f,  0.0f, // bottom-left of right
+
+        1.0f,  0.0f,  0.0f, // bottom-left of right
+        1.0f,  0.0f,  0.0f, // bottom-right of right
+        1.0f,  0.0f,  0.0f, // top-right of right
+
+        // back surface
+        0.0f,  0.0f, -1.0f, // top-right of back
+        0.0f,  0.0f, -1.0f, // top-left of back
+        0.0f,  0.0f, -1.0f, // bottom-left of back
+
+        0.0f,  0.0f, -1.0f, // bottom-left of back
+        0.0f,  0.0f, -1.0f, // bottom-right of back
+        0.0f,  0.0f, -1.0f, // top-right of back
+
+        // left surface
+        -1.0f,  0.0f,  0.0f, // top-right of left
+        -1.0f,  0.0f,  0.0f, // top-left of left
+        -1.0f,  0.0f,  0.0f, // bottom-left of left
+
+        -1.0f,  0.0f,  0.0f, // bottom-left of left
+        -1.0f,  0.0f,  0.0f, // bottom-right of left
+        -1.0f,  0.0f,  0.0f, // top-right of left
+
+        // top surface
+        0.0f,  1.0f,  0.0f, // top-right of top
+        0.0f,  1.0f,  0.0f, // top-left of top
+        0.0f,  1.0f,  0.0f, // bottom-left of top
+
+        0.0f,  1.0f,  0.0f, // bottom-left of top
+        0.0f,  1.0f,  0.0f, // bottom-right of top
+        0.0f,  1.0f,  0.0f, // top-right of top
+
+        // bottom surface
+        0.0f, -1.0f,  0.0f, // top-right of bottom
+        0.0f, -1.0f,  0.0f, // top-left of bottom
+        0.0f, -1.0f,  0.0f, // bottom-left of bottom
+
+        0.0f, -1.0f,  0.0f, // bottom-left of bottom
+        0.0f, -1.0f,  0.0f, // bottom-right of bottom
+        0.0f, -1.0f,  0.0f, // top-right of bottom
+
+    };
+
+    // Step 2
+    memset((void*)&vertexData_normal, 0, sizeof(VertexData));
+
+    // Step 3
+    memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
+
+    vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCreateInfo.pNext = NULL;
+    vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
+    vkBufferCreateInfo.size = sizeof(cube_normals);
+    vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    
+    // Setp 4
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_normal.vkBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for Normal!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Successful for Normal!.\n");
+    }
+
+    // Step 5
+    memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, vertexData_normal.vkBuffer, &vkMemoryRequirements);
+
+    // Step 6
+    memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo.pNext = NULL;
+    vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
+    vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
+
+    // Step A 
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        // Step B
+        if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
+            // Step C
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+                // Step D
+                vkMemoryAllocateInfo.memoryTypeIndex = i;
+                break;
+            }
+        }
+        // Step E
+        vkMemoryRequirements.memoryTypeBits >>= 1;
+    }
+
+    //Setp 9
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_normal.vkDeviceMemory);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for Normal!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Successful for Normal!.\n");
+    }
+
+    // Step 10
+    vkResult = vkBindBufferMemory(vkDevice, vertexData_normal.vkBuffer, vertexData_normal.vkDeviceMemory, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for Normal!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Successful for Normal!.\n");
+    }
+
+    // Step 11
+    data = NULL;
+
+    vkResult = vkMapMemory(
+        vkDevice,
+        vertexData_normal.vkDeviceMemory,
+        0,
+        vkMemoryAllocateInfo.allocationSize,
+        0,
+        &data
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Failed for Normal!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Successful for Normal!.\n");
+    }
+
+    // Step 12
+    memcpy(data, cube_position, sizeof(cube_position));
+
+    // Step 13
+    vkUnmapMemory(vkDevice, vertexData_normal.vkDeviceMemory);
+
     return(vkResult);
 }
 
@@ -2775,6 +2956,29 @@ VkResult updateUniformBuffer(void) {
     perspectiveProjectionMatrix[1][1] *= -1.0f; // Invert Y axis for Vulkan
 
     myUniformData.projectionMatrix = perspectiveProjectionMatrix;
+
+    // Update Lighting Related Uniform
+    myUniformData.lightDiffuse[0] = 1.0f;
+    myUniformData.lightDiffuse[1] = 1.0f;
+    myUniformData.lightDiffuse[2] = 1.0f;
+    myUniformData.lightDiffuse[3] = 1.0f;
+
+    myUniformData.lightPosition[0] = 0.0f;
+    myUniformData.lightPosition[1] = 0.0f;
+    myUniformData.lightPosition[2] = 2.0f;
+    myUniformData.lightPosition[3] = 0.0f;
+
+    myUniformData.materialDiffuse[0] = 0.5f;
+    myUniformData.materialDiffuse[1] = 0.5f;
+    myUniformData.materialDiffuse[2] = 0.5f;
+    myUniformData.materialDiffuse[3] = 1.0f;
+
+    // update key pressed 
+    if(bLight) {
+        myUniformData.lKeyPressed = 1;
+    } else {
+        myUniformData.lKeyPressed = 0;
+    }
 
     void *data = NULL;
 
@@ -3178,14 +3382,18 @@ VkResult createPipeline(void) {
     VkResult vkResult = VK_SUCCESS;
 
     // Vertex Input Binding Description [ Vertex Input State]
-    VkVertexInputBindingDescription vkVertexInputBindingDescription_array[1];
+    VkVertexInputBindingDescription vkVertexInputBindingDescription_array[2];
     memset((void*)vkVertexInputBindingDescription_array, 0, sizeof(VkVertexInputBindingDescription) * _ARRAYSIZE(vkVertexInputBindingDescription_array));
 
     vkVertexInputBindingDescription_array[0].binding = AMK_ATTRIBUTE_POSITION; // 0th binding index for position
     vkVertexInputBindingDescription_array[0].stride = sizeof(float) * 3;
     vkVertexInputBindingDescription_array[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    VkVertexInputAttributeDescription vkVertexInputAttributeDescription_array[1];
+    vkVertexInputBindingDescription_array[1].binding = AMK_ATTRIBUTES_NORMAL; // 1st binding index for normal
+    vkVertexInputBindingDescription_array[1].stride = sizeof(float) * 3;
+    vkVertexInputBindingDescription_array[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription vkVertexInputAttributeDescription_array[2];
     memset((void*)vkVertexInputAttributeDescription_array, 0, sizeof(VkVertexInputAttributeDescription) * _ARRAYSIZE(vkVertexInputAttributeDescription_array));
 
     // Position Attribute
@@ -3193,6 +3401,12 @@ VkResult createPipeline(void) {
     vkVertexInputAttributeDescription_array[0].location = AMK_ATTRIBUTE_POSITION;
     vkVertexInputAttributeDescription_array[0].format = VK_FORMAT_R32G32B32_SFLOAT;
     vkVertexInputAttributeDescription_array[0].offset = 0;
+
+    // Normal Attribute
+    vkVertexInputAttributeDescription_array[1].binding = AMK_ATTRIBUTES_NORMAL;
+    vkVertexInputAttributeDescription_array[1].location = AMK_ATTRIBUTES_NORMAL;
+    vkVertexInputAttributeDescription_array[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    vkVertexInputAttributeDescription_array[1].offset = 0;
     
     VkPipelineVertexInputStateCreateInfo vkPipelineVertexInputStateCreateInfo;
     memset((void*)&vkPipelineVertexInputStateCreateInfo, 0, sizeof(VkPipelineVertexInputStateCreateInfo));
@@ -3576,6 +3790,16 @@ VkResult buildCommandBuffers(void) {
             AMK_ATTRIBUTE_POSITION, 1,
             &vertexData_position.vkBuffer,
             vkDeviceSize_offset_position_array
+        );
+        
+        VkDeviceSize vkDeviceSize_offset_normal_array[1];
+        memset((void*)vkDeviceSize_offset_normal_array, 0, sizeof(VkDeviceSize) * _ARRAYSIZE(vkDeviceSize_offset_normal_array));
+
+        vkCmdBindVertexBuffers(
+            vkCommandBuffer_array[i], 
+            AMK_ATTRIBUTES_NORMAL, 1,
+            &vertexData_normal.vkBuffer,
+            vkDeviceSize_offset_normal_array
         );
 
         // Here we should call vulkan drawing functions!
