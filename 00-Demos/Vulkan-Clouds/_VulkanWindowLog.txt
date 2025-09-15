@@ -354,15 +354,350 @@ createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
 createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
 initialize(): createCommandBuffers() Successful!.
 
-createVertexBuffer(): vkCreateBuffer() Successful!.
-createVertexBuffer(): vkAllocateMemory() Successful!.
-createVertexBuffer(): vkBindBufferMemory() Successful!.
-createVertexBuffer(): vkMapMemory() Successful!.
+createVertexBuffer(): vkCreateBuffer() Successful for Position!.
+createVertexBuffer(): vkAllocateMemory() Successful for Position!.
+createVertexBuffer(): vkBindBufferMemory() Successful for Position!.
+createVertexBuffer(): vkMapMemory() Successful for Position!.
+
+createVertexBuffer(): vkCreateBuffer() Successful for TexCoord!.
+createVertexBuffer(): vkAllocateMemory() Successful for TexCoord!.
+createVertexBuffer(): vkBindBufferMemory() Successful for TexCoord!.
+createVertexBuffer(): vkMapMemory() Successful for TexCoord!.
 initialize(): createVertexBuffer() Successful!.
 
-createUniformBuffer(): vkCreateBuffer() Successful!.
-createUniformBuffer(): vkAllocateMemory() Successful!.
-createUniformBuffer(): vkBindBufferMemory() Successful!.
+createTexture(): Texture Image Loaded Successfully! Width: 256, Height: 256, Channels: 4, Size: 262144 bytes
+createTexture(): vkCreateBuffer() Successful for Staging Buffer!.
+createTexture(): vkAllocateMemory() Successful for Staging Buffer!.
+createTexture(): vkBindBufferMemory() Successful for Staging Buffer!.
+createTexture(): vkMapMemory() Successful for Staging Buffer!.
+createTexture(): Image Data Copied to Staging Buffer Successful & Freed stbi Image Data!.
+createTexture(): vkCreateImage() Successful for Texture Image!.
+createTexture(): vkAllocateMemory() Successful for Texture Image!.
+createTexture(): vkBindImageMemory() Successful for Texture Image!.
+createTexture(): vkAllocateCommandBuffers() Successful for Transition Image Layout!.
+createTexture(): vkBeginCommandBuffer() Successful for Transition Image Layout!.
+createTexture(): vkEndCommandBuffer() Successful for Transition Image Layout!.
+createTexture(): vkQueueSubmit() Successful for Transition Image Layout!.
+createTexture(): vkQueueWaitIdle() Successful for Transition Image Layout!.
+createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout!.
+createTexture(): vkAllocateCommandBuffers() Successful for Buffer to Image Copy!.
+createTexture(): vkBeginCommandBuffer() Successful for Buffer to Image Copy!.
+createTexture(): vkEndCommandBuffer() Successful for Buffer to Image Copy!.
+createTexture(): vkQueueSubmit() Successful for Buffer to Image Copy!.
+createTexture(): vkQueueWaitIdle() Successful for Buffer to Image Copy!.
+createTexture(): vkFreeCommandBuffers() Successful for Buffer to Image Copy!.
+createTexture(): vkAllocateCommandBuffers() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkBeginCommandBuffer() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkEndCommandBuffer() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkQueueSubmit() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkQueueWaitIdle() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkFreeMemory() Successful for Staging Buffer!.
+createTexture(): vkDestroyBuffer() Successful for Staging Buffer!.
+createTexture(): vkCreateImageView() Successful for Texture Image!.
+createTexture(): vkCreateSampler() Successful for Texture Sampler!.
+initialize(): createTexture() Successful!.
+
+createUniformBuffer(): vkCreateBuffer() Successful for 0th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 0th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 0th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 1th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 1th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 1th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 2th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 2th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 2th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 3th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 3th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 3th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 4th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 4th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 4th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 5th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 5th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 5th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 6th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 6th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 6th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 7th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 7th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 7th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 8th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 8th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 8th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 9th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 9th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 9th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 10th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 10th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 10th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 11th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 11th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 11th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 12th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 12th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 12th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 13th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 13th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 13th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 14th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 14th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 14th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 15th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 15th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 15th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 16th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 16th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 16th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 17th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 17th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 17th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 18th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 18th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 18th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 19th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 19th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 19th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 20th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 20th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 20th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 21th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 21th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 21th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 22th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 22th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 22th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 23th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 23th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 23th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 24th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 24th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 24th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 25th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 25th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 25th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 26th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 26th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 26th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 27th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 27th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 27th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 28th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 28th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 28th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 29th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 29th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 29th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 30th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 30th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 30th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 31th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 31th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 31th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 32th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 32th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 32th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 33th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 33th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 33th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 34th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 34th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 34th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 35th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 35th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 35th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 36th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 36th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 36th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 37th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 37th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 37th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 38th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 38th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 38th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 39th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 39th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 39th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 40th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 40th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 40th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 41th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 41th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 41th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 42th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 42th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 42th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 43th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 43th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 43th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 44th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 44th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 44th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 45th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 45th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 45th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 46th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 46th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 46th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 47th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 47th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 47th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 48th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 48th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 48th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 49th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 49th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 49th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 50th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 50th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 50th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 51th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 51th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 51th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 52th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 52th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 52th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 53th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 53th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 53th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 54th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 54th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 54th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 55th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 55th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 55th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 56th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 56th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 56th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 57th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 57th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 57th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 58th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 58th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 58th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 59th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 59th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 59th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 60th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 60th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 60th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 61th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 61th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 61th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 62th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 62th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 62th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 63th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 63th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 63th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 64th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 64th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 64th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 65th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 65th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 65th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 66th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 66th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 66th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 67th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 67th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 67th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 68th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 68th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 68th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 69th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 69th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 69th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 70th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 70th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 70th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 71th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 71th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 71th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 72th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 72th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 72th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 73th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 73th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 73th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 74th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 74th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 74th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 75th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 75th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 75th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 76th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 76th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 76th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 77th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 77th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 77th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 78th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 78th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 78th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 79th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 79th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 79th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 80th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 80th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 80th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 81th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 81th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 81th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 82th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 82th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 82th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 83th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 83th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 83th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 84th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 84th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 84th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 85th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 85th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 85th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 86th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 86th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 86th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 87th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 87th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 87th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 88th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 88th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 88th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 89th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 89th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 89th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 90th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 90th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 90th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 91th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 91th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 91th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 92th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 92th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 92th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 93th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 93th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 93th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 94th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 94th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 94th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 95th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 95th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 95th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 96th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 96th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 96th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 97th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 97th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 97th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 98th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 98th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 98th could!.
+createUniformBuffer(): vkCreateBuffer() Successful for 99th could!.
+createUniformBuffer(): vkAllocateMemory() Successful for 99th could!.
+createUniformBuffer(): vkBindBufferMemory() Successful for 99th could!.
 createUniformBuffer(): updateUniformBuffer() Successful!.
 initialize(): createUniformBuffer() Successful!.
 
@@ -385,6 +720,105 @@ initialize(): createPipelineLayout() Successful!.
 createDescriptorPool(): vkCreateDescriptorPool() Successful!.
 initialize(): createDescriptorPool() Successful!.
 
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
 createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
 createDescriptorSet(): vkUpdateDescriptorSets() Successful!.
 initialize(): createDescriptorSet() Successful!.
@@ -418,6 +852,39 @@ initialize(): buildCommandBuffers() Successful!.
 
 initialize(): Initialization Successful!.
 WinMain(): initialize() Successful!.
+getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() first Call Successful!. [Found 5 Formats]
+getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() Second Call Successful!.
+getPhysicalDeviceSurfaceFormatAndColorSpace(): vkSurfaceFormatKHR_array freed.
+createSwapchain(): getPhysicalDeviceSurfaceFormatAndColorSpace() Successful!.
+createSwapchain(): vkGetPhysicalDeviceSurfaceCapabilitiesKHR() Successful!.
+createSwapchain(): desiredNumberOfSwapchainImages is : 2, [Min: 2, Max: 8]
+createSwapchain(): Swapchain Image Width : 1536 X Height : 841
+getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() first Call Successful!. [Found 4 Present Modes]
+getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() Second Call Successful!.
+getPhysicalDeviceSurfacePresentMode(): VK_PRESENT_MODE_MAILBOX_KHR Present Mode found!.
+getPhysicalDeviceSurfacePresentMode(): vkPresentModeKHR_array freed.
+createSwapchain(): getPhysicalDeviceSurfacePresentMode() Successful!.
+createSwapchain(): vkCreateSwapchainKHR() Successful!.
+createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Successful!. : Swapchain Image Count : [2]
+createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Second Call Successful!.
+createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {0}!.
+createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {1}!.
+createRenderPass(): vkCreateRenderPass() Successful!.
+createPipelineLayout(): vkCreatePipelineLayout() Successful!.
+createPipeline(): vkCreatePipelineCache() Successful!.
+createPipeline(): vkCreateGraphicsPipelines() Successful!.
+createFramebuffers(): vkCreateFramebuffer() Successful for {0}!.
+createFramebuffers(): vkCreateFramebuffer() Successful for {1}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
+buildCommandBuffers(): vkResetCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkBeginCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkEndCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkResetCommandBuffer() Successful for {1}!.
+buildCommandBuffers(): vkBeginCommandBuffer() Successful for {1}!.
+buildCommandBuffers(): vkEndCommandBuffer() Successful for {1}!.
+
+
 
 uninitialize(): vkDeviceWaitIdle is done!
 uninitialize(): vkDestroyFence() Succeed for {0}!.
@@ -435,10 +902,215 @@ uninitialize(): vkDestroyPipelineLayout() Succeed!
 uninitialize(): vkDestroyDescriptorSetLayout() Succeed!
 uninitialize(): vkDestroyShaderModule() Succeed for Fragment Shader!
 uninitialize(): vkDestroyShaderModule() Succeed for Vertex Shader!
-uninitialize(): vkFreeMemory() Succeed for Uniform Buffer!
-uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!
-uninitialize(): vkFreeMemory() Succeed for Vertex Buffer!
-uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {0}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {0}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {1}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {1}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {2}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {2}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {3}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {3}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {4}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {4}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {5}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {5}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {6}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {6}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {7}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {7}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {8}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {8}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {9}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {9}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {10}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {10}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {11}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {11}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {12}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {12}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {13}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {13}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {14}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {14}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {15}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {15}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {16}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {16}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {17}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {17}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {18}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {18}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {19}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {19}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {20}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {20}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {21}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {21}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {22}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {22}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {23}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {23}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {24}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {24}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {25}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {25}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {26}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {26}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {27}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {27}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {28}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {28}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {29}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {29}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {30}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {30}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {31}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {31}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {32}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {32}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {33}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {33}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {34}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {34}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {35}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {35}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {36}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {36}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {37}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {37}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {38}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {38}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {39}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {39}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {40}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {40}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {41}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {41}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {42}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {42}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {43}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {43}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {44}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {44}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {45}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {45}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {46}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {46}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {47}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {47}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {48}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {48}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {49}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {49}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {50}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {50}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {51}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {51}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {52}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {52}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {53}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {53}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {54}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {54}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {55}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {55}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {56}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {56}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {57}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {57}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {58}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {58}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {59}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {59}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {60}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {60}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {61}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {61}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {62}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {62}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {63}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {63}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {64}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {64}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {65}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {65}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {66}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {66}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {67}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {67}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {68}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {68}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {69}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {69}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {70}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {70}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {71}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {71}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {72}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {72}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {73}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {73}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {74}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {74}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {75}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {75}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {76}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {76}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {77}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {77}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {78}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {78}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {79}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {79}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {80}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {80}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {81}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {81}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {82}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {82}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {83}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {83}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {84}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {84}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {85}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {85}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {86}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {86}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {87}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {87}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {88}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {88}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {89}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {89}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {90}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {90}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {91}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {91}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {92}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {92}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {93}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {93}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {94}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {94}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {95}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {95}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {96}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {96}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {97}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {97}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {98}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {98}!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {99}!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {99}!
+uninitialize(): freed uniformData_array!.
+uninitialize(): vkDestroySampler() Succeed for Texture Sampler!
+uninitialize(): vkDestroyImageView() Succeed for Texture Image View!
+uninitialize(): vkFreeMemory() Succeed for Texture Image Memory!
+uninitialize(): vkDestroyImage() Succeed for Texture Image!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for TexCoord!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for TexCoord!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Position!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Position!
 uninitialize(): vkFreeCommandBuffers() Succeed for {0}
 uninitialize(): vkFreeCommandBuffers() Succeed for {1}
 uninitialize(): freed vkCommandBuffer_array!.
