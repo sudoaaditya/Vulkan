@@ -152,9 +152,22 @@ VertexData vertexData_elements;
 
 // Uniform Related Declarations
 struct MyUniformData {
+    // For Matrices
     glm::mat4 modelMatrix;
     glm::mat4 viewMatrix;
     glm::mat4 projectionMatrix;
+    // For Light
+    float lightAmbient[4]; // ambient
+    float lightDiffuse[4]; // diffuse
+    float lightSpecular[4]; // specular
+    float lightPosition[4]; // light position
+    // For Material
+    float materialAmbient[4]; // ambient
+    float materialDiffuse[4]; // diffuse
+    float materialSpecular[4]; // specular
+    float materialShininess;
+    // For Key Pressed
+    unsigned int lKeyPressed;
 };
 
 typedef struct {
@@ -184,6 +197,9 @@ VkDescriptorSet vkDescriptorSet = VK_NULL_HANDLE;
 VkViewport vkViewport;
 VkRect2D vkRect2D_scissor;
 VkPipeline vkPipeline = VK_NULL_HANDLE;
+
+// Lights
+BOOL bLight = FALSE;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
@@ -359,6 +375,11 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
                 case 'f':
                 case 'F':
                     ToggleFullScreen();
+                    break;
+
+                case 'l':
+                case 'L':
+                    bLight = !bLight;
                     break;
                 
                 default:
@@ -3051,6 +3072,53 @@ VkResult updateUniformBuffer(void) {
 
     myUniformData.projectionMatrix = perspectiveProjectionMatrix;
 
+    // Update Lighting Related Uniform
+    myUniformData.lightAmbient[0] = 0.1f;
+    myUniformData.lightAmbient[1] = 0.1f;
+    myUniformData.lightAmbient[2] = 0.1f;
+    myUniformData.lightAmbient[3] = 1.0f;
+
+    myUniformData.lightDiffuse[0] = 1.0f;
+    myUniformData.lightDiffuse[1] = 1.0f;
+    myUniformData.lightDiffuse[2] = 1.0f;
+    myUniformData.lightDiffuse[3] = 1.0f;
+
+    myUniformData.lightSpecular[0] = 1.0f;
+    myUniformData.lightSpecular[1] = 1.0f;
+    myUniformData.lightSpecular[2] = 1.0f;
+    myUniformData.lightSpecular[3] = 1.0f;
+
+    myUniformData.lightPosition[0] = 100.0f;
+    myUniformData.lightPosition[1] = 110.0f;
+    myUniformData.lightPosition[2] = 100.0f;
+    myUniformData.lightPosition[3] = 1.0f;
+
+    myUniformData.materialAmbient[0] = 0.0f;
+    myUniformData.materialAmbient[1] = 0.0f;
+    myUniformData.materialAmbient[2] = 0.0f;
+    myUniformData.materialAmbient[3] = 1.0f;
+
+    myUniformData.materialDiffuse[0] = 0.5f;
+    myUniformData.materialDiffuse[1] = 0.3f;
+    myUniformData.materialDiffuse[2] = 0.7f;
+    myUniformData.materialDiffuse[3] = 1.0f;
+
+    myUniformData.materialSpecular[0] = 0.7f;
+    myUniformData.materialSpecular[1] = 0.7f;
+    myUniformData.materialSpecular[2] = 0.7f;
+    myUniformData.materialSpecular[3] = 1.0f;
+
+    myUniformData.materialShininess = 128.0f;
+
+
+    // update key pressed 
+    if(bLight) {
+        myUniformData.lKeyPressed = 1;
+    } else {
+        myUniformData.lKeyPressed = 0;
+    }
+
+
     void *data = NULL;
 
     vkResult = vkMapMemory(
@@ -3212,7 +3280,7 @@ VkResult createDescriptorSetLayout(void) {
     vkDescriptorSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     vkDescriptorSetLayoutBinding.binding = 0; // this 0 is  the binding index, we will use this index in shader
     vkDescriptorSetLayoutBinding.descriptorCount = 1; 
-    vkDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // this binding will be used in vertex shader
+    vkDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT; // this binding will be used in vertex shader & Fragmnet shader
     vkDescriptorSetLayoutBinding.pImmutableSamplers = NULL; // we don't have any immutable samplers for now
 
     //Create Descriptor Set Layout Create Info
