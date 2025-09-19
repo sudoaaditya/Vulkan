@@ -20,13 +20,19 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE // clip space depth range is [0, 1]
 #include "../../glm/glm.hpp"
 #include "../../glm/gtc/matrix_transform.hpp"
+#include "clockUtils/Clock.h"
 
 // vulkan related libraries
 #pragma comment(lib, "vulkan-1.lib")
 
 #define WIN_WIDTH 800
 #define WIN_HEIGHT 600
-#define CLOUDS_COUNT 100
+
+// CLOUDS RELATED CONSTANTS
+#define CLOUDS_COUNT 1000
+#define SPHERE_RADIUS 500.0f
+#define MIN_CLOUD_SIZE 5.0f
+#define MAX_CLOUD_SIZE 30.0f
 
 // global variables
 BOOL gbFullScreen = FALSE;
@@ -139,6 +145,8 @@ struct MyUniformData {
     glm::mat4 modelMatrix;
     glm::mat4 viewMatrix;
     glm::mat4 projectionMatrix;
+    float cloudOpacity;
+    float elapsedTime;
 };
 
 typedef struct {
@@ -150,6 +158,9 @@ UniformData *uniformData_array = NULL;
 
 // Prebaked Model Matrixes for Clouds
 glm::mat4 prebakedModelMatrix_array[CLOUDS_COUNT];
+// opacity values for clouds
+float cloudOpacity_array[CLOUDS_COUNT];
+Clock myClock;
 
 // Shader Variables
 VkShaderModule vkShaderModule_vertex = VK_NULL_HANDLE;
@@ -248,7 +259,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
     ghwnd = hwnd;
 
     // seed the random function
-    srand(time(0));
+    // srand(time(0));
 
     vkResult = initialize();
     if(vkResult != VK_SUCCESS) {
@@ -687,6 +698,8 @@ VkResult initialize(void) {
     // Initialization is completed!
     bInitialized = TRUE;
     fprintf(fptr, "initialize(): Initialization Successful!.\n");
+
+    myClock.start();
 
     return (vkResult);
 }
@@ -3290,7 +3303,7 @@ VkResult createUniformBuffer (void) {
     return (vkResult);
 }
 
-void calculatePrebakedCloudMatrices(void) {
+/* void calculatePrebakedCloudMatrices(void) {
 
     // functions
     float getRandomFloat(void);
@@ -3301,27 +3314,6 @@ void calculatePrebakedCloudMatrices(void) {
     float inc = (2.0f * 3.14159265f) / (float)CLOUDS_COUNT; // in radians
 
     for(uint32_t i = 0; i < CLOUDS_COUNT; i++) {
-        /* angle = i * inc;
-        prebakedModelMatrix_array[i] = glm::mat4(1.0f);
-        prebakedModelMatrix_array[i] = glm::translate(
-            glm::mat4(1.0f),
-            glm::vec3(
-                radius * sin(angle),
-                0.0f,
-                radius * cos(angle)
-            )
-        );
-        
-        prebakedModelMatrix_array[i] = glm::scale(
-            prebakedModelMatrix_array[i],
-            glm::vec3(1.0f * getRandomFloat(), 1.0f * getRandomFloat(), 1.0f)
-        ); */
-
-        /* prebakedModelMatrix_array[i] = glm::rotate(
-        prebakedModelMatrix_array[i],
-        -angle + glm::radians(90.0f),
-        glm::vec3(0.0f, 0.0f, 1.0f)
-        ); */
 
         glm::mat4 modelMat = glm::mat4(1.0f);
 
@@ -3352,6 +3344,51 @@ void calculatePrebakedCloudMatrices(void) {
 
         prebakedModelMatrix_array[i] = modelMat;
     }
+} */
+
+void calculatePrebakedCloudMatrices(void) {
+
+    float getRandomFloat(void);
+
+    float radius = SPHERE_RADIUS; // hemisphere radius
+    for (uint32_t i = 0; i < CLOUDS_COUNT; i++) {
+
+        glm::mat4 modelMat = glm::mat4(1.0f);
+
+        float theta = getRandomFloat() * 2.0f * 3.14159265f; // azimuth [0, 2π)
+        float phi   = getRandomFloat() * 0.5f * 3.14159265f; // elevation [0, π/2] -> only hemisphere (upper half)
+
+        float x = radius * cos(phi) * cos(theta);
+        float y = radius * sin(phi); // height (up)
+        float z = radius * cos(phi) * sin(theta);
+
+        modelMat = glm::translate(modelMat, glm::vec3(x, y, z));
+
+        glm::vec3 dirToCenter = glm::normalize(-glm::vec3(x, y, z));
+        glm::vec3 up(0.0f, 0.0f, 1.0f); // world up
+        glm::vec3 rotationAxis = glm::cross(up, dirToCenter);
+        float rotationAngle = acos(glm::dot(up, dirToCenter));
+        if (glm::length(rotationAxis) > 0.0001f)
+            modelMat = glm::rotate(modelMat, rotationAngle, glm::normalize(rotationAxis));
+
+       /*  // ---- Random additional rotation around local X-axis ----
+        modelMat = glm::rotate(
+            modelMat,
+            glm::radians(getRandomFloat() * 360.0f),
+            glm::vec3(1.0f, 0.0f, 0.0f)
+        ); */
+
+        // ---- Scale ----
+        float cloudScale = getRandomFloat() * MAX_CLOUD_SIZE + MIN_CLOUD_SIZE;
+        cloudScale *= (1.0f + (y / radius)); // larger clouds at higher altitudes
+        modelMat = glm::scale(modelMat, glm::vec3(cloudScale, cloudScale, 1.0f));
+
+        prebakedModelMatrix_array[i] = modelMat;
+
+        // cloud opacity based on height (y)
+        cloudOpacity_array[i] = 1.0f - (y / radius);
+        cloudOpacity_array[i] = glm::clamp(cloudOpacity_array[i], 0.3f, 0.8f);
+    }
 }
 
 float getRandomFloat(void) {
@@ -3371,9 +3408,15 @@ VkResult updateUniformBuffer(void) {
         30000.0f
     );
 
-    // create viewMat at z = -2
+   /*  // create viewMat at z = -20
     glm::mat4 viewMat = glm::mat4(1.0f);
-    viewMat = glm::translate(viewMat, glm::vec3(0.0f, 0.0f, -20.0f));
+    viewMat = glm::translate(viewMat, glm::vec3(0.0f, 0.0f, -20.0f)); */
+
+    glm::vec3 camPos   = glm::vec3(0.0f, -SPHERE_RADIUS, 0.0f);
+    glm::vec3 target   = glm::vec3(0.0f,  0.0f, 0.0f);
+    glm::vec3 upVector = glm::vec3(0.0f,  0.0f, -1.0f);
+
+    glm::mat4 viewMat = glm::lookAt(camPos, target, upVector);
 
     perspectiveProjectionMatrix[1][1] *= -1.0f; // Invert Y axis for Vulkan
 
@@ -3389,6 +3432,12 @@ VkResult updateUniformBuffer(void) {
 
         myUniformData.projectionMatrix = perspectiveProjectionMatrix;
 
+        // clamp values to animate clouds with elapsed time
+        float elapsedTime = (float) myClock.getElapsedTime();
+
+        myUniformData.cloudOpacity = cloudOpacity_array[i];
+        myUniformData.elapsedTime = elapsedTime;
+        
         void *data = NULL;
 
         vkResult = vkMapMemory(
@@ -3552,7 +3601,7 @@ VkResult createDescriptorSetLayout(void) {
     vkDescriptorSetLayoutBinding_array[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     vkDescriptorSetLayoutBinding_array[0].binding = 0; // this 0 is  the binding index, we will use this index in shader
     vkDescriptorSetLayoutBinding_array[0].descriptorCount = 1; 
-    vkDescriptorSetLayoutBinding_array[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // this binding will be used in vertex shader
+    vkDescriptorSetLayoutBinding_array[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT; // this binding will be used in vertex shader & Fragmnet shader
     vkDescriptorSetLayoutBinding_array[0].pImmutableSamplers = NULL; // we don't have any immutable samplers for now
 
     // 2nd element is for texture image & sampler
