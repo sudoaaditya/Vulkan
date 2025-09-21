@@ -18502,7 +18502,7 @@ uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {2998}!
 uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {2998}!
 uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {2999}!
 uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {2999}!
-uninitialize(): freed uniformData_array!.
+uninitialize(): freed amk_uniformData_sceneOne_array!.
 uninitialize(): vkDestroySampler() Succeed for Texture Sampler!
 uninitialize(): vkDestroyImageView() Succeed for Texture Image View!
 uninitialize(): vkFreeMemory() Succeed for Texture Image Memory!

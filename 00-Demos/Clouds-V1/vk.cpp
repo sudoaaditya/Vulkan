@@ -30,16 +30,15 @@
 
 // Could Related Variables
 #define PI 3.14159265f
-#define CLOUDS_COUNT 3000 // number of clouds
-#define CLOUDS_SPREAD_X_MIN_FACTOR 500 // postion X
-#define CLOUDS_SPREAD_X_MAX_FACTOR 1000 // postion X
-#define CLOUDS_SPREAD_Y_MIN_FACTOR 15 // postion y
-#define CLOUDS_SPREAD_Y_MAX_FACTOR 80 // postion y
+#define CLOUDS_COUNT_S1 3000 // number of clouds
+#define CLOUDS_SPREAD_X_MIN_FACTOR_S1 500 // postion X
+#define CLOUDS_SPREAD_X_MAX_FACTOR_S1 1000 // postion X
+#define CLOUDS_SPREAD_Y_MAX_FACTOR_S1 80 // postion y
 
-#define CLOULDS_HEIGHT_MIN_FACTOR 2 // scale
-#define CLOULDS_HEIGHT_MAX_FACTOR 60 // scale
+#define CLOULDS_HEIGHT_MIN_FACTOR_S1 2 // scale
+#define CLOULDS_HEIGHT_MAX_FACTOR_S1 60 // scale
 
-float viewMat_eyeZ = - 20.0f; // camera is at (0, 0, -20)
+float amk_viewMat_eyeZ = - 20.0f; // camera is at (0, 0, -20)
 Clock myClock;
 
 // global variables
@@ -137,33 +136,6 @@ const char *enabledValidationLayerNames_array[1]; //VK_LAYER_KHRONOS_validation
 VkDebugReportCallbackEXT vkDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT_fnptr = NULL;
 
-// Vertex Buffer
-typedef struct {
-    VkBuffer vkBuffer;
-    VkDeviceMemory vkDeviceMemory;
-} VertexData;
-
-// Position
-VertexData vertexData_position;
-// TexCoord
-VertexData vertexData_texcoord;
-
-// Uniform Related Declarations
-struct MyUniformData {
-    glm::mat4 modelMatrix;
-    glm::mat4 viewMatrix;
-    glm::mat4 projectionMatrix;
-};
-
-typedef struct {
-    VkBuffer vkBuffer;
-    VkDeviceMemory vkDeviceMemory;
-} UniformData;
-
-UniformData *uniformData_array = NULL;
-
-// Prebaked Model Matrixes for Clouds
-glm::mat4 prebakedModelMatrix_array[CLOUDS_COUNT];
 
 // Shader Variables
 VkShaderModule vkShaderModule_vertex = VK_NULL_HANDLE;
@@ -178,9 +150,6 @@ VkPipelineLayout vkPipelineLayout = VK_NULL_HANDLE;
 // Descriptor Pool
 VkDescriptorPool vkDescriptorPool = VK_NULL_HANDLE;
 
-// Descriptor Set
-VkDescriptorSet *vkDescriptorSet_array = NULL;
-
 // Pipeline
 VkViewport vkViewport;
 VkRect2D vkRect2D_scissor;
@@ -194,6 +163,35 @@ VkImageView vkImageView_texture = VK_NULL_HANDLE;
 VkSampler vkSampler_texture = VK_NULL_HANDLE;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
+
+// Scene One - Clouds Related Variables
+// Vertex Buffer
+typedef struct {
+    VkBuffer vkBuffer;
+    VkDeviceMemory vkDeviceMemory;
+} VertexData;
+
+// Position
+VertexData amk_clouds_sceneOne_vertexData_position;
+// TexCoord
+VertexData amk_clouds_sceneOne_vertexData_texcoord;
+// Uniform Related Declarations
+struct MyUniformData {
+    glm::mat4 modelMatrix;
+    glm::mat4 viewMatrix;
+    glm::mat4 projectionMatrix;
+};
+typedef struct {
+    VkBuffer vkBuffer;
+    VkDeviceMemory vkDeviceMemory;
+} UniformData;
+
+UniformData *amk_uniformData_sceneOne_array = NULL;
+
+// Prebaked Model Matrixes for Clouds
+glm::mat4 amk_prebakedModelMatrix_sceneOne_array[CLOUDS_COUNT_S1];
+// Descriptor Set
+VkDescriptorSet *amk_vkDescriptorSet_sceneOne_array = NULL;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
     // Func
@@ -465,20 +463,20 @@ VkResult initialize(void) {
     VkResult vkResult = VK_SUCCESS;
 
     // malloc for clouds
-    uniformData_array = (UniformData*)malloc(sizeof(UniformData) * CLOUDS_COUNT);
-    if(uniformData_array == NULL) {
-        fprintf(fptr, "initialize(): malloc() Failed for uniformData_array!.\n");
+    amk_uniformData_sceneOne_array = (UniformData*)malloc(sizeof(UniformData) * CLOUDS_COUNT_S1);
+    if(amk_uniformData_sceneOne_array == NULL) {
+        fprintf(fptr, "initialize(): malloc() Failed for amk_uniformData_sceneOne_array!.\n");
         return (VK_ERROR_INITIALIZATION_FAILED);
     } else {
-        memset((void*)uniformData_array, 0, sizeof(UniformData) * CLOUDS_COUNT);
+        memset((void*)amk_uniformData_sceneOne_array, 0, sizeof(UniformData) * CLOUDS_COUNT_S1);
     }
 
-    vkDescriptorSet_array = (VkDescriptorSet*)malloc(sizeof(VkDescriptorSet) * CLOUDS_COUNT);
-    if(vkDescriptorSet_array == NULL) {
-        fprintf(fptr, "initialize(): malloc() Failed for vkDescriptorSet_array!.\n");
+    amk_vkDescriptorSet_sceneOne_array = (VkDescriptorSet*)malloc(sizeof(VkDescriptorSet) * CLOUDS_COUNT_S1);
+    if(amk_vkDescriptorSet_sceneOne_array == NULL) {
+        fprintf(fptr, "initialize(): malloc() Failed for amk_vkDescriptorSet_sceneOne_array!.\n");
         return (VK_ERROR_INITIALIZATION_FAILED);
     } else {
-        memset((void*)vkDescriptorSet_array, 0, sizeof(VkDescriptorSet) * CLOUDS_COUNT);
+        memset((void*)amk_vkDescriptorSet_sceneOne_array, 0, sizeof(VkDescriptorSet) * CLOUDS_COUNT_S1);
     }
 
     // code
@@ -1103,8 +1101,8 @@ void uninitialize(void){
         fprintf(fptr, "uninitialize(): vkDescriptorPool & vkDescriptorSet Destroy Succeed!\n");
         vkDescriptorPool = VK_NULL_HANDLE;
 
-        free(vkDescriptorSet_array);
-        vkDescriptorSet_array = NULL;
+        free(amk_vkDescriptorSet_sceneOne_array);
+        amk_vkDescriptorSet_sceneOne_array = NULL;
     }
 
     // Destroy Pipeline Layout
@@ -1135,23 +1133,23 @@ void uninitialize(void){
     }
 
     // Destroy Uniform Buffer
-    for(uint32_t i = 0; i < CLOUDS_COUNT; i++) {
-        if(uniformData_array[i].vkDeviceMemory) {
-            vkFreeMemory(vkDevice, uniformData_array[i].vkDeviceMemory, NULL);
+    for(uint32_t i = 0; i < CLOUDS_COUNT_S1; i++) {
+        if(amk_uniformData_sceneOne_array[i].vkDeviceMemory) {
+            vkFreeMemory(vkDevice, amk_uniformData_sceneOne_array[i].vkDeviceMemory, NULL);
             fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {%d}!\n", i);
-            uniformData_array[i].vkDeviceMemory = VK_NULL_HANDLE;
+            amk_uniformData_sceneOne_array[i].vkDeviceMemory = VK_NULL_HANDLE;
         }
 
-        if(uniformData_array[i].vkBuffer) {
-            vkDestroyBuffer(vkDevice, uniformData_array[i].vkBuffer, NULL);
+        if(amk_uniformData_sceneOne_array[i].vkBuffer) {
+            vkDestroyBuffer(vkDevice, amk_uniformData_sceneOne_array[i].vkBuffer, NULL);
             fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {%d}!\n", i);
-            uniformData_array[i].vkBuffer = VK_NULL_HANDLE;
+            amk_uniformData_sceneOne_array[i].vkBuffer = VK_NULL_HANDLE;
         }
     }
-    if(uniformData_array) {
-        free(uniformData_array);
-        fprintf(fptr, "uninitialize(): freed uniformData_array!.\n");
-        uniformData_array = NULL;
+    if(amk_uniformData_sceneOne_array) {
+        free(amk_uniformData_sceneOne_array);
+        fprintf(fptr, "uninitialize(): freed amk_uniformData_sceneOne_array!.\n");
+        amk_uniformData_sceneOne_array = NULL;
     }
 
     // Destroy Texture Sampler
@@ -1183,29 +1181,29 @@ void uninitialize(void){
     }
 
     // Destroy Vertex Buffer Color
-    if(vertexData_texcoord.vkDeviceMemory) {
-        vkFreeMemory(vkDevice, vertexData_texcoord.vkDeviceMemory, NULL);
+    if(amk_clouds_sceneOne_vertexData_texcoord.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, amk_clouds_sceneOne_vertexData_texcoord.vkDeviceMemory, NULL);
         fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for TexCoord!\n");
-        vertexData_texcoord.vkDeviceMemory = VK_NULL_HANDLE;
+        amk_clouds_sceneOne_vertexData_texcoord.vkDeviceMemory = VK_NULL_HANDLE;
     }
 
-    if(vertexData_texcoord.vkBuffer) {
-        vkDestroyBuffer(vkDevice, vertexData_texcoord.vkBuffer, NULL);
+    if(amk_clouds_sceneOne_vertexData_texcoord.vkBuffer) {
+        vkDestroyBuffer(vkDevice, amk_clouds_sceneOne_vertexData_texcoord.vkBuffer, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for TexCoord!\n");
-        vertexData_texcoord.vkBuffer = VK_NULL_HANDLE;
+        amk_clouds_sceneOne_vertexData_texcoord.vkBuffer = VK_NULL_HANDLE;
     }
 
     // Destroy Vertex Buffer Position
-    if(vertexData_position.vkDeviceMemory) {
-        vkFreeMemory(vkDevice, vertexData_position.vkDeviceMemory, NULL);
+    if(amk_clouds_sceneOne_vertexData_position.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, amk_clouds_sceneOne_vertexData_position.vkDeviceMemory, NULL);
         fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Position!\n");
-        vertexData_position.vkDeviceMemory = VK_NULL_HANDLE;
+        amk_clouds_sceneOne_vertexData_position.vkDeviceMemory = VK_NULL_HANDLE;
     }
 
-    if(vertexData_position.vkBuffer) {
-        vkDestroyBuffer(vkDevice, vertexData_position.vkBuffer, NULL);
+    if(amk_clouds_sceneOne_vertexData_position.vkBuffer) {
+        vkDestroyBuffer(vkDevice, amk_clouds_sceneOne_vertexData_position.vkBuffer, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Position!\n");
-        vertexData_position.vkBuffer = VK_NULL_HANDLE;
+        amk_clouds_sceneOne_vertexData_position.vkBuffer = VK_NULL_HANDLE;
     }
 
     // Destroy  Command Buffers
@@ -2420,7 +2418,7 @@ VkResult createVertexBuffer(void) {
 
     // VertexData for Triangle Position
     // Step 2
-    memset((void*)&vertexData_position, 0, sizeof(VertexData));
+    memset((void*)&amk_clouds_sceneOne_vertexData_position, 0, sizeof(VertexData));
 
     // Step 3
     VkBufferCreateInfo vkBufferCreateInfo;
@@ -2433,7 +2431,7 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
-    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_position.vkBuffer);
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &amk_clouds_sceneOne_vertexData_position.vkBuffer);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for Position!.\n");
         return (vkResult);
@@ -2445,7 +2443,7 @@ VkResult createVertexBuffer(void) {
     VkMemoryRequirements vkMemoryRequirements;
     memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
 
-    vkGetBufferMemoryRequirements(vkDevice, vertexData_position.vkBuffer, &vkMemoryRequirements);
+    vkGetBufferMemoryRequirements(vkDevice, amk_clouds_sceneOne_vertexData_position.vkBuffer, &vkMemoryRequirements);
 
     // Step 6
     VkMemoryAllocateInfo vkMemoryAllocateInfo;
@@ -2472,7 +2470,7 @@ VkResult createVertexBuffer(void) {
     }
 
     //Setp 9
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_position.vkDeviceMemory);
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &amk_clouds_sceneOne_vertexData_position.vkDeviceMemory);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for Position!.\n");
         return (vkResult);
@@ -2481,7 +2479,7 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 10
-    vkResult = vkBindBufferMemory(vkDevice, vertexData_position.vkBuffer, vertexData_position.vkDeviceMemory, 0);
+    vkResult = vkBindBufferMemory(vkDevice, amk_clouds_sceneOne_vertexData_position.vkBuffer, amk_clouds_sceneOne_vertexData_position.vkDeviceMemory, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for Position!.\n");
         return (vkResult);
@@ -2494,7 +2492,7 @@ VkResult createVertexBuffer(void) {
 
     vkResult = vkMapMemory(
         vkDevice,
-        vertexData_position.vkDeviceMemory,
+        amk_clouds_sceneOne_vertexData_position.vkDeviceMemory,
         0,
         vkMemoryAllocateInfo.allocationSize,
         0,
@@ -2512,12 +2510,12 @@ VkResult createVertexBuffer(void) {
     memcpy(data, rectangle_position, sizeof(rectangle_position));
 
     // Step 13
-    vkUnmapMemory(vkDevice, vertexData_position.vkDeviceMemory);
+    vkUnmapMemory(vkDevice, amk_clouds_sceneOne_vertexData_position.vkDeviceMemory);
 
     fprintf(fptr, "\n");
 
     // VertexData for Triangle Color
-    memset((void*)&vertexData_texcoord, 0, sizeof(VertexData));
+    memset((void*)&amk_clouds_sceneOne_vertexData_texcoord, 0, sizeof(VertexData));
 
     // Step 3
     memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
@@ -2529,7 +2527,7 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
-    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_texcoord.vkBuffer);
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &amk_clouds_sceneOne_vertexData_texcoord.vkBuffer);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for TexCoord!.\n");
         return (vkResult);
@@ -2540,7 +2538,7 @@ VkResult createVertexBuffer(void) {
     // Step 5
     memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
 
-    vkGetBufferMemoryRequirements(vkDevice, vertexData_texcoord.vkBuffer, &vkMemoryRequirements);
+    vkGetBufferMemoryRequirements(vkDevice, amk_clouds_sceneOne_vertexData_texcoord.vkBuffer, &vkMemoryRequirements);
 
     // Step 6
     memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
@@ -2566,7 +2564,7 @@ VkResult createVertexBuffer(void) {
     }
 
     //Setp 9
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_texcoord.vkDeviceMemory);
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &amk_clouds_sceneOne_vertexData_texcoord.vkDeviceMemory);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for TexCoord!.\n");
         return (vkResult);
@@ -2575,7 +2573,7 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 10
-    vkResult = vkBindBufferMemory(vkDevice, vertexData_texcoord.vkBuffer, vertexData_texcoord.vkDeviceMemory, 0);
+    vkResult = vkBindBufferMemory(vkDevice, amk_clouds_sceneOne_vertexData_texcoord.vkBuffer, amk_clouds_sceneOne_vertexData_texcoord.vkDeviceMemory, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for TexCoord!.\n");
         return (vkResult);
@@ -2588,7 +2586,7 @@ VkResult createVertexBuffer(void) {
 
     vkResult = vkMapMemory(
         vkDevice,
-        vertexData_texcoord.vkDeviceMemory,
+        amk_clouds_sceneOne_vertexData_texcoord.vkDeviceMemory,
         0,
         vkMemoryAllocateInfo.allocationSize,
         0,
@@ -2606,7 +2604,7 @@ VkResult createVertexBuffer(void) {
     memcpy(data, rectangle_texCoords, sizeof(rectangle_texCoords));
 
     // Step 13
-    vkUnmapMemory(vkDevice, vertexData_texcoord.vkDeviceMemory);
+    vkUnmapMemory(vkDevice, amk_clouds_sceneOne_vertexData_texcoord.vkDeviceMemory);
 
     return(vkResult);
 }
@@ -3219,9 +3217,9 @@ VkResult createUniformBuffer (void) {
     // variables
     VkResult vkResult = VK_SUCCESS;
 
-    for(uint32_t i = 0; i < CLOUDS_COUNT; i++) {
+    for(uint32_t i = 0; i < CLOUDS_COUNT_S1; i++) {
         
-        memset((void*)&uniformData_array[i], 0, sizeof(UniformData));
+        memset((void*)&amk_uniformData_sceneOne_array[i], 0, sizeof(UniformData));
 
         // Step 3
         VkBufferCreateInfo vkBufferCreateInfo;
@@ -3234,7 +3232,7 @@ VkResult createUniformBuffer (void) {
         vkBufferCreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         
         // Setp 4
-        vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &uniformData_array[i].vkBuffer);
+        vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &amk_uniformData_sceneOne_array[i].vkBuffer);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "createUniformBuffer(): vkCreateBuffer() Failed for %dth could!.\n", i);
             return (vkResult);
@@ -3246,7 +3244,7 @@ VkResult createUniformBuffer (void) {
         VkMemoryRequirements vkMemoryRequirements;
         memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
 
-        vkGetBufferMemoryRequirements(vkDevice, uniformData_array[i].vkBuffer, &vkMemoryRequirements);
+        vkGetBufferMemoryRequirements(vkDevice, amk_uniformData_sceneOne_array[i].vkBuffer, &vkMemoryRequirements);
 
         // Step 6
         VkMemoryAllocateInfo vkMemoryAllocateInfo;
@@ -3273,7 +3271,7 @@ VkResult createUniformBuffer (void) {
         }
 
         //Setp 9
-        vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &uniformData_array[i].vkDeviceMemory);
+        vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &amk_uniformData_sceneOne_array[i].vkDeviceMemory);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "createUniformBuffer(): vkAllocateMemory() Failed for %dth could!.\n", i);
             return (vkResult);
@@ -3282,7 +3280,7 @@ VkResult createUniformBuffer (void) {
         }
 
         // Step 10
-        vkResult = vkBindBufferMemory(vkDevice, uniformData_array[i].vkBuffer, uniformData_array[i].vkDeviceMemory, 0);
+        vkResult = vkBindBufferMemory(vkDevice, amk_uniformData_sceneOne_array[i].vkBuffer, amk_uniformData_sceneOne_array[i].vkDeviceMemory, 0);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "createUniformBuffer(): vkBindBufferMemory() Failed for %dth could!.\n", i);
             return (vkResult);
@@ -3314,31 +3312,9 @@ void calculatePrebakedCloudMatrices(void) {
     // variables
     float radius = 10.0f;
     float angle = 0.0f;
-    float inc = (2.0f * 3.14159265f) / (float)CLOUDS_COUNT; // in radians
+    float inc = (2.0f * 3.14159265f) / (float)CLOUDS_COUNT_S1; // in radians
 
-    for(uint32_t i = 0; i < CLOUDS_COUNT; i++) {
-        /* angle = i * inc;
-        prebakedModelMatrix_array[i] = glm::mat4(1.0f);
-        prebakedModelMatrix_array[i] = glm::translate(
-            glm::mat4(1.0f),
-            glm::vec3(
-                radius * sin(angle),
-                0.0f,
-                radius * cos(angle)
-            )
-        );
-        
-        prebakedModelMatrix_array[i] = glm::scale(
-            prebakedModelMatrix_array[i],
-            glm::vec3(1.0f * getRandomFloat(), 1.0f * getRandomFloat(), 1.0f)
-        ); */
-
-        /* prebakedModelMatrix_array[i] = glm::rotate(
-        prebakedModelMatrix_array[i],
-        -angle + glm::radians(90.0f),
-        glm::vec3(0.0f, 0.0f, 1.0f)
-        ); */
-
+    for(uint32_t i = 0; i < CLOUDS_COUNT_S1; i++) {
         glm::mat4 modelMat = glm::mat4(1.0f);
 
         float r = getRandomFloat() * 2.0f - 1.0f;
@@ -3346,15 +3322,13 @@ void calculatePrebakedCloudMatrices(void) {
         modelMat = glm::translate(
             modelMat, 
             glm::vec3(
-                (float)(getRandomFloat() * CLOUDS_SPREAD_X_MAX_FACTOR - CLOUDS_SPREAD_X_MIN_FACTOR), 
-                // (float)(getRandomFloat() * getRandomFloat() * CLOUDS_SPREAD_Y_MAX_FACTOR - CLOUDS_SPREAD_Y_MIN_FACTOR),
-                // (getRandomFloat() * 2.0f - 1.0f) * CLOUDS_SPREAD_Y_MAX_FACTOR,
-                r * r * CLOUDS_SPREAD_Y_MAX_FACTOR * (r < 0 ? -1.0f : 1.0f),
+                (float)(getRandomFloat() * CLOUDS_SPREAD_X_MAX_FACTOR_S1 - CLOUDS_SPREAD_X_MIN_FACTOR_S1), 
+                r * r * CLOUDS_SPREAD_Y_MAX_FACTOR_S1 * (r < 0 ? -1.0f : 1.0f),
                 -(float)i
             )
         );
 
-        float couldScale = (float)(getRandomFloat() * getRandomFloat() * CLOULDS_HEIGHT_MAX_FACTOR + CLOULDS_HEIGHT_MIN_FACTOR);
+        float couldScale = (float)(getRandomFloat() * getRandomFloat() * CLOULDS_HEIGHT_MAX_FACTOR_S1 + CLOULDS_HEIGHT_MIN_FACTOR_S1);
         modelMat = glm::scale(
             modelMat,
             glm::vec3(
@@ -3370,7 +3344,7 @@ void calculatePrebakedCloudMatrices(void) {
             glm::vec3(0.0f, 0.0f, 1.0f)
         );
 
-        prebakedModelMatrix_array[i] = modelMat;
+        amk_prebakedModelMatrix_sceneOne_array[i] = modelMat;
     }
 }
 
@@ -3399,28 +3373,28 @@ VkResult updateUniformBuffer(void) {
     float speed = deltaTime * 10.0f; // adjust speed
 
     if (movingForward) {
-        viewMat_eyeZ += speed;
-        if (viewMat_eyeZ >= CLOUDS_COUNT) {
+        amk_viewMat_eyeZ += speed;
+        if (amk_viewMat_eyeZ >= CLOUDS_COUNT_S1) {
             movingForward = false; // reverse
         }
     } else {
-        viewMat_eyeZ -= speed;
-        if (viewMat_eyeZ <= -20.0f) {
+        amk_viewMat_eyeZ -= speed;
+        if (amk_viewMat_eyeZ <= -20.0f) {
             movingForward = true; // forward
         }
     }
     // create viewMat at z = -2
     glm::mat4 viewMat = glm::mat4(1.0f);
-    viewMat = glm::translate(viewMat, glm::vec3(0.0f, 0.0f, viewMat_eyeZ));
+    viewMat = glm::translate(viewMat, glm::vec3(0.0f, 0.0f, amk_viewMat_eyeZ));
 
     perspectiveProjectionMatrix[1][1] *= -1.0f; // Invert Y axis for Vulkan
 
-    for(uint32_t i = 0; i <CLOUDS_COUNT; i++) {
+    for(uint32_t i = 0; i <CLOUDS_COUNT_S1; i++) {
         struct MyUniformData myUniformData;
         memset((void*)&myUniformData, 0, sizeof(struct MyUniformData));
 
         myUniformData.modelMatrix = glm::mat4(1.0f);
-        myUniformData.modelMatrix = prebakedModelMatrix_array[i];
+        myUniformData.modelMatrix = amk_prebakedModelMatrix_sceneOne_array[i];
 
         myUniformData.viewMatrix = viewMat;
         myUniformData.projectionMatrix = glm::mat4(1.0f);
@@ -3431,7 +3405,7 @@ VkResult updateUniformBuffer(void) {
 
         vkResult = vkMapMemory(
             vkDevice,
-            uniformData_array[i].vkDeviceMemory,
+            amk_uniformData_sceneOne_array[i].vkDeviceMemory,
             0,
             sizeof(struct MyUniformData),
             0,
@@ -3444,7 +3418,7 @@ VkResult updateUniformBuffer(void) {
 
         memcpy(data, &myUniformData, sizeof(struct MyUniformData));
 
-        vkUnmapMemory(vkDevice, uniformData_array[i].vkDeviceMemory);
+        vkUnmapMemory(vkDevice, amk_uniformData_sceneOne_array[i].vkDeviceMemory);
 
         // Free Data / Set it to NULL
         data = NULL;
@@ -3672,7 +3646,7 @@ VkResult createDescriptorPool(void) {
     vkDescriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     vkDescriptorPoolCreateInfo.pNext = NULL;
     vkDescriptorPoolCreateInfo.flags = 0;
-    vkDescriptorPoolCreateInfo.maxSets = CLOUDS_COUNT; // we have only one descriptor set layout but we will create multiple descriptor sets from it
+    vkDescriptorPoolCreateInfo.maxSets = CLOUDS_COUNT_S1; // we have only one descriptor set layout but we will create multiple descriptor sets from it
     vkDescriptorPoolCreateInfo.poolSizeCount = _ARRAYSIZE(vkDescriptorPoolSize_array);
     vkDescriptorPoolCreateInfo.pPoolSizes = vkDescriptorPoolSize_array;
 
@@ -3702,9 +3676,9 @@ VkResult createDescriptorSet(void) {
     vkDescriptorSetAllocateInfo.descriptorSetCount = 1; // we have only one descriptor set
     vkDescriptorSetAllocateInfo.pSetLayouts = &vkDescriptorSetLayout; // we have only one descriptor set layout
 
-    for(uint32_t i = 0; i < CLOUDS_COUNT; i++) {
+    for(uint32_t i = 0; i < CLOUDS_COUNT_S1; i++) {
         // Allocate Descriptor Set 
-        vkResult = vkAllocateDescriptorSets(vkDevice, &vkDescriptorSetAllocateInfo, &vkDescriptorSet_array[i]);
+        vkResult = vkAllocateDescriptorSets(vkDevice, &vkDescriptorSetAllocateInfo, &amk_vkDescriptorSet_sceneOne_array[i]);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "createDescriptorSet(): vkAllocateDescriptorSets() Failed!.\n");
             return (vkResult);
@@ -3718,7 +3692,7 @@ VkResult createDescriptorSet(void) {
         memset((void*)&vkDescriptorBufferInfo, 0, sizeof(VkDescriptorBufferInfo));
 
         // for mvp uniform
-        vkDescriptorBufferInfo.buffer = uniformData_array[i].vkBuffer; // this is the buffer we want to use as uniform
+        vkDescriptorBufferInfo.buffer = amk_uniformData_sceneOne_array[i].vkBuffer; // this is the buffer we want to use as uniform
         vkDescriptorBufferInfo.offset = 0; // offset is 0
         vkDescriptorBufferInfo.range = sizeof(struct MyUniformData); // range is size of uniform
 
@@ -3738,7 +3712,7 @@ VkResult createDescriptorSet(void) {
 
         vkWriteDescriptorSet_array[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         vkWriteDescriptorSet_array[0].pNext = NULL;
-        vkWriteDescriptorSet_array[0].dstSet = vkDescriptorSet_array[i]; // this is the descriptor set we want to update
+        vkWriteDescriptorSet_array[0].dstSet = amk_vkDescriptorSet_sceneOne_array[i]; // this is the descriptor set we want to update
         vkWriteDescriptorSet_array[0].dstArrayElement = 0; // we have only one descriptor set, so array element is 0
         vkWriteDescriptorSet_array[0].descriptorCount = 1; // we are only gonna write one descriptor set
         vkWriteDescriptorSet_array[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; 
@@ -3749,7 +3723,7 @@ VkResult createDescriptorSet(void) {
 
         vkWriteDescriptorSet_array[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         vkWriteDescriptorSet_array[1].pNext = NULL;
-        vkWriteDescriptorSet_array[1].dstSet = vkDescriptorSet_array[i]; // this is the descriptor set we want to update
+        vkWriteDescriptorSet_array[1].dstSet = amk_vkDescriptorSet_sceneOne_array[i]; // this is the descriptor set we want to update
         vkWriteDescriptorSet_array[1].dstArrayElement = 0; // we have only one descriptor set, so array element is 0
         vkWriteDescriptorSet_array[1].descriptorCount = 1; // we are only gonna write one descriptor set
         vkWriteDescriptorSet_array[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; 
@@ -4233,7 +4207,7 @@ VkResult buildCommandBuffers(void) {
         vkCmdBindVertexBuffers(
             vkCommandBuffer_array[i], 
             AMK_ATTRIBUTE_POSITION, 1,
-            &vertexData_position.vkBuffer,
+            &amk_clouds_sceneOne_vertexData_position.vkBuffer,
             vkDeviceSize_offset_position_array
         );
 
@@ -4244,18 +4218,18 @@ VkResult buildCommandBuffers(void) {
         vkCmdBindVertexBuffers(
             vkCommandBuffer_array[i], 
             AMK_ATTRIBUTE_TEXCOORD, 1,
-            &vertexData_texcoord.vkBuffer,
+            &amk_clouds_sceneOne_vertexData_texcoord.vkBuffer,
             vkDeviceSize_offset_texcoord_array
         );
 
-        for(uint32_t j = 0; j < CLOUDS_COUNT; j++) {
+        for(uint32_t j = 0; j < CLOUDS_COUNT_S1; j++) {
             // Bind Descriptor Set
             vkCmdBindDescriptorSets(
                 vkCommandBuffer_array[i],
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                 vkPipelineLayout,
                 0, 1,
-                &vkDescriptorSet_array[j], // this is the descriptor set we want to bind
+                &amk_vkDescriptorSet_sceneOne_array[j], // this is the descriptor set we want to bind
                 0, NULL
             );
 
