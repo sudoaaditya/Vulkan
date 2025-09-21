@@ -1,8 +1,14 @@
 del *.exe
 del *.obj
 del *.txt
+del *.res
+del *.spv
 
 cls
+
+C:\VulkanSDK\Vulkan\Bin\glslangValidator.exe -V -H -o shader.vert.spv shader.vert 
+
+C:\VulkanSDK\Vulkan\Bin\glslangValidator.exe -V -H -o shader.frag.spv shader.frag
 
 cl.exe /c /EHsc /I C:\VulkanSDK\Vulkan\include vk.cpp clockUtils\Clock.cpp
 

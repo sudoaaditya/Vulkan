@@ -29,10 +29,11 @@
 #define WIN_HEIGHT 600
 
 // CLOUDS RELATED CONSTANTS
-#define CLOUDS_COUNT 1000
-#define SPHERE_RADIUS 500.0f
-#define MIN_CLOUD_SIZE 5.0f
-#define MAX_CLOUD_SIZE 30.0f
+#define PI 3.14159265f
+#define CLOUDS_COUNT_S2 1000
+#define SPHERE_RADIUS_S2 500.0f
+#define MIN_CLOUD_SIZE_S2 5.0f
+#define MAX_CLOUD_SIZE_S2 30.0f
 
 // global variables
 BOOL gbFullScreen = FALSE;
@@ -129,39 +130,6 @@ const char *enabledValidationLayerNames_array[1]; //VK_LAYER_KHRONOS_validation
 VkDebugReportCallbackEXT vkDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT_fnptr = NULL;
 
-// Vertex Buffer
-typedef struct {
-    VkBuffer vkBuffer;
-    VkDeviceMemory vkDeviceMemory;
-} VertexData;
-
-// Position
-VertexData vertexData_position;
-// TexCoord
-VertexData vertexData_texcoord;
-
-// Uniform Related Declarations
-struct MyUniformData {
-    glm::mat4 modelMatrix;
-    glm::mat4 viewMatrix;
-    glm::mat4 projectionMatrix;
-    float cloudOpacity;
-    float elapsedTime;
-};
-
-typedef struct {
-    VkBuffer vkBuffer;
-    VkDeviceMemory vkDeviceMemory;
-} UniformData;
-
-UniformData *uniformData_array = NULL;
-
-// Prebaked Model Matrixes for Clouds
-glm::mat4 prebakedModelMatrix_array[CLOUDS_COUNT];
-// opacity values for clouds
-float cloudOpacity_array[CLOUDS_COUNT];
-Clock myClock;
-
 // Shader Variables
 VkShaderModule vkShaderModule_vertex = VK_NULL_HANDLE;
 VkShaderModule vkShaderModule_fragment = VK_NULL_HANDLE;
@@ -183,14 +151,51 @@ VkViewport vkViewport;
 VkRect2D vkRect2D_scissor;
 VkPipeline vkPipeline = VK_NULL_HANDLE;
 
-// Texture Related Variables
-VkImage vkImage_texture = VK_NULL_HANDLE;
-VkDeviceMemory vkDeviceMemory_texture = VK_NULL_HANDLE;
-VkImageView vkImageView_texture = VK_NULL_HANDLE;
 // Texture Sampler
 VkSampler vkSampler_texture = VK_NULL_HANDLE;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
+
+// Scene 2: Clouds related functions
+// Vertex Buffer
+typedef struct {
+    VkBuffer vkBuffer;
+    VkDeviceMemory vkDeviceMemory;
+} VertexData;
+
+// Position
+VertexData amk_vertexData_position_sceneTwo_cloud;
+// TexCoord
+VertexData amk_vertexData_texcoord_sceneTwo_cloud;
+// Uniform Related Declarations
+
+// Prebaked Model Matrixes for Clouds
+glm::mat4 amk_prebakedModelMatrix_sceneTwo_array[CLOUDS_COUNT_S2];
+// opacity values for clouds
+float amk_cloudOpacity_sceneTwo_array[CLOUDS_COUNT_S2];
+Clock myClock;
+struct MyUniformData {
+    glm::mat4 modelMatrix;
+    glm::mat4 viewMatrix;
+    glm::mat4 projectionMatrix;
+    float cloudOpacity;
+    float elapsedTime;
+};
+typedef struct {
+    VkBuffer vkBuffer;
+    VkDeviceMemory vkDeviceMemory;
+} UniformData;
+
+UniformData *amk_uniformData_sceneTwo_array = NULL;
+
+// Texture Related Variables
+VkImage vkImage_amk_texture_sceneTwo_cloud = VK_NULL_HANDLE;
+VkDeviceMemory vkDeviceMemory_amk_texture_sceneTwo_cloud = VK_NULL_HANDLE;
+VkImageView vkImageView_amk_texture_sceneTwo_cloud = VK_NULL_HANDLE;
+
+VkImage vkImage_amk_texture_sceneTwo_dark_cloud = VK_NULL_HANDLE;
+VkDeviceMemory vkDeviceMemory_amk_texture_sceneTwo_dark_cloud = VK_NULL_HANDLE;
+VkImageView vkImageView_amk_texture_sceneTwo_dark_cloud = VK_NULL_HANDLE;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
     // Func
@@ -444,7 +449,7 @@ VkResult initialize(void) {
     VkResult createCommandPool(void);
     VkResult createCommandBuffers(void);
     VkResult createVertexBuffer(void);
-    VkResult createTexture(const char*);
+    VkResult createTexture(const char*, VkImage*, VkDeviceMemory*, VkImageView*);
     VkResult createUniformBuffer(void);
     VkResult createShaders(void);
     VkResult createDescriptorSetLayout(void);
@@ -462,20 +467,20 @@ VkResult initialize(void) {
     VkResult vkResult = VK_SUCCESS;
 
     // malloc for clouds
-    uniformData_array = (UniformData*)malloc(sizeof(UniformData) * CLOUDS_COUNT);
-    if(uniformData_array == NULL) {
-        fprintf(fptr, "initialize(): malloc() Failed for uniformData_array!.\n");
+    amk_uniformData_sceneTwo_array = (UniformData*)malloc(sizeof(UniformData) * CLOUDS_COUNT_S2);
+    if(amk_uniformData_sceneTwo_array == NULL) {
+        fprintf(fptr, "initialize(): malloc() Failed for amk_uniformData_sceneTwo_array!.\n");
         return (VK_ERROR_INITIALIZATION_FAILED);
     } else {
-        memset((void*)uniformData_array, 0, sizeof(UniformData) * CLOUDS_COUNT);
+        memset((void*)amk_uniformData_sceneTwo_array, 0, sizeof(UniformData) * CLOUDS_COUNT_S2);
     }
 
-    vkDescriptorSet_array = (VkDescriptorSet*)malloc(sizeof(VkDescriptorSet) * CLOUDS_COUNT);
+    vkDescriptorSet_array = (VkDescriptorSet*)malloc(sizeof(VkDescriptorSet) * CLOUDS_COUNT_S2);
     if(vkDescriptorSet_array == NULL) {
         fprintf(fptr, "initialize(): malloc() Failed for vkDescriptorSet_array!.\n");
         return (VK_ERROR_INITIALIZATION_FAILED);
     } else {
-        memset((void*)vkDescriptorSet_array, 0, sizeof(VkDescriptorSet) * CLOUDS_COUNT);
+        memset((void*)vkDescriptorSet_array, 0, sizeof(VkDescriptorSet) * CLOUDS_COUNT_S2);
     }
 
     // code
@@ -571,12 +576,20 @@ VkResult initialize(void) {
     }
 
     // Create Texture
-    vkResult = createTexture("cloud.png");
+    vkResult = createTexture("cloud.png", &vkImage_amk_texture_sceneTwo_cloud, &vkDeviceMemory_amk_texture_sceneTwo_cloud, &vkImageView_amk_texture_sceneTwo_cloud);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "initialize(): createTexture() Failed!.\n");
+        fprintf(fptr, "initialize(): createTexture() Failed for Kundali!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "initialize(): createTexture() Successful!.\n\n");
+        fprintf(fptr, "initialize(): createTexture() Successful for Kundali!.\n\n");
+    }
+
+    vkResult = createTexture("cloud_dark.png", &vkImage_amk_texture_sceneTwo_dark_cloud, &vkDeviceMemory_amk_texture_sceneTwo_dark_cloud, &vkImageView_amk_texture_sceneTwo_dark_cloud);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): createTexture() Failed for Stone!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): createTexture() Successful for Stone!.\n\n");
     }
 
     // Create Uniform Buffer
@@ -1132,23 +1145,23 @@ void uninitialize(void){
     }
 
     // Destroy Uniform Buffer
-    for(uint32_t i = 0; i < CLOUDS_COUNT; i++) {
-        if(uniformData_array[i].vkDeviceMemory) {
-            vkFreeMemory(vkDevice, uniformData_array[i].vkDeviceMemory, NULL);
+    for(uint32_t i = 0; i < CLOUDS_COUNT_S2; i++) {
+        if(amk_uniformData_sceneTwo_array[i].vkDeviceMemory) {
+            vkFreeMemory(vkDevice, amk_uniformData_sceneTwo_array[i].vkDeviceMemory, NULL);
             fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Uniform Buffer Memory for {%d}!\n", i);
-            uniformData_array[i].vkDeviceMemory = VK_NULL_HANDLE;
+            amk_uniformData_sceneTwo_array[i].vkDeviceMemory = VK_NULL_HANDLE;
         }
 
-        if(uniformData_array[i].vkBuffer) {
-            vkDestroyBuffer(vkDevice, uniformData_array[i].vkBuffer, NULL);
+        if(amk_uniformData_sceneTwo_array[i].vkBuffer) {
+            vkDestroyBuffer(vkDevice, amk_uniformData_sceneTwo_array[i].vkBuffer, NULL);
             fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer for {%d}!\n", i);
-            uniformData_array[i].vkBuffer = VK_NULL_HANDLE;
+            amk_uniformData_sceneTwo_array[i].vkBuffer = VK_NULL_HANDLE;
         }
     }
-    if(uniformData_array) {
-        free(uniformData_array);
-        fprintf(fptr, "uninitialize(): freed uniformData_array!.\n");
-        uniformData_array = NULL;
+    if(amk_uniformData_sceneTwo_array) {
+        free(amk_uniformData_sceneTwo_array);
+        fprintf(fptr, "uninitialize(): freed amk_uniformData_sceneTwo_array!.\n");
+        amk_uniformData_sceneTwo_array = NULL;
     }
 
     // Destroy Texture Sampler
@@ -1159,50 +1172,71 @@ void uninitialize(void){
     }
 
     // Destroy Texture Image View
-    if(vkImageView_texture) {
-        vkDestroyImageView(vkDevice, vkImageView_texture, NULL);
+    if(vkImageView_amk_texture_sceneTwo_cloud) {
+        vkDestroyImageView(vkDevice, vkImageView_amk_texture_sceneTwo_cloud, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyImageView() Succeed for Texture Image View!\n");
-        vkImageView_texture = VK_NULL_HANDLE;
+        vkImageView_amk_texture_sceneTwo_cloud = VK_NULL_HANDLE;
     }
 
     // Destroy Texture Image Memory
-    if(vkDeviceMemory_texture) {
-        vkFreeMemory(vkDevice, vkDeviceMemory_texture, NULL);
+    if(vkDeviceMemory_amk_texture_sceneTwo_cloud) {
+        vkFreeMemory(vkDevice, vkDeviceMemory_amk_texture_sceneTwo_cloud, NULL);
         fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Texture Image Memory!\n");
-        vkDeviceMemory_texture = VK_NULL_HANDLE;
+        vkDeviceMemory_amk_texture_sceneTwo_cloud = VK_NULL_HANDLE;
     }
 
     // Destroy Texture Image
-    if(vkImage_texture) {
-        vkDestroyImage(vkDevice, vkImage_texture, NULL);
+    if(vkImage_amk_texture_sceneTwo_cloud) {
+        vkDestroyImage(vkDevice, vkImage_amk_texture_sceneTwo_cloud, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyImage() Succeed for Texture Image!\n");
-        vkImage_texture = VK_NULL_HANDLE;
+        vkImage_amk_texture_sceneTwo_cloud = VK_NULL_HANDLE;
+    }
+
+    // Destroy Texture Image View
+    if(vkImageView_amk_texture_sceneTwo_dark_cloud) {
+        vkDestroyImageView(vkDevice, vkImageView_amk_texture_sceneTwo_dark_cloud, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyImageView() Succeed for Texture Image View!\n");
+        vkImageView_amk_texture_sceneTwo_dark_cloud = VK_NULL_HANDLE;
+    }
+
+    // Destroy Texture Image Memory
+    if(vkDeviceMemory_amk_texture_sceneTwo_dark_cloud) {
+        vkFreeMemory(vkDevice, vkDeviceMemory_amk_texture_sceneTwo_dark_cloud, NULL);
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Texture Image Memory!\n");
+        vkDeviceMemory_amk_texture_sceneTwo_dark_cloud = VK_NULL_HANDLE;
+    }
+
+    // Destroy Texture Image
+    if(vkImage_amk_texture_sceneTwo_dark_cloud) {
+        vkDestroyImage(vkDevice, vkImage_amk_texture_sceneTwo_dark_cloud, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyImage() Succeed for Texture Image!\n");
+        vkImage_amk_texture_sceneTwo_dark_cloud = VK_NULL_HANDLE;
     }
 
     // Destroy Vertex Buffer Color
-    if(vertexData_texcoord.vkDeviceMemory) {
-        vkFreeMemory(vkDevice, vertexData_texcoord.vkDeviceMemory, NULL);
+    if(amk_vertexData_texcoord_sceneTwo_cloud.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, amk_vertexData_texcoord_sceneTwo_cloud.vkDeviceMemory, NULL);
         fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for TexCoord!\n");
-        vertexData_texcoord.vkDeviceMemory = VK_NULL_HANDLE;
+        amk_vertexData_texcoord_sceneTwo_cloud.vkDeviceMemory = VK_NULL_HANDLE;
     }
 
-    if(vertexData_texcoord.vkBuffer) {
-        vkDestroyBuffer(vkDevice, vertexData_texcoord.vkBuffer, NULL);
+    if(amk_vertexData_texcoord_sceneTwo_cloud.vkBuffer) {
+        vkDestroyBuffer(vkDevice, amk_vertexData_texcoord_sceneTwo_cloud.vkBuffer, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for TexCoord!\n");
-        vertexData_texcoord.vkBuffer = VK_NULL_HANDLE;
+        amk_vertexData_texcoord_sceneTwo_cloud.vkBuffer = VK_NULL_HANDLE;
     }
 
     // Destroy Vertex Buffer Position
-    if(vertexData_position.vkDeviceMemory) {
-        vkFreeMemory(vkDevice, vertexData_position.vkDeviceMemory, NULL);
+    if(amk_vertexData_position_sceneTwo_cloud.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, amk_vertexData_position_sceneTwo_cloud.vkDeviceMemory, NULL);
         fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Position!\n");
-        vertexData_position.vkDeviceMemory = VK_NULL_HANDLE;
+        amk_vertexData_position_sceneTwo_cloud.vkDeviceMemory = VK_NULL_HANDLE;
     }
 
-    if(vertexData_position.vkBuffer) {
-        vkDestroyBuffer(vkDevice, vertexData_position.vkBuffer, NULL);
+    if(amk_vertexData_position_sceneTwo_cloud.vkBuffer) {
+        vkDestroyBuffer(vkDevice, amk_vertexData_position_sceneTwo_cloud.vkBuffer, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Position!\n");
-        vertexData_position.vkBuffer = VK_NULL_HANDLE;
+        amk_vertexData_position_sceneTwo_cloud.vkBuffer = VK_NULL_HANDLE;
     }
 
     // Destroy  Command Buffers
@@ -2417,7 +2451,7 @@ VkResult createVertexBuffer(void) {
 
     // VertexData for Triangle Position
     // Step 2
-    memset((void*)&vertexData_position, 0, sizeof(VertexData));
+    memset((void*)&amk_vertexData_position_sceneTwo_cloud, 0, sizeof(VertexData));
 
     // Step 3
     VkBufferCreateInfo vkBufferCreateInfo;
@@ -2430,7 +2464,7 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
-    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_position.vkBuffer);
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &amk_vertexData_position_sceneTwo_cloud.vkBuffer);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for Position!.\n");
         return (vkResult);
@@ -2442,7 +2476,7 @@ VkResult createVertexBuffer(void) {
     VkMemoryRequirements vkMemoryRequirements;
     memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
 
-    vkGetBufferMemoryRequirements(vkDevice, vertexData_position.vkBuffer, &vkMemoryRequirements);
+    vkGetBufferMemoryRequirements(vkDevice, amk_vertexData_position_sceneTwo_cloud.vkBuffer, &vkMemoryRequirements);
 
     // Step 6
     VkMemoryAllocateInfo vkMemoryAllocateInfo;
@@ -2469,7 +2503,7 @@ VkResult createVertexBuffer(void) {
     }
 
     //Setp 9
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_position.vkDeviceMemory);
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &amk_vertexData_position_sceneTwo_cloud.vkDeviceMemory);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for Position!.\n");
         return (vkResult);
@@ -2478,7 +2512,7 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 10
-    vkResult = vkBindBufferMemory(vkDevice, vertexData_position.vkBuffer, vertexData_position.vkDeviceMemory, 0);
+    vkResult = vkBindBufferMemory(vkDevice, amk_vertexData_position_sceneTwo_cloud.vkBuffer, amk_vertexData_position_sceneTwo_cloud.vkDeviceMemory, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for Position!.\n");
         return (vkResult);
@@ -2491,7 +2525,7 @@ VkResult createVertexBuffer(void) {
 
     vkResult = vkMapMemory(
         vkDevice,
-        vertexData_position.vkDeviceMemory,
+        amk_vertexData_position_sceneTwo_cloud.vkDeviceMemory,
         0,
         vkMemoryAllocateInfo.allocationSize,
         0,
@@ -2509,12 +2543,12 @@ VkResult createVertexBuffer(void) {
     memcpy(data, rectangle_position, sizeof(rectangle_position));
 
     // Step 13
-    vkUnmapMemory(vkDevice, vertexData_position.vkDeviceMemory);
+    vkUnmapMemory(vkDevice, amk_vertexData_position_sceneTwo_cloud.vkDeviceMemory);
 
     fprintf(fptr, "\n");
 
     // VertexData for Triangle Color
-    memset((void*)&vertexData_texcoord, 0, sizeof(VertexData));
+    memset((void*)&amk_vertexData_texcoord_sceneTwo_cloud, 0, sizeof(VertexData));
 
     // Step 3
     memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
@@ -2526,7 +2560,7 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
-    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_texcoord.vkBuffer);
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &amk_vertexData_texcoord_sceneTwo_cloud.vkBuffer);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for TexCoord!.\n");
         return (vkResult);
@@ -2537,7 +2571,7 @@ VkResult createVertexBuffer(void) {
     // Step 5
     memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
 
-    vkGetBufferMemoryRequirements(vkDevice, vertexData_texcoord.vkBuffer, &vkMemoryRequirements);
+    vkGetBufferMemoryRequirements(vkDevice, amk_vertexData_texcoord_sceneTwo_cloud.vkBuffer, &vkMemoryRequirements);
 
     // Step 6
     memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
@@ -2563,7 +2597,7 @@ VkResult createVertexBuffer(void) {
     }
 
     //Setp 9
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_texcoord.vkDeviceMemory);
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &amk_vertexData_texcoord_sceneTwo_cloud.vkDeviceMemory);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for TexCoord!.\n");
         return (vkResult);
@@ -2572,7 +2606,7 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 10
-    vkResult = vkBindBufferMemory(vkDevice, vertexData_texcoord.vkBuffer, vertexData_texcoord.vkDeviceMemory, 0);
+    vkResult = vkBindBufferMemory(vkDevice, amk_vertexData_texcoord_sceneTwo_cloud.vkBuffer, amk_vertexData_texcoord_sceneTwo_cloud.vkDeviceMemory, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for TexCoord!.\n");
         return (vkResult);
@@ -2585,7 +2619,7 @@ VkResult createVertexBuffer(void) {
 
     vkResult = vkMapMemory(
         vkDevice,
-        vertexData_texcoord.vkDeviceMemory,
+        amk_vertexData_texcoord_sceneTwo_cloud.vkDeviceMemory,
         0,
         vkMemoryAllocateInfo.allocationSize,
         0,
@@ -2603,12 +2637,12 @@ VkResult createVertexBuffer(void) {
     memcpy(data, rectangle_texCoords, sizeof(rectangle_texCoords));
 
     // Step 13
-    vkUnmapMemory(vkDevice, vertexData_texcoord.vkDeviceMemory);
+    vkUnmapMemory(vkDevice, amk_vertexData_texcoord_sceneTwo_cloud.vkDeviceMemory);
 
     return(vkResult);
 }
 
-VkResult createTexture(const char*  textureFileName) {
+VkResult createTexture(const char *textureFileName, VkImage *vkImage_texture, VkDeviceMemory *vkDeviceMemory_texture, VkImageView *vkImageView_texture) {
     // variables
     VkResult vkResult = VK_SUCCESS;
 
@@ -2655,8 +2689,6 @@ VkResult createTexture(const char*  textureFileName) {
     vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo_stagingBuffer, NULL, &vkBuffer_stagingBuffer);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkCreateBuffer() Failed for Staging Buffer!.\n");
-        /* stbi_image_free(image_data);
-        fclose(fp); */
         return(vkResult);
     } else {
         fprintf(fptr, "createTexture(): vkCreateBuffer() Successful for Staging Buffer!.\n");
@@ -2690,9 +2722,6 @@ VkResult createTexture(const char*  textureFileName) {
     vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_stagingBuffer, NULL, &vkDeviceMemory_stagingBuffer);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkAllocateMemory() Failed for Staging Buffer!.\n");
-        /* vkDestroyBuffer(vkDevice, vkBuffer_stagingBuffer, NULL);
-        stbi_image_free(image_data);
-        fclose(fp); */
         return(vkResult);
     } else {
         fprintf(fptr, "createTexture(): vkAllocateMemory() Successful for Staging Buffer!.\n");
@@ -2701,10 +2730,6 @@ VkResult createTexture(const char*  textureFileName) {
     vkBindBufferMemory(vkDevice, vkBuffer_stagingBuffer, vkDeviceMemory_stagingBuffer, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkBindBufferMemory() Failed for Staging Buffer!.\n");
-        /* vkFreeMemory(vkDevice, vkDeviceMemory_stagingBuffer, NULL);
-        vkDestroyBuffer(vkDevice, vkBuffer_stagingBuffer, NULL);
-        stbi_image_free(image_data);
-        fclose(fp); */
         return(vkResult);
     } else {
         fprintf(fptr, "createTexture(): vkBindBufferMemory() Successful for Staging Buffer!.\n");
@@ -2758,7 +2783,7 @@ VkResult createTexture(const char*  textureFileName) {
     vkImageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     vkImageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // Initial Layout is Undefined as we will be transferring data to it
 
-    vkResult = vkCreateImage(vkDevice, &vkImageCreateInfo, NULL, &vkImage_texture);
+    vkResult = vkCreateImage(vkDevice, &vkImageCreateInfo, NULL, vkImage_texture);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkCreateImage() Failed for Texture Image!.\n");
         return(vkResult);
@@ -2769,7 +2794,7 @@ VkResult createTexture(const char*  textureFileName) {
     VkMemoryRequirements vkMemoryRequirements_image;
     memset((void*)&vkMemoryRequirements_image, 0, sizeof(VkMemoryRequirements));
 
-    vkGetImageMemoryRequirements(vkDevice, vkImage_texture, &vkMemoryRequirements_image);
+    vkGetImageMemoryRequirements(vkDevice, *vkImage_texture, &vkMemoryRequirements_image);
 
     VkMemoryAllocateInfo vkMemoryAllocateInfo_image;
     memset((void*)&vkMemoryAllocateInfo_image, 0, sizeof(VkMemoryAllocateInfo));
@@ -2789,7 +2814,7 @@ VkResult createTexture(const char*  textureFileName) {
         vkMemoryRequirements_image.memoryTypeBits >>= 1;
     }
 
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_image, NULL, &vkDeviceMemory_texture);
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_image, NULL, vkDeviceMemory_texture);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkAllocateMemory() Failed for Texture Image!.\n");
         return(vkResult);
@@ -2797,7 +2822,7 @@ VkResult createTexture(const char*  textureFileName) {
         fprintf(fptr, "createTexture(): vkAllocateMemory() Successful for Texture Image!.\n");
     }
 
-    vkResult = vkBindImageMemory(vkDevice, vkImage_texture, vkDeviceMemory_texture, 0);
+    vkResult = vkBindImageMemory(vkDevice, *vkImage_texture, *vkDeviceMemory_texture, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkBindImageMemory() Failed for Texture Image!.\n");
         return(vkResult);
@@ -2851,7 +2876,7 @@ VkResult createTexture(const char*  textureFileName) {
     vkImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     vkImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     vkImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    vkImageMemoryBarrier.image = vkImage_texture;
+    vkImageMemoryBarrier.image = *vkImage_texture;
     vkImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     vkImageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
     vkImageMemoryBarrier.subresourceRange.baseMipLevel = 0;
@@ -2980,7 +3005,7 @@ VkResult createTexture(const char*  textureFileName) {
     vkCmdCopyBufferToImage(
         vkCommandBuffer_buffer_to_image_copy,
         vkBuffer_stagingBuffer,
-        vkImage_texture,
+        *vkImage_texture,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1, // Number of regions
         &vkBufferImageCopy
@@ -3067,7 +3092,7 @@ VkResult createTexture(const char*  textureFileName) {
     vkImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     vkImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     vkImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    vkImageMemoryBarrier.image = vkImage_texture;
+    vkImageMemoryBarrier.image = *vkImage_texture;
     vkImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     vkImageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
     vkImageMemoryBarrier.subresourceRange.baseMipLevel = 0;
@@ -3167,9 +3192,9 @@ VkResult createTexture(const char*  textureFileName) {
     vkImageViewCreateInfo.subresourceRange.layerCount = 1;
     vkImageViewCreateInfo.subresourceRange.levelCount = 1;
     vkImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    vkImageViewCreateInfo.image = vkImage_texture;
+    vkImageViewCreateInfo.image = *vkImage_texture;
 
-    vkResult = vkCreateImageView(vkDevice, &vkImageViewCreateInfo, NULL, &vkImageView_texture);
+    vkResult = vkCreateImageView(vkDevice, &vkImageViewCreateInfo, NULL, vkImageView_texture);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkCreateImageView() Failed for Texture Image!.\n");
         return (vkResult);
@@ -3207,7 +3232,6 @@ VkResult createTexture(const char*  textureFileName) {
     return(vkResult);
 }
 
-
 VkResult createUniformBuffer (void) {
     // functions
     VkResult updateUniformBuffer(void);
@@ -3216,9 +3240,9 @@ VkResult createUniformBuffer (void) {
     // variables
     VkResult vkResult = VK_SUCCESS;
 
-    for(uint32_t i = 0; i < CLOUDS_COUNT; i++) {
+    for(uint32_t i = 0; i < CLOUDS_COUNT_S2; i++) {
         
-        memset((void*)&uniformData_array[i], 0, sizeof(UniformData));
+        memset((void*)&amk_uniformData_sceneTwo_array[i], 0, sizeof(UniformData));
 
         // Step 3
         VkBufferCreateInfo vkBufferCreateInfo;
@@ -3231,7 +3255,7 @@ VkResult createUniformBuffer (void) {
         vkBufferCreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         
         // Setp 4
-        vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &uniformData_array[i].vkBuffer);
+        vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &amk_uniformData_sceneTwo_array[i].vkBuffer);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "createUniformBuffer(): vkCreateBuffer() Failed for %dth could!.\n", i);
             return (vkResult);
@@ -3243,7 +3267,7 @@ VkResult createUniformBuffer (void) {
         VkMemoryRequirements vkMemoryRequirements;
         memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
 
-        vkGetBufferMemoryRequirements(vkDevice, uniformData_array[i].vkBuffer, &vkMemoryRequirements);
+        vkGetBufferMemoryRequirements(vkDevice, amk_uniformData_sceneTwo_array[i].vkBuffer, &vkMemoryRequirements);
 
         // Step 6
         VkMemoryAllocateInfo vkMemoryAllocateInfo;
@@ -3270,7 +3294,7 @@ VkResult createUniformBuffer (void) {
         }
 
         //Setp 9
-        vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &uniformData_array[i].vkDeviceMemory);
+        vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &amk_uniformData_sceneTwo_array[i].vkDeviceMemory);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "createUniformBuffer(): vkAllocateMemory() Failed for %dth could!.\n", i);
             return (vkResult);
@@ -3279,7 +3303,7 @@ VkResult createUniformBuffer (void) {
         }
 
         // Step 10
-        vkResult = vkBindBufferMemory(vkDevice, uniformData_array[i].vkBuffer, uniformData_array[i].vkDeviceMemory, 0);
+        vkResult = vkBindBufferMemory(vkDevice, amk_uniformData_sceneTwo_array[i].vkBuffer, amk_uniformData_sceneTwo_array[i].vkDeviceMemory, 0);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "createUniformBuffer(): vkBindBufferMemory() Failed for %dth could!.\n", i);
             return (vkResult);
@@ -3303,60 +3327,17 @@ VkResult createUniformBuffer (void) {
     return (vkResult);
 }
 
-/* void calculatePrebakedCloudMatrices(void) {
-
-    // functions
-    float getRandomFloat(void);
-
-    // variables
-    float radius = 10.0f;
-    float angle = 0.0f;
-    float inc = (2.0f * 3.14159265f) / (float)CLOUDS_COUNT; // in radians
-
-    for(uint32_t i = 0; i < CLOUDS_COUNT; i++) {
-
-        glm::mat4 modelMat = glm::mat4(1.0f);
-
-        modelMat = glm::translate(
-            modelMat, 
-            glm::vec3(
-                (float)(getRandomFloat() * 100 - 50), 
-                (float)(getRandomFloat() * getRandomFloat() * 25 - 1.5),
-                -(float)i
-            )
-        );
-
-        modelMat = glm::rotate(
-            modelMat,
-            glm::radians((float)(rand() * 3.14159265)),
-            glm::vec3(0.0f, 0.0f, 1.0f)
-        );
-
-        float couldScale = (float)(getRandomFloat() * 15 + 0.7);
-        modelMat = glm::scale(
-            modelMat,
-            glm::vec3(
-                couldScale, 
-                couldScale, 
-                1.0f
-            )
-        );
-
-        prebakedModelMatrix_array[i] = modelMat;
-    }
-} */
-
 void calculatePrebakedCloudMatrices(void) {
 
     float getRandomFloat(void);
 
-    float radius = SPHERE_RADIUS; // hemisphere radius
-    for (uint32_t i = 0; i < CLOUDS_COUNT; i++) {
+    float radius = SPHERE_RADIUS_S2; // hemisphere radius
+    for (uint32_t i = 0; i < CLOUDS_COUNT_S2; i++) {
 
         glm::mat4 modelMat = glm::mat4(1.0f);
 
-        float theta = getRandomFloat() * 2.0f * 3.14159265f; // azimuth [0, 2π)
-        float phi   = getRandomFloat() * 0.5f * 3.14159265f; // elevation [0, π/2] -> only hemisphere (upper half)
+        float theta = getRandomFloat() * 2.0f * PI; // azimuth 
+        float phi   = getRandomFloat() * 0.5f * PI; // elevation
 
         float x = radius * cos(phi) * cos(theta);
         float y = radius * sin(phi); // height (up)
@@ -3371,23 +3352,15 @@ void calculatePrebakedCloudMatrices(void) {
         if (glm::length(rotationAxis) > 0.0001f)
             modelMat = glm::rotate(modelMat, rotationAngle, glm::normalize(rotationAxis));
 
-       /*  // ---- Random additional rotation around local X-axis ----
-        modelMat = glm::rotate(
-            modelMat,
-            glm::radians(getRandomFloat() * 360.0f),
-            glm::vec3(1.0f, 0.0f, 0.0f)
-        ); */
-
-        // ---- Scale ----
-        float cloudScale = getRandomFloat() * MAX_CLOUD_SIZE + MIN_CLOUD_SIZE;
+        float cloudScale = getRandomFloat() * MAX_CLOUD_SIZE_S2 + MIN_CLOUD_SIZE_S2;
         cloudScale *= (1.0f + (y / radius)); // larger clouds at higher altitudes
         modelMat = glm::scale(modelMat, glm::vec3(cloudScale, cloudScale, 1.0f));
 
-        prebakedModelMatrix_array[i] = modelMat;
+        amk_prebakedModelMatrix_sceneTwo_array[i] = modelMat;
 
         // cloud opacity based on height (y)
-        cloudOpacity_array[i] = 1.0f - (y / radius);
-        cloudOpacity_array[i] = glm::clamp(cloudOpacity_array[i], 0.3f, 0.8f);
+        amk_cloudOpacity_sceneTwo_array[i] = 1.0f - (y / radius);
+        amk_cloudOpacity_sceneTwo_array[i] = glm::clamp(amk_cloudOpacity_sceneTwo_array[i], 0.3f, 0.8f);
     }
 }
 
@@ -3412,20 +3385,20 @@ VkResult updateUniformBuffer(void) {
     glm::mat4 viewMat = glm::mat4(1.0f);
     viewMat = glm::translate(viewMat, glm::vec3(0.0f, 0.0f, -20.0f)); */
 
-    glm::vec3 camPos   = glm::vec3(0.0f, -SPHERE_RADIUS, 0.0f);
-    glm::vec3 target   = glm::vec3(0.0f,  0.0f, 0.0f);
+    glm::vec3 camPos   = glm::vec3(0.0f, -SPHERE_RADIUS_S2, 0.0f);
+    glm::vec3 target   = glm::vec3(0.0f,  SPHERE_RADIUS_S2, 0.0f);
     glm::vec3 upVector = glm::vec3(0.0f,  0.0f, -1.0f);
 
     glm::mat4 viewMat = glm::lookAt(camPos, target, upVector);
 
     perspectiveProjectionMatrix[1][1] *= -1.0f; // Invert Y axis for Vulkan
 
-    for(uint32_t i = 0; i <CLOUDS_COUNT; i++) {
+    for(uint32_t i = 0; i <CLOUDS_COUNT_S2; i++) {
         struct MyUniformData myUniformData;
         memset((void*)&myUniformData, 0, sizeof(struct MyUniformData));
 
         myUniformData.modelMatrix = glm::mat4(1.0f);
-        myUniformData.modelMatrix = prebakedModelMatrix_array[i];
+        myUniformData.modelMatrix = amk_prebakedModelMatrix_sceneTwo_array[i];
 
         myUniformData.viewMatrix = viewMat;
         myUniformData.projectionMatrix = glm::mat4(1.0f);
@@ -3435,14 +3408,14 @@ VkResult updateUniformBuffer(void) {
         // clamp values to animate clouds with elapsed time
         float elapsedTime = (float) myClock.getElapsedTime();
 
-        myUniformData.cloudOpacity = cloudOpacity_array[i];
+        myUniformData.cloudOpacity = amk_cloudOpacity_sceneTwo_array[i];
         myUniformData.elapsedTime = elapsedTime;
         
         void *data = NULL;
 
         vkResult = vkMapMemory(
             vkDevice,
-            uniformData_array[i].vkDeviceMemory,
+            amk_uniformData_sceneTwo_array[i].vkDeviceMemory,
             0,
             sizeof(struct MyUniformData),
             0,
@@ -3455,7 +3428,7 @@ VkResult updateUniformBuffer(void) {
 
         memcpy(data, &myUniformData, sizeof(struct MyUniformData));
 
-        vkUnmapMemory(vkDevice, uniformData_array[i].vkDeviceMemory);
+        vkUnmapMemory(vkDevice, amk_uniformData_sceneTwo_array[i].vkDeviceMemory);
 
         // Free Data / Set it to NULL
         data = NULL;
@@ -3607,7 +3580,7 @@ VkResult createDescriptorSetLayout(void) {
     // 2nd element is for texture image & sampler
     vkDescriptorSetLayoutBinding_array[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     vkDescriptorSetLayoutBinding_array[1].binding = 1; // this 0 is  the binding index, we will use this index in shader
-    vkDescriptorSetLayoutBinding_array[1].descriptorCount = 1; 
+    vkDescriptorSetLayoutBinding_array[1].descriptorCount = 2; 
     vkDescriptorSetLayoutBinding_array[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT; // this binding will be used in fragment shader
     vkDescriptorSetLayoutBinding_array[1].pImmutableSamplers = NULL; // we don't have any immutable samplers for now
 
@@ -3683,7 +3656,7 @@ VkResult createDescriptorPool(void) {
     vkDescriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     vkDescriptorPoolCreateInfo.pNext = NULL;
     vkDescriptorPoolCreateInfo.flags = 0;
-    vkDescriptorPoolCreateInfo.maxSets = CLOUDS_COUNT; // we have only one descriptor set layout but we will create multiple descriptor sets from it
+    vkDescriptorPoolCreateInfo.maxSets = CLOUDS_COUNT_S2; // we have only one descriptor set layout but we will create multiple descriptor sets from it
     vkDescriptorPoolCreateInfo.poolSizeCount = _ARRAYSIZE(vkDescriptorPoolSize_array);
     vkDescriptorPoolCreateInfo.pPoolSizes = vkDescriptorPoolSize_array;
 
@@ -3713,7 +3686,7 @@ VkResult createDescriptorSet(void) {
     vkDescriptorSetAllocateInfo.descriptorSetCount = 1; // we have only one descriptor set
     vkDescriptorSetAllocateInfo.pSetLayouts = &vkDescriptorSetLayout; // we have only one descriptor set layout
 
-    for(uint32_t i = 0; i < CLOUDS_COUNT; i++) {
+    for(uint32_t i = 0; i < CLOUDS_COUNT_S2; i++) {
         // Allocate Descriptor Set 
         vkResult = vkAllocateDescriptorSets(vkDevice, &vkDescriptorSetAllocateInfo, &vkDescriptorSet_array[i]);
         if(vkResult != VK_SUCCESS) {
@@ -3729,17 +3702,21 @@ VkResult createDescriptorSet(void) {
         memset((void*)&vkDescriptorBufferInfo, 0, sizeof(VkDescriptorBufferInfo));
 
         // for mvp uniform
-        vkDescriptorBufferInfo.buffer = uniformData_array[i].vkBuffer; // this is the buffer we want to use as uniform
+        vkDescriptorBufferInfo.buffer = amk_uniformData_sceneTwo_array[i].vkBuffer; // this is the buffer we want to use as uniform
         vkDescriptorBufferInfo.offset = 0; // offset is 0
         vkDescriptorBufferInfo.range = sizeof(struct MyUniformData); // range is size of uniform
 
         // for texture sampler
-        VkDescriptorImageInfo vkDescriptorImageInfo;
-        memset((void*)&vkDescriptorImageInfo, 0, sizeof(VkDescriptorImageInfo));
+        VkDescriptorImageInfo vkDescriptorImageInfo_array[2];
+        memset((void*)&vkDescriptorImageInfo_array, 0, sizeof(VkDescriptorImageInfo) * _ARRAYSIZE(vkDescriptorImageInfo_array));
 
-        vkDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        vkDescriptorImageInfo.imageView = vkImageView_texture;
-        vkDescriptorImageInfo.sampler = vkSampler_texture;
+        vkDescriptorImageInfo_array[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vkDescriptorImageInfo_array[0].imageView = vkImageView_amk_texture_sceneTwo_cloud;
+        vkDescriptorImageInfo_array[0].sampler = vkSampler_texture;
+
+        vkDescriptorImageInfo_array[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vkDescriptorImageInfo_array[1].imageView = vkImageView_amk_texture_sceneTwo_dark_cloud;
+        vkDescriptorImageInfo_array[1].sampler = vkSampler_texture;
 
         // Now update the descriptor set with the buffer directly to the shader
         // we will write to the shader
@@ -3762,10 +3739,10 @@ VkResult createDescriptorSet(void) {
         vkWriteDescriptorSet_array[1].pNext = NULL;
         vkWriteDescriptorSet_array[1].dstSet = vkDescriptorSet_array[i]; // this is the descriptor set we want to update
         vkWriteDescriptorSet_array[1].dstArrayElement = 0; // we have only one descriptor set, so array element is 0
-        vkWriteDescriptorSet_array[1].descriptorCount = 1; // we are only gonna write one descriptor set
+        vkWriteDescriptorSet_array[1].descriptorCount = 2; // we are only gonna write one descriptor set
         vkWriteDescriptorSet_array[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; 
         vkWriteDescriptorSet_array[1].pBufferInfo = NULL;
-        vkWriteDescriptorSet_array[1].pImageInfo = &vkDescriptorImageInfo; // we'll use this during texture
+        vkWriteDescriptorSet_array[1].pImageInfo = vkDescriptorImageInfo_array; // we'll use this during texture
         vkWriteDescriptorSet_array[1].pTexelBufferView = NULL; // using for tiling of texture but we're not using it now
         vkWriteDescriptorSet_array[1].dstBinding = 1; // this is the binding index we used in descriptor set layout & shader
 
@@ -4244,7 +4221,7 @@ VkResult buildCommandBuffers(void) {
         vkCmdBindVertexBuffers(
             vkCommandBuffer_array[i], 
             AMK_ATTRIBUTE_POSITION, 1,
-            &vertexData_position.vkBuffer,
+            &amk_vertexData_position_sceneTwo_cloud.vkBuffer,
             vkDeviceSize_offset_position_array
         );
 
@@ -4255,11 +4232,11 @@ VkResult buildCommandBuffers(void) {
         vkCmdBindVertexBuffers(
             vkCommandBuffer_array[i], 
             AMK_ATTRIBUTE_TEXCOORD, 1,
-            &vertexData_texcoord.vkBuffer,
+            &amk_vertexData_texcoord_sceneTwo_cloud.vkBuffer,
             vkDeviceSize_offset_texcoord_array
         );
 
-        for(uint32_t j = 0; j < CLOUDS_COUNT; j++) {
+        for(uint32_t j = 0; j < CLOUDS_COUNT_S2; j++) {
             // Bind Descriptor Set
             vkCmdBindDescriptorSets(
                 vkCommandBuffer_array[i],
