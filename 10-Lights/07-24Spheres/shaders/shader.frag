@@ -15,13 +15,17 @@ layout(binding = 0) uniform myUniformData {
     vec4 lightDiffuse;
     vec4 lightSpecular;
     vec4 lightPosition;
-    vec4 materialAmbient;
-    vec4 materialDiffuse;
-    vec4 materialSpecular;
-    float materialShininess;
     // Key Pressed Uniform
     uint lKeyPressed;
 } uMyUniforms;
+
+layout(push_constant) uniform PushConstantData_Material {
+    // For Material
+    vec4 materialAmbient; // ambient
+    vec4 materialDiffuse; // diffuse
+    vec4 materialSpecular; // specular
+    float materialShininess;
+} pushConstantData_material;
 
 
 layout(location = 0) out vec4 FragColor;
@@ -35,11 +39,11 @@ void main(void) {
 
         float tn_dot_ld = max(dot(n_lightDirection, n_tNormal), 0.0);
         vec3 reflectionVector = reflect(-n_lightDirection, n_tNormal);
-        float rv_dot_vv_pow_shine = pow(max(dot(reflectionVector, n_viewerVec), 0.0), uMyUniforms.materialShininess);
+        float rv_dot_vv_pow_shine = pow(max(dot(reflectionVector, n_viewerVec), 0.0), pushConstantData_material.materialShininess);
 
-        vec3 ambient = vec3(uMyUniforms.lightAmbient * uMyUniforms.materialAmbient);
-        vec3 diffuse = vec3(uMyUniforms.lightDiffuse * uMyUniforms.materialDiffuse * tn_dot_ld);
-        vec3 specular = vec3(uMyUniforms.lightSpecular * uMyUniforms.materialSpecular * rv_dot_vv_pow_shine);
+        vec3 ambient = vec3(uMyUniforms.lightAmbient * pushConstantData_material.materialAmbient);
+        vec3 diffuse = vec3(uMyUniforms.lightDiffuse * pushConstantData_material.materialDiffuse * tn_dot_ld);
+        vec3 specular = vec3(uMyUniforms.lightSpecular * pushConstantData_material.materialSpecular * rv_dot_vv_pow_shine);
         
         phong_ads_light = ambient + diffuse + specular;
     }

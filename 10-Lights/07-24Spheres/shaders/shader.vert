@@ -14,10 +14,6 @@ layout(binding = 0) uniform myUniformData {
     vec4 lightDiffuse;
     vec4 lightSpecular;
     vec4 lightPosition;
-    vec4 materialAmbient;
-    vec4 materialDiffuse;
-    vec4 materialSpecular;
-    float materialShininess;
     // Key Pressed Uniform
     uint lKeyPressed;
 } uMyUniforms;

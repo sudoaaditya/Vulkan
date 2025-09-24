@@ -2,6 +2,9 @@
 #include<stdio.h>
 #include<stdlib.h>
 
+#define _USE_MATH_DEFINES 1 // for using M_PI
+#include <math.h>
+
 #include "vk.h"
 #include "Sphere.h"
 
@@ -157,15 +160,10 @@ struct MyUniformData {
     glm::mat4 viewMatrix;
     glm::mat4 projectionMatrix;
     // For Light
-    float lightAmbient[4]; // ambient
-    float lightDiffuse[4]; // diffuse
-    float lightSpecular[4]; // specular
-    float lightPosition[4]; // light position
-    // For Material
-    float materialAmbient[4]; // ambient
-    float materialDiffuse[4]; // diffuse
-    float materialSpecular[4]; // specular
-    float materialShininess;
+    glm::vec4 lightAmbient; // ambient
+    glm::vec4 lightDiffuse; // diffuse
+    glm::vec4 lightSpecular; // specular
+    glm::vec4 lightPosition; // light position
     // For Key Pressed
     unsigned int lKeyPressed;
 };
@@ -176,6 +174,16 @@ typedef struct {
 } UniformData;
 
 UniformData uniformData;
+
+typedef struct {
+    // For Material
+    glm::vec4 materialAmbient; // ambient
+    glm::vec4 materialDiffuse; // diffuse
+    glm::vec4 materialSpecular; // specular
+    float materialShininess;
+} PushConstantData_Material;
+
+PushConstantData_Material pushConstantData_material;
 
 // Shader Variables
 VkShaderModule vkShaderModule_vertex = VK_NULL_HANDLE;
@@ -194,12 +202,160 @@ VkDescriptorPool vkDescriptorPool = VK_NULL_HANDLE;
 VkDescriptorSet vkDescriptorSet = VK_NULL_HANDLE;
 
 // Pipeline
-VkViewport vkViewport;
 VkRect2D vkRect2D_scissor;
 VkPipeline vkPipeline = VK_NULL_HANDLE;
 
 // Lights
 BOOL bLight = FALSE;
+float angleLight = 0.0f;
+char rotationAxis = ' '; // 'x', 'y' or 'z'
+
+// matrials
+glm::vec4 materials[] = {
+    // Emerald
+    glm::vec4(0.0215f, 0.1745f, 0.0215f, 1.0f),
+    glm::vec4(0.07568f, 0.61424f, 0.07568f, 1.0f),
+    glm::vec4(0.633f, 0.727811f, 0.633f, 1.0f),
+    glm::vec4(0.6f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Jade
+    glm::vec4(0.135f, 0.2225f, 0.1575f, 1.0f),
+    glm::vec4(0.54f, 0.89f, 0.63f, 1.0f),
+    glm::vec4(0.316228f, 0.316228f, 0.316228f, 1.0f),
+    glm::vec4(0.1f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Obsidian
+    glm::vec4(0.05375f, 0.05f, 0.06625f, 1.0f),
+    glm::vec4(0.18275f, 0.17f, 0.22525f, 1.0f),
+    glm::vec4(0.332741f, 0.328634f, 0.346435f, 1.0f),
+    glm::vec4(0.3f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Pearl
+    glm::vec4(0.25f, 0.20725f, 0.20725f, 1.0f),
+    glm::vec4(1.0f, 0.829f, 0.829f, 1.0f),
+    glm::vec4(0.296648f, 0.296648f, 0.296648f, 1.0f),
+    glm::vec4(0.088f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Ruby
+    glm::vec4(0.1745f, 0.01175f, 0.01175f, 1.0f),
+    glm::vec4(0.61424f, 0.04136f, 0.04236f, 1.0f),
+    glm::vec4(0.727811f, 0.626959f, 0.626959f, 1.0f),
+    glm::vec4(0.6f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Turquoise
+    glm::vec4(0.1f, 0.18725f, 0.1745f, 1.0f),
+    glm::vec4(0.396f, 0.74151f, 0.69102f, 1.0f),
+    glm::vec4(0.297254f, 0.30829f, 0.306678f, 1.0f),
+    glm::vec4(0.1f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Brass
+    glm::vec4(0.329412f, 0.223529f, 0.027451f, 1.0f),
+    glm::vec4(0.780392f, 0.568627f, 0.113725f, 1.0f),
+    glm::vec4(0.992157f, 0.941176f, 0.807843f, 1.0f),
+    glm::vec4(0.21794872f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Bronze
+    glm::vec4(0.2125f, 0.1275f, 0.054f, 1.0f),
+    glm::vec4(0.714f, 0.4284f, 0.18144f, 1.0f),
+    glm::vec4(0.393548f, 0.271906f, 0.166721f, 1.0f),
+    glm::vec4(0.2f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Chrome
+    glm::vec4(0.25f, 0.25f, 0.25f, 1.0f),
+    glm::vec4(0.4f, 0.4f, 0.4f, 1.0f),
+    glm::vec4(0.774597f, 0.774597f, 0.774597f, 1.0f),
+    glm::vec4(0.6f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Copper
+    glm::vec4(0.19125f, 0.0735f, 0.0225f, 1.0f),
+    glm::vec4(0.7038f, 0.27048f, 0.0828f, 1.0f),
+    glm::vec4(0.256777f, 0.137622f, 0.086014f, 1.0f),
+    glm::vec4(0.1f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Gold
+    glm::vec4(0.24725f, 0.1995f, 0.0745f, 1.0f),
+    glm::vec4(0.75164f, 0.60648f, 0.22648f, 1.0f),
+    glm::vec4(0.628281f, 0.555802f, 0.366065f, 1.0f),
+    glm::vec4(0.4f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Silver
+    glm::vec4(0.19225f, 0.19225f, 0.19225f, 1.0f),
+    glm::vec4(0.50754f, 0.50754f, 0.50754f, 1.0f),
+    glm::vec4(0.508273f, 0.508273f, 0.508273f, 1.0f),
+    glm::vec4(0.4f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Plastic Black
+    glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
+    glm::vec4(0.01f, 0.01f, 0.01f, 1.0f),
+    glm::vec4(0.50f, 0.50f, 0.50f, 1.0f),
+    glm::vec4(0.35f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Plastic Cyan
+    glm::vec4(0.0f, 0.1f, 0.06f, 1.0f),
+    glm::vec4(0.0f, 0.50980392f, 0.50980392f, 1.0f),
+    glm::vec4(0.50196078f, 0.50196078f, 0.50196078f, 1.0f),
+    glm::vec4(0.25f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Plastic Green
+    glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
+    glm::vec4(0.1f, 0.35f, 0.1f, 1.0f),
+    glm::vec4(0.45f, 0.55f, 0.45f, 1.0f),
+    glm::vec4(0.25f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Plastic Red
+    glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
+    glm::vec4(0.5f, 0.0f, 0.0f, 1.0f),
+    glm::vec4(0.7f, 0.6f, 0.6f, 1.0f),
+    glm::vec4(0.25f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Plastic White
+    glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
+    glm::vec4(0.55f, 0.55f, 0.55f, 1.0f),
+    glm::vec4(0.70f, 0.70f, 0.70f, 1.0f),
+    glm::vec4(0.25f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Plastic Yellow
+    glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
+    glm::vec4(0.5f, 0.5f, 0.0f, 1.0f),
+    glm::vec4(0.60f, 0.60f, 0.50f, 1.0f),
+    glm::vec4(0.25f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Rubber Black
+    glm::vec4(0.02f, 0.02f, 0.02f, 1.0f),
+    glm::vec4(0.01f, 0.01f, 0.01f, 1.0f),
+    glm::vec4(0.4f, 0.4f, 0.4f, 1.0f),
+    glm::vec4(0.078125f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Rubber Cyan
+    glm::vec4(0.0f, 0.05f, 0.05f, 1.0f),
+    glm::vec4(0.4f, 0.5f, 0.5f, 1.0f),
+    glm::vec4(0.04f, 0.7f, 0.7f, 1.0f),
+    glm::vec4(0.078125f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Rubber Green
+    glm::vec4(0.0f, 0.04f, 0.0f, 1.0f),
+    glm::vec4(0.4f, 0.5f, 0.4f, 1.0f),
+    glm::vec4(0.04f, 0.5f, 0.04f, 1.0f),
+    glm::vec4(0.078125f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Rubber Red
+    glm::vec4(0.05f, 0.0f, 0.0f, 1.0f),
+    glm::vec4(0.5f, 0.4f, 0.4f, 1.0f),
+    glm::vec4(0.7f, 0.04f, 0.04f, 1.0f),
+    glm::vec4(0.078125f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Rubber White
+    glm::vec4(0.05f, 0.05f, 0.05f, 1.0f),
+    glm::vec4(0.5f, 0.5f, 0.5f, 1.0f),
+    glm::vec4(0.7f, 0.7f, 0.7f, 1.0f),
+    glm::vec4(0.078125f * 128.0f, 0.0f, 0.0f, 0.0f),
+
+    // Rubber Yellow
+    glm::vec4(0.05f, 0.05f, 0.0f, 1.0f),
+    glm::vec4(0.5f, 0.5f, 0.4f, 1.0f),
+    glm::vec4(0.7f, 0.7f, 0.04f, 1.0f),
+    glm::vec4(0.078125f * 128.0f, 0.0f, 0.0f, 0.0f)
+};
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
@@ -380,6 +536,21 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
                 case 'l':
                 case 'L':
                     bLight = !bLight;
+                    break;
+
+                case 'x':
+                case 'X':
+                    rotationAxis = 'x';
+                    break;
+
+                case 'y':
+                case 'Y':
+                    rotationAxis = 'y';
+                    break;
+
+                case 'z':
+                case 'Z':
+                    rotationAxis = 'z';
                     break;
                 
                 default:
@@ -683,9 +854,9 @@ VkResult initialize(void) {
 
     // initialize clear color values
     memset((void*)&vkClearColorValue, 0, sizeof(VkClearColorValue));
-    vkClearColorValue.float32[0] = 0.0f;
-    vkClearColorValue.float32[1] = 0.0f;
-    vkClearColorValue.float32[2] = 0.0f;
+    vkClearColorValue.float32[0] = 0.25f;
+    vkClearColorValue.float32[1] = 0.25f;
+    vkClearColorValue.float32[2] = 0.25f;
     vkClearColorValue.float32[3] = 1.0f; // analogous to glClearColor
 
     // initialize clear depth stencil values
@@ -1342,7 +1513,13 @@ void uninitialize(void){
 }
 
 void update(void) {
-
+    // update angle
+    if(rotationAxis == 'x' || rotationAxis == 'y' || rotationAxis == 'z') {
+        angleLight = angleLight + 0.003f;
+        if(angleLight > (float)(M_PI * 2.0f)) {
+            angleLight = 0.0f;
+        }
+    }
 }
 
 //! //////////////////////////////////////// Definations of vulkan Related Functions ///////////////////////////////////////////////
@@ -3073,43 +3250,27 @@ VkResult updateUniformBuffer(void) {
     myUniformData.projectionMatrix = perspectiveProjectionMatrix;
 
     // Update Lighting Related Uniform
-    myUniformData.lightAmbient[0] = 0.1f;
-    myUniformData.lightAmbient[1] = 0.1f;
-    myUniformData.lightAmbient[2] = 0.1f;
-    myUniformData.lightAmbient[3] = 1.0f;
+    myUniformData.lightAmbient = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    myUniformData.lightDiffuse = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    myUniformData.lightSpecular = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    myUniformData.lightPosition = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); // Positional Light
 
-    myUniformData.lightDiffuse[0] = 1.0f;
-    myUniformData.lightDiffuse[1] = 1.0f;
-    myUniformData.lightDiffuse[2] = 1.0f;
-    myUniformData.lightDiffuse[3] = 1.0f;
-
-    myUniformData.lightSpecular[0] = 1.0f;
-    myUniformData.lightSpecular[1] = 1.0f;
-    myUniformData.lightSpecular[2] = 1.0f;
-    myUniformData.lightSpecular[3] = 1.0f;
-
-    myUniformData.lightPosition[0] = 100.0f;
-    myUniformData.lightPosition[1] = 110.0f;
-    myUniformData.lightPosition[2] = 100.0f;
-    myUniformData.lightPosition[3] = 1.0f;
-
-    myUniformData.materialAmbient[0] = 0.0f;
-    myUniformData.materialAmbient[1] = 0.0f;
-    myUniformData.materialAmbient[2] = 0.0f;
-    myUniformData.materialAmbient[3] = 1.0f;
-
-    myUniformData.materialDiffuse[0] = 0.5f;
-    myUniformData.materialDiffuse[1] = 0.3f;
-    myUniformData.materialDiffuse[2] = 0.7f;
-    myUniformData.materialDiffuse[3] = 1.0f;
-
-    myUniformData.materialSpecular[0] = 0.7f;
-    myUniformData.materialSpecular[1] = 0.7f;
-    myUniformData.materialSpecular[2] = 0.7f;
-    myUniformData.materialSpecular[3] = 1.0f;
-
-    myUniformData.materialShininess = 128.0f;
-
+    if(rotationAxis == 'x') {
+        myUniformData.lightPosition.x = 0.0f;
+        myUniformData.lightPosition.y = 45.0f * sin(angleLight);
+        myUniformData.lightPosition.z = 45.0f * cos(angleLight);
+        myUniformData.lightPosition.w = 1.0f;
+    } else if(rotationAxis == 'y') {
+        myUniformData.lightPosition.x = 45.0f * sin(angleLight);
+        myUniformData.lightPosition.y = 0.0f;
+        myUniformData.lightPosition.z = 45.0f * cos(angleLight);
+        myUniformData.lightPosition.w = 1.0f;
+    } else if(rotationAxis == 'z') {
+        myUniformData.lightPosition.x = 45.0f * sin(angleLight);
+        myUniformData.lightPosition.y = 45.0f * cos(angleLight);
+        myUniformData.lightPosition.z = 0.0f;
+        myUniformData.lightPosition.w = 1.0f;
+    }
 
     // update key pressed 
     if(bLight) {
@@ -3309,6 +3470,14 @@ VkResult createPipelineLayout(void) {
     // Variables
     VkResult vkResult = VK_SUCCESS;
 
+    // Init Push Constants Related
+    VkPushConstantRange vkPushConstantRange;
+    memset((void*)&vkPushConstantRange, 0, sizeof(VkPushConstantRange));
+
+    vkPushConstantRange.offset = 0;
+    vkPushConstantRange.size = sizeof(PushConstantData_Material);
+    vkPushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT; // we will use this
+
     // Create Pipeline Layout Create Info
     VkPipelineLayoutCreateInfo vkPipelineLayoutCreateInfo;
     memset((void*)&vkPipelineLayoutCreateInfo, 0, sizeof(VkPipelineLayoutCreateInfo));
@@ -3318,8 +3487,8 @@ VkResult createPipelineLayout(void) {
     vkPipelineLayoutCreateInfo.flags = 0;
     vkPipelineLayoutCreateInfo.setLayoutCount = 1; // we have only one descriptor set layout
     vkPipelineLayoutCreateInfo.pSetLayouts = &vkDescriptorSetLayout;
-    vkPipelineLayoutCreateInfo.pushConstantRangeCount = 0; // no push constant range for now
-    vkPipelineLayoutCreateInfo.pPushConstantRanges = NULL;
+    vkPipelineLayoutCreateInfo.pushConstantRangeCount = 1; // One push constant range for now
+    vkPipelineLayoutCreateInfo.pPushConstantRanges = &vkPushConstantRange;
 
     // Create Pipeline Layout
     vkResult = vkCreatePipelineLayout(vkDevice, &vkPipelineLayoutCreateInfo, NULL, &vkPipelineLayout);
@@ -3603,7 +3772,6 @@ VkResult createPipeline(void) {
     vkPipelineColorBlendStateCreateInfo.attachmentCount = _ARRAYSIZE(vkPipelineColorBlendAttachmentState_array);
     vkPipelineColorBlendStateCreateInfo.pAttachments = vkPipelineColorBlendAttachmentState_array;
 
-
     // Viewport Scissor State
     VkPipelineViewportStateCreateInfo vkPipelineViewportStateCreateInfo;
     memset((void*)&vkPipelineViewportStateCreateInfo, 0, sizeof(VkPipelineViewportStateCreateInfo));
@@ -3613,17 +3781,9 @@ VkResult createPipeline(void) {
     vkPipelineViewportStateCreateInfo.flags = 0;
 
     // Set the viewport/s
+    //! WE'RE GOING TO USE DYNAMIC VIEWPORT FOR THIS APPLICATION HENCE WE'RE NOT GOING TO INITIALIZE IT HERE
+    //! BUT STILL WE ARE GOING TO USE VIEWPORT IT"S COUNT NEEDS TO BE GIVEN HERE
     vkPipelineViewportStateCreateInfo.viewportCount = 1;
-
-    memset((void*)&vkViewport, 0, sizeof(VkViewport));
-    vkViewport.x = 0;
-    vkViewport.y = 0;
-    vkViewport.width = (float)vkExtent2D_swapchain.width;
-    vkViewport.height = (float)vkExtent2D_swapchain.height;
-    vkViewport.minDepth = 0.0f;
-    vkViewport.maxDepth = 1.0f;
-
-    vkPipelineViewportStateCreateInfo.pViewports = &vkViewport;
 
     // Set the scissor rect/s
     vkPipelineViewportStateCreateInfo.scissorCount = 1;
@@ -3652,7 +3812,19 @@ VkResult createPipeline(void) {
     vkPipelineDepthStencilStateCreateInfo.front = vkPipelineDepthStencilStateCreateInfo.back; // front and back are same
 
     // Dynamic State
-    // We don't have any dynamic state;
+    VkDynamicState vkDynamicState_array[1];
+    memset((void*)vkDynamicState_array, 0, sizeof(VkDynamicState) * _ARRAYSIZE(vkDynamicState_array));
+
+    vkDynamicState_array[0] = VK_DYNAMIC_STATE_VIEWPORT; // we're using dynamic viewport
+
+    VkPipelineDynamicStateCreateInfo vkPipelineDynamicStateCreateInfo;
+    memset((void*)&vkPipelineDynamicStateCreateInfo, 0, sizeof(VkPipelineDynamicStateCreateInfo));
+
+    vkPipelineDynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    vkPipelineDynamicStateCreateInfo.pNext = NULL;
+    vkPipelineDynamicStateCreateInfo.flags = 0;
+    vkPipelineDynamicStateCreateInfo.dynamicStateCount = _ARRAYSIZE(vkDynamicState_array);
+    vkPipelineDynamicStateCreateInfo.pDynamicStates = vkDynamicState_array;
 
     // Multisample State
     VkPipelineMultisampleStateCreateInfo vkPipelineMultisampleStateCreateInfo;
@@ -3722,7 +3894,7 @@ VkResult createPipeline(void) {
     vkGraphicsPipelineCreateInfo.pColorBlendState = &vkPipelineColorBlendStateCreateInfo;
     vkGraphicsPipelineCreateInfo.pViewportState = &vkPipelineViewportStateCreateInfo;   
     vkGraphicsPipelineCreateInfo.pDepthStencilState = &vkPipelineDepthStencilStateCreateInfo;
-    vkGraphicsPipelineCreateInfo.pDynamicState = NULL; // we don't have dynamic state
+    vkGraphicsPipelineCreateInfo.pDynamicState = &vkPipelineDynamicStateCreateInfo; // for viewport dynamic state
     vkGraphicsPipelineCreateInfo.pMultisampleState = &vkPipelineMultisampleStateCreateInfo;
     vkGraphicsPipelineCreateInfo.stageCount = _ARRAYSIZE(vkPipelineShaderStageCreateInfo_array);
     vkGraphicsPipelineCreateInfo.pStages = vkPipelineShaderStageCreateInfo_array;
@@ -3858,6 +4030,7 @@ VkResult createFences(void) {
 
 VkResult buildCommandBuffers(void) {
     // variables
+    VkViewport vkViewport;
     VkResult vkResult = VK_SUCCESS;
 
     for(uint32_t i = 0; i < swapchainImageCount; i++) {
@@ -3967,16 +4140,817 @@ VkResult buildCommandBuffers(void) {
             VK_INDEX_TYPE_UINT16 // we are using 16 bit uint index matches with declared array in vertexData_position_index
         );
 
-        // Here we should call vulkan drawing functions!
-        // Draw Indexed
-        vkCmdDrawIndexed(
+        // Set Viewport // increase x by 200 and y by 72
+        /* // First Column
+        // First Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 50.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 30.0f * (float)winHeight / 600.0f;
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+        
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient = glm::vec4(0.0215f, 0.1745f, 0.0215f, 1.0f);
+        pushConstantData_material.materialDiffuse = glm::vec4(0.07568f, 0.61424f, 0.07568f, 1.0f);
+        pushConstantData_material.materialSpecular = glm::vec4(0.633f, 0.727811f, 0.633f, 1.0f);
+        pushConstantData_material.materialShininess =  0.6f * 128.0f;
+
+        vkCmdPushConstants(
             vkCommandBuffer_array[i],
-            numElements, // number of indices to draw
-            1, // number of instances to draw
-            0, // first index to draw from index buffer
-            0, // if we want to add offset to starting index of vertex buffer, we can add here
-            1  // nth instance, but we have only one instance so 1 
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
         );
+
+        //Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // First Column
+        // second Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 50.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 102.0f * (float)winHeight / 600.0f;
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+        
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient = glm::vec4(0.135f, 0.2225f, 0.1575f, 1.0f);
+        pushConstantData_material.materialDiffuse = glm::vec4(0.54f, 0.89f, 0.63f, 1.0f);
+        pushConstantData_material.materialSpecular = glm::vec4(0.316228f, 0.316228f, 0.316228f, 1.0f);
+        pushConstantData_material.materialShininess =  0.1f * 12.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+        
+        //Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // First Column
+        // Third Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 50.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 174.0f * (float)winHeight / 600.0f;
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+        
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient = glm::vec4(0.05375f, 0.05f, 0.06625f, 1.0f);
+        pushConstantData_material.materialDiffuse = glm::vec4(0.18275f, 0.17f, 0.22525f, 1.0f);
+        pushConstantData_material.materialSpecular = glm::vec4(0.332741f, 0.328634f, 0.34643f, 1.0f);
+        pushConstantData_material.materialShininess =  0.3f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+        
+        //Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // First Column
+        // Fourth Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 50.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 246.0f * (float)winHeight / 600.0f;
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+        
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient = glm::vec4(0.25f, 0.20725f, 0.20725f , 1.0f);
+        pushConstantData_material.materialDiffuse = glm::vec4(1.0f, 0.829f, 0.829f , 1.0f);
+        pushConstantData_material.materialSpecular = glm::vec4(0.296648f, 0.296648f, 0.296648f , 1.0f);
+        pushConstantData_material.materialShininess =  0.088f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+        
+        //Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+
+        // First Column
+        // Fifth Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 50.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 318.0f * (float)winHeight / 600.0f;
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+        
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient = glm::vec4(0.1745f, 0.01175f, 0.01175f, 1.0f);
+        pushConstantData_material.materialDiffuse = glm::vec4(0.61424f, 0.04136f, 0.04236f, 1.0f);
+        pushConstantData_material.materialSpecular = glm::vec4(0.727811f, 0.626959f, 0.626959f, 1.0f);
+        pushConstantData_material.materialShininess = 0.6f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+        
+        //Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // First Column
+        // Sixth Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 50.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 390.0f * (float)winHeight / 600.0f;
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+        
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient = glm::vec4(0.1f, 0.18725f, 0.1745f, 1.0f);
+        pushConstantData_material.materialDiffuse = glm::vec4(0.396f, 0.74151f, 0.69102f, 1.0f);
+        pushConstantData_material.materialSpecular = glm::vec4(0.297254f, 0.30829f, 0.306678f, 1.0f);
+        pushConstantData_material.materialShininess =  0.1f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+        
+        //Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Second Column
+        // First Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 250.0f * (float)winWidth / 800.0f; // column 2
+        vkViewport.y = 30.0f * (float)winHeight / 600.0f;           // row 1
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Brass)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.329412f, 0.223529f, 0.027451f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.780392f, 0.568627f, 0.113725f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.992157f, 0.941176f, 0.807843f, 1.0f);
+        pushConstantData_material.materialShininess = 0.21794872f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Second Column
+        // Second Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 250.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 102.0f * (float)winHeight / 600.0f; // row 2
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Bronze)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.2125f, 0.1275f, 0.054f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.714f, 0.4284f, 0.18144f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.393548f, 0.271906f, 0.166721f, 1.0f);
+        pushConstantData_material.materialShininess = 0.2f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Second Column
+        // Third Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 250.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 174.0f * (float)winHeight / 600.0f; // row 3
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Chrome)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.4f, 0.4f, 0.4f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.774597f, 0.774597f, 0.774597f, 1.0f);
+        pushConstantData_material.materialShininess = 0.6f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Second Column
+        // Fourth Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 250.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 246.0f * (float)winHeight / 600.0f; // row 4
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Copper)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.19125f, 0.0735f, 0.0225f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.7038f, 0.27048f, 0.0828f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.256777f, 0.137622f, 0.086014f, 1.0f);
+        pushConstantData_material.materialShininess = 0.1f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Second Column
+        // Fifth Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 250.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 318.0f * (float)winHeight / 600.0f; // row 5
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Gold)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.24725f, 0.1995f, 0.0745f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.75164f, 0.60648f, 0.22648f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.628281f, 0.555802f, 0.366065f, 1.0f);
+        pushConstantData_material.materialShininess = 0.4f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Second Column
+        // Sixth Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 250.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 390.0f * (float)winHeight / 600.0f; // row 6
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Silver)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.19225f, 0.19225f, 0.19225f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.50754f, 0.50754f, 0.50754f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.508273f, 0.508273f, 0.508273f, 1.0f);
+        pushConstantData_material.materialShininess = 0.4f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        //!
+        // Third Column
+        // First Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 450.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 30.0f * (float)winHeight / 600.0f; // row 2
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Black Plastic)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.01f, 0.01f, 0.01f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.50f, 0.50f, 0.50f, 1.0f);
+        pushConstantData_material.materialShininess = 0.25f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Third Column
+        // Second Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 450.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 102.0f * (float)winHeight / 600.0f; // row 2
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Cyan Plastic)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.0f, 0.1f, 0.06f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.0f, 0.5098039f, 0.5098039f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.5019608f, 0.5019608f, 0.5019608f, 1.0f);
+        pushConstantData_material.materialShininess = 0.25f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Third Column
+        // Third Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 450.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 174.0f * (float)winHeight / 600.0f; // row 3
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant ( Green Plastic)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.1f, 0.35f, 0.1f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.45f, 0.55f, 0.45f, 1.0f);
+        pushConstantData_material.materialShininess = 0.25f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Third Column
+        // Fourth Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 450.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 246.0f * (float)winHeight / 600.0f; // row 4
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Red Plastic)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.5f, 0.0f, 0.0f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.7f, 0.6f, 0.6f, 1.0f);
+        pushConstantData_material.materialShininess = 0.25f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Third Column
+        // Fifth Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 450.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 318.0f * (float)winHeight / 600.0f; // row 5
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (White Plastic)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.55f, 0.55f, 0.55f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.70f, 0.70f, 0.70f, 1.0f);
+        pushConstantData_material.materialShininess = 0.25f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Third Column
+        // Sixth Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 450.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 390.0f * (float)winHeight / 600.0f; // row 6
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Yellow Plastic)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.5f, 0.5f, 0.0f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.60f, 0.60f, 0.50f, 1.0f);
+        pushConstantData_material.materialShininess = 0.25f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        //!
+        // Fourth Column
+        // First Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 650.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 30.0f * (float)winHeight / 600.0f; // row 2
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Black Rubber)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.02f, 0.02f, 0.02f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.01f, 0.01f, 0.01f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.4f, 0.4f, 0.4f, 1.0f);
+        pushConstantData_material.materialShininess = 0.078125f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Fourth Column
+        // Second Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 650.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 102.0f * (float)winHeight / 600.0f; // row 2
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Cyan Rubber)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.0f, 0.05f, 0.05f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.4f, 0.5f, 0.5f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.04f, 0.7f, 0.7f, 1.0f);
+        pushConstantData_material.materialShininess = 0.078125f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Fourth Column
+        // Third Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 650.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 174.0f * (float)winHeight / 600.0f; // row 3
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant ( Green Rubber)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.0f, 0.04f, 0.0f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.4f, 0.5f, 0.4f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.04f, 0.5f, 0.04f, 1.0f);
+        pushConstantData_material.materialShininess = 0.078125f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Fourth Column
+        // Fourth Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 650.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 246.0f * (float)winHeight / 600.0f; // row 4
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Red Rubber)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.05f, 0.0f, 0.0f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.5f, 0.4f, 0.4f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.7f, 0.04f, 0.04f, 1.0f);
+        pushConstantData_material.materialShininess = 0.078125f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Fourth Column
+        // Fifth Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 650.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 318.0f * (float)winHeight / 600.0f; // row 5
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (White Rubber)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.7f, 0.7f, 0.7f, 1.0f);
+        pushConstantData_material.materialShininess = 0.078125f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+
+        // Fourth Column
+        // Sixth Sphere
+        memset((void*)&vkViewport, 0, sizeof(VkViewport));
+        vkViewport.x = 650.0f * (float)winWidth / 800.0f;
+        vkViewport.y = 390.0f * (float)winHeight / 600.0f; // row 6
+        vkViewport.width = (float)winWidth / 8.0f;
+        vkViewport.height = (float)winHeight / 8.0f;
+        vkViewport.minDepth = 0.0f;
+        vkViewport.maxDepth = 1.0f;
+
+        vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+        // Material Push Constant (Yellow Rubber)
+        memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+        pushConstantData_material.materialAmbient   = glm::vec4(0.05f, 0.05f, 0.0f, 1.0f);
+        pushConstantData_material.materialDiffuse   = glm::vec4(0.5f, 0.5f, 0.4f, 1.0f);
+        pushConstantData_material.materialSpecular  = glm::vec4(0.7f, 0.7f, 0.04f, 1.0f);
+        pushConstantData_material.materialShininess = 0.078125f * 128.0f;
+
+        vkCmdPushConstants(
+            vkCommandBuffer_array[i],
+            vkPipelineLayout,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            0,
+            sizeof(PushConstantData_Material),
+            &pushConstantData_material
+        );
+
+        // Draw
+        vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0); */
+
+        uint32_t cols = 4;
+        uint32_t rows = 6;
+
+        for(uint32_t k = 0; k < cols; k++) {
+            for(uint32_t j = 0 ; j < rows; j++) {
+                uint32_t index = (k * rows + j) * cols;
+
+                memset((void*)&vkViewport, 0, sizeof(VkViewport));
+                vkViewport.x = (50.0f + (k * 200.0f)) * (float)winWidth / 800.0f;
+                vkViewport.y = (30.0f + (j * 72.0f)) * (float)winHeight / 600.0f; // row 6
+                vkViewport.width = (float)winWidth / 8.0f;
+                vkViewport.height = (float)winHeight / 8.0f;
+                vkViewport.minDepth = 0.0f;
+                vkViewport.maxDepth = 1.0f;
+
+                vkCmdSetViewport(vkCommandBuffer_array[i], 0, 1, &vkViewport);
+
+                // Material Push Constant
+                memset((void*)&pushConstantData_material, 0, sizeof(PushConstantData_Material));
+
+                pushConstantData_material.materialAmbient   = materials[index + 0];
+                pushConstantData_material.materialDiffuse   = materials[index + 1];
+                pushConstantData_material.materialSpecular  = materials[index + 2];
+                pushConstantData_material.materialShininess = materials[index + 3].r;
+
+                vkCmdPushConstants(
+                    vkCommandBuffer_array[i],
+                    vkPipelineLayout,
+                    VK_SHADER_STAGE_FRAGMENT_BIT,
+                    0,
+                    sizeof(PushConstantData_Material),
+                    &pushConstantData_material
+                );
+
+                // Draw
+                vkCmdDrawIndexed(vkCommandBuffer_array[i], numElements, 1, 0, 0, 0);
+            }
+        }
+
 
         // End Render Pass
         vkCmdEndRenderPass(vkCommandBuffer_array[i]);
