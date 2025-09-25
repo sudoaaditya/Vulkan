@@ -4485,39 +4485,6 @@ initialize(): buildCommandBuffers() Successful!.
 
 initialize(): Initialization Successful!.
 WinMain(): initialize() Successful!.
-getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() first Call Successful!. [Found 5 Formats]
-getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() Second Call Successful!.
-getPhysicalDeviceSurfaceFormatAndColorSpace(): vkSurfaceFormatKHR_array freed.
-createSwapchain(): getPhysicalDeviceSurfaceFormatAndColorSpace() Successful!.
-createSwapchain(): vkGetPhysicalDeviceSurfaceCapabilitiesKHR() Successful!.
-createSwapchain(): desiredNumberOfSwapchainImages is : 2, [Min: 2, Max: 8]
-createSwapchain(): Swapchain Image Width : 1536 X Height : 864
-getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() first Call Successful!. [Found 4 Present Modes]
-getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() Second Call Successful!.
-getPhysicalDeviceSurfacePresentMode(): VK_PRESENT_MODE_MAILBOX_KHR Present Mode found!.
-getPhysicalDeviceSurfacePresentMode(): vkPresentModeKHR_array freed.
-createSwapchain(): getPhysicalDeviceSurfacePresentMode() Successful!.
-createSwapchain(): vkCreateSwapchainKHR() Successful!.
-createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Successful!. : Swapchain Image Count : [2]
-createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Second Call Successful!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {0}!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {1}!.
-createRenderPass(): vkCreateRenderPass() Successful!.
-createPipelineLayout(): vkCreatePipelineLayout() Successful!.
-createPipeline(): vkCreatePipelineCache() Successful!.
-createPipeline(): vkCreateGraphicsPipelines() Successful!.
-createFramebuffers(): vkCreateFramebuffer() Successful for {0}!.
-createFramebuffers(): vkCreateFramebuffer() Successful for {1}!.
-createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
-createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
-buildCommandBuffers(): vkResetCommandBuffer() Successful for {0}!.
-buildCommandBuffers(): vkBeginCommandBuffer() Successful for {0}!.
-buildCommandBuffers(): vkEndCommandBuffer() Successful for {0}!.
-buildCommandBuffers(): vkResetCommandBuffer() Successful for {1}!.
-buildCommandBuffers(): vkBeginCommandBuffer() Successful for {1}!.
-buildCommandBuffers(): vkEndCommandBuffer() Successful for {1}!.
-
-
 
 uninitialize(): vkDeviceWaitIdle is done!
 uninitialize(): vkDestroyFence() Succeed for {0}!.
@@ -6556,7 +6523,7 @@ uninitialize(): vkDestroyImageView() Succeed for {1}
 uninitialize(): freed swapchainImageView_array!.
 uninitialize(): freed swapchainImage_array!.
 uninitialize(): vkDestroySwapchainKHR() Succeed!
-AMK_VALIDATION: debugReportCallback() :  Validation (0) = Validation Error: [ VUID-vkDestroyDevice-device-05137 ] Object 0: handle = 0xdcc8fd0000000012, type = VK_OBJECT_TYPE_SAMPLER; | MessageID = 0x4872eaa0 | vkDestroyDevice():  OBJ ERROR : For VkDevice 0x1670403b1d0[], VkSampler 0xdcc8fd0000000012[] has not been destroyed.
+AMK_VALIDATION: debugReportCallback() :  Validation (0) = Validation Error: [ VUID-vkDestroyDevice-device-05137 ] Object 0: handle = 0xdcc8fd0000000012, type = VK_OBJECT_TYPE_SAMPLER; | MessageID = 0x4872eaa0 | vkDestroyDevice():  OBJ ERROR : For VkDevice 0x23f456c40d0[], VkSampler 0xdcc8fd0000000012[] has not been destroyed.
 The Vulkan spec states: All child objects created on device must have been destroyed prior to destroying device (https://vulkan.lunarg.com/doc/view/1.3.296.0/windows/1.3-extensions/vkspec.html#VUID-vkDestroyDevice-device-05137)
 uninitialize(): vkDestroyDevice() Succeed!
 uninitialize(): vkDestroySurfaceKHR() Succeed
