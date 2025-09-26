@@ -30,7 +30,7 @@
 
 // Points Related Variables
 #define PI 3.14159265f
-#define POINTS_COUNT 3000
+#define POINTS_COUNT 10000
 #define BOUNDING_LENGTH 10
 
 Clock myClock;
@@ -3290,7 +3290,7 @@ VkResult updateUniformBuffer(void) {
 
     // create viewMat at z = -2
     glm::mat4 viewMat = glm::mat4(1.0f);
-    viewMat = glm::translate(viewMat, glm::vec3(0.0f, -3.5f, -10.0f));
+    viewMat = glm::translate(viewMat, glm::vec3(0.0f, -(float)BOUNDING_LENGTH/2, -BOUNDING_LENGTH));
 
     perspectiveProjectionMatrix[1][1] *= -1.0f; // Invert Y axis for Vulkan
 

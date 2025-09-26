@@ -19,7 +19,6 @@ layout(binding = 0) uniform mvpMatrix {
     float snowBound;
 } uMVP;
 
-
 void main(void) {
     vec4 modelPosition = uMVP.modelMatrix * vPosition;
     modelPosition.y = mod(modelPosition.y - uMVP.time * 0.2, uMVP.snowBound);
@@ -27,15 +26,15 @@ void main(void) {
     modelPosition.z = mod(modelPosition.z + (sin((uMVP.time + modelPosition.x) * 0.5)) *
         uMVP.radius * 0.8, uMVP.snowBound) - (uMVP.snowBound / 2.0);
 
-    modelPosition.x = mod(modelPosition.x +
-        (cos((uMVP.time + modelPosition.z) * 0.5)) *
+    modelPosition.x = mod(modelPosition.x + (cos((uMVP.time + modelPosition.z) * 0.5)) *
         uMVP.radius, uMVP.snowBound) - (uMVP.snowBound / 2.0);
 
     vec4 viewPosition = uMVP.viewMatrix * modelPosition;
     vec4 projectionPosition = uMVP.projectionMatrix * viewPosition;
 
+    float yFactor = modelPosition.y / uMVP.snowBound;
+    yFactor = clamp(yFactor, 0.0, 1.0);
+
     gl_Position = projectionPosition;
-    gl_PointSize = uMVP.size * aRandom * (1.0 / -viewPosition.z);
-
-
+    gl_PointSize = uMVP.size * (1.0 / -viewPosition.z) * yFactor;
 }
