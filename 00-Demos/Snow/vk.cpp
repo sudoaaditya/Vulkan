@@ -3306,7 +3306,7 @@ VkResult updateUniformBuffer(void) {
     myUniformData.projectionMatrix = perspectiveProjectionMatrix;
 
     // for snow
-    myUniformData.snowSize = 100.0f;
+    myUniformData.snowSize = 120.0f;
     myUniformData.elapsedTime = elapsedTime * 2;
     myUniformData.useSnowTexture = 1;
     myUniformData.snowMoveRadius = 0.5;

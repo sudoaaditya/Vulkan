@@ -23,11 +23,14 @@ void main(void) {
     vec4 modelPosition = uMVP.modelMatrix * vPosition;
     modelPosition.y = mod(modelPosition.y - uMVP.time * 0.2, uMVP.snowBound);
 
-    modelPosition.z = mod(modelPosition.z + (sin((uMVP.time + modelPosition.x) * 0.5)) *
+/*     modelPosition.z = mod(modelPosition.z + (sin((uMVP.time + modelPosition.x) * 0.5)) *
         uMVP.radius * 0.8, uMVP.snowBound) - (uMVP.snowBound / 2.0);
 
     modelPosition.x = mod(modelPosition.x + (cos((uMVP.time + modelPosition.z) * 0.5)) *
-        uMVP.radius, uMVP.snowBound) - (uMVP.snowBound / 2.0);
+        uMVP.radius, uMVP.snowBound) - (uMVP.snowBound / 2.0); */
+
+    modelPosition.x = modelPosition.x + sin(uMVP.time * 0.5 + uMVP.snowBound * aRandom) * (uMVP.radius * 0.3);
+    modelPosition.z = modelPosition.z + cos(uMVP.time * 0.3 + uMVP.snowBound * aRandom) * (uMVP.radius * 0.2);
 
     vec4 viewPosition = uMVP.viewMatrix * modelPosition;
     vec4 projectionPosition = uMVP.projectionMatrix * viewPosition;
