@@ -30,8 +30,9 @@
 
 // Points Related Variables
 #define PI 3.14159265f
-#define POINTS_COUNT 10000
-#define BOUNDING_LENGTH 10
+#define POINTS_COUNT 50000
+#define BOUNDING_LENGTH 80
+#define ENV_RADIUS 50
 
 Clock myClock;
 
@@ -180,6 +181,7 @@ struct MyUniformData {
     float elapsedTime;
     int useSnowTexture;
     float snowBound;
+    float envHeight;
 };
 typedef struct {
     VkBuffer vkBuffer;
@@ -3282,7 +3284,7 @@ VkResult updateUniformBuffer(void) {
     glm::mat4 perspectiveProjectionMatrix = glm::mat4(1.0f);
 
     perspectiveProjectionMatrix = glm::perspective(
-        glm::radians(35.0f),
+        glm::radians(45.0f),
         (float)winWidth / (float)winHeight,
         0.1f,
         30000.0f
@@ -3290,7 +3292,7 @@ VkResult updateUniformBuffer(void) {
 
     // create viewMat at z = -2
     glm::mat4 viewMat = glm::mat4(1.0f);
-    viewMat = glm::translate(viewMat, glm::vec3(0.0f, -(float)BOUNDING_LENGTH/2, -BOUNDING_LENGTH));
+    viewMat = glm::translate(viewMat, glm::vec3(0.0f, 0.0f, -BOUNDING_LENGTH));
 
     perspectiveProjectionMatrix[1][1] *= -1.0f; // Invert Y axis for Vulkan
 
@@ -3298,7 +3300,7 @@ VkResult updateUniformBuffer(void) {
     memset((void*)&myUniformData, 0, sizeof(struct MyUniformData));
 
     myUniformData.modelMatrix = glm::mat4(1.0f);
-    myUniformData.modelMatrix = glm::translate(myUniformData.modelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+    myUniformData.modelMatrix = glm::translate(myUniformData.modelMatrix,  glm::vec3(-8.0f, -30.0f, 0.0f));
 
     myUniformData.viewMatrix = viewMat;
     myUniformData.projectionMatrix = glm::mat4(1.0f);
@@ -3306,11 +3308,12 @@ VkResult updateUniformBuffer(void) {
     myUniformData.projectionMatrix = perspectiveProjectionMatrix;
 
     // for snow
-    myUniformData.snowSize = 120.0f;
-    myUniformData.elapsedTime = elapsedTime * 2;
-    myUniformData.useSnowTexture = 1;
-    myUniformData.snowMoveRadius = 0.5;
+    myUniformData.snowSize = 600.0f;
+    myUniformData.elapsedTime = elapsedTime * 5;
+    myUniformData.useSnowTexture = 0;
+    myUniformData.snowMoveRadius = 1.5;
     myUniformData.snowBound = (float)BOUNDING_LENGTH;
+    myUniformData.envHeight = (float)ENV_RADIUS;
 
     void *data = NULL;
 
