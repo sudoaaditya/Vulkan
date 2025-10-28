@@ -428,45 +428,6 @@ initialize(): buildCommandBuffers() Successful!.
 
 initialize(): Initialization Successful!.
 WinMain(): initialize() Successful!.
-getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() first Call Successful!. [Found 5 Formats]
-getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() Second Call Successful!.
-getPhysicalDeviceSurfaceFormatAndColorSpace(): vkSurfaceFormatKHR_array freed.
-createSwapchain(): getPhysicalDeviceSurfaceFormatAndColorSpace() Successful!.
-createSwapchain(): vkGetPhysicalDeviceSurfaceCapabilitiesKHR() Successful!.
-createSwapchain(): desiredNumberOfSwapchainImages is : 2, [Min: 2, Max: 8]
-createSwapchain(): Swapchain Image Width : 1536 X Height : 864
-getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() first Call Successful!. [Found 4 Present Modes]
-getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() Second Call Successful!.
-getPhysicalDeviceSurfacePresentMode(): VK_PRESENT_MODE_MAILBOX_KHR Present Mode found!.
-getPhysicalDeviceSurfacePresentMode(): vkPresentModeKHR_array freed.
-createSwapchain(): getPhysicalDeviceSurfacePresentMode() Successful!.
-createSwapchain(): vkCreateSwapchainKHR() Successful!.
-createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Successful!. : Swapchain Image Count : [2]
-createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Second Call Successful!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {0}!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {1}!.
-getSupportedDepthFormat(): Supported Depth Format Found: 130
-createSwapchainImagesAndImageViews(): getSupportedDepthFormat() Successful!.
-createSwapchainImagesAndImageViews(): vkCreateImage() Successful for Depth Image!.
-createSwapchainImagesAndImageViews(): vkAllocateMemory() Successful!.
-createSwapchainImagesAndImageViews(): vkBindDev() Successful!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for Depth Image!.
-createRenderPass(): vkCreateRenderPass() Successful!.
-createPipelineLayout(): vkCreatePipelineLayout() Successful!.
-createPipeline(): vkCreatePipelineCache() Successful!.
-createPipeline(): vkCreateGraphicsPipelines() Successful!.
-createFramebuffers(): vkCreateFramebuffer() Successful for {0}!.
-createFramebuffers(): vkCreateFramebuffer() Successful for {1}!.
-createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
-createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
-buildCommandBuffers(): vkResetCommandBuffer() Successful for {0}!.
-buildCommandBuffers(): vkBeginCommandBuffer() Successful for {0}!.
-buildCommandBuffers(): vkEndCommandBuffer() Successful for {0}!.
-buildCommandBuffers(): vkResetCommandBuffer() Successful for {1}!.
-buildCommandBuffers(): vkBeginCommandBuffer() Successful for {1}!.
-buildCommandBuffers(): vkEndCommandBuffer() Successful for {1}!.
-
-
 
 uninitialize(): vkDeviceWaitIdle is done!
 uninitialize(): vkDestroyFence() Succeed for {0}!.
