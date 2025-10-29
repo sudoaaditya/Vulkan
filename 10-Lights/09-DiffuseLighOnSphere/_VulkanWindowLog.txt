@@ -364,11 +364,21 @@ createVertexBuffer(): vkCreateBuffer() Successful for Position!.
 createVertexBuffer(): vkAllocateMemory() Successful for Position!.
 createVertexBuffer(): vkBindBufferMemory() Successful for Position!.
 createVertexBuffer(): vkMapMemory() Successful for Position!.
-createVertexBuffer(): vkCreateBuffer() Successful for Normal!.
-createVertexBuffer(): vkAllocateMemory() Successful for Normal!.
-createVertexBuffer(): vkBindBufferMemory() Successful for Normal!.
-createVertexBuffer(): vkMapMemory() Successful for Normal!.
+createVertexBuffer(): vkCreateBuffer() Successful for Normals!.
+createVertexBuffer(): vkAllocateMemory() Successful for Normals!.
+createVertexBuffer(): vkBindBufferMemory() Successful for Normals!.
+createVertexBuffer(): vkMapMemory() Successful for Normals!.
+createVertexBuffer(): vkCreateBuffer() Successful for Texcoords!.
+createVertexBuffer(): vkAllocateMemory() Successful for Texcoords!.
+createVertexBuffer(): vkBindBufferMemory() Successful for Texcoords!.
+createVertexBuffer(): vkMapMemory() Successful for Texcoords!.
 initialize(): createVertexBuffer() Successful!.
+
+createIndexBuffer(): vkCreateBuffer() Successful for Index Buffer!.
+createIndexBuffer(): vkAllocateMemory() Successful for Index Buffer!.
+createIndexBuffer(): vkBindBufferMemory() Successful for Index Buffer!.
+createIndexBuffer(): vkMapMemory() Successful for Index Buffer!.
+initialize(): createIndexBuffer() Successful!.
 
 createUniformBuffer(): vkCreateBuffer() Successful!.
 createUniformBuffer(): vkAllocateMemory() Successful!.
@@ -447,10 +457,14 @@ uninitialize(): vkDestroyShaderModule() Succeed for Fragment Shader!
 uninitialize(): vkDestroyShaderModule() Succeed for Vertex Shader!
 uninitialize(): vkFreeMemory() Succeed for Uniform Buffer!
 uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!
-uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Normal!
-uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Normal!
 uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Position!
 uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Position!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Normal!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Normal!
+uninitialize(): vkFreeMemory() Succeed for Index Buffer!
+uninitialize(): vkDestroyBuffer() Succeed for Index Buffer!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Texcoord!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Texcoord!
 uninitialize(): vkFreeCommandBuffers() Succeed for {0}
 uninitialize(): vkFreeCommandBuffers() Succeed for {1}
 uninitialize(): freed vkCommandBuffer_array!.
