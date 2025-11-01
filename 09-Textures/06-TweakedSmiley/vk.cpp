@@ -2588,12 +2588,12 @@ void updateTexCoordBuffer(const float *texCoord) {
         vkDevice,
         vertexData_texcoord.vkDeviceMemory,
         0,
-        sizeof(float) * 12,
+        sizeof(float) * _ARRAYSIZE(texCoord0),
         0,
         &data
     );
 
-    memcpy(data, texCoord, sizeof(float) * 12);
+    memcpy(data, texCoord, sizeof(float) * _ARRAYSIZE(texCoord0));
 
     vkUnmapMemory(vkDevice, vertexData_texcoord.vkDeviceMemory);
 }
