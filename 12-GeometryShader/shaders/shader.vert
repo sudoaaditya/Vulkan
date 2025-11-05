@@ -4,13 +4,11 @@
 layout(location = 0) in vec4 vPosition;
 
 layout(binding = 0) uniform mvpMatrix {
-    mat4 modelMatrix;
-    mat4 viewMatrix;
-    mat4 projectionMatrix;
+    mat4 mvpMatrix;
 } uMVP;
 
 void main (void) {
-
     // code
-    gl_Position = uMVP.projectionMatrix * uMVP.viewMatrix * uMVP.modelMatrix * vPosition;
+    gl_Position = uMVP.mvpMatrix * vPosition;
+    gl_Position.y = -gl_Position.y;
 }

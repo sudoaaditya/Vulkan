@@ -46,6 +46,7 @@ VkSurfaceKHR vkSurfaceKHR = VK_NULL_HANDLE;
 VkPhysicalDevice vkPhysicalDevice_selected = VK_NULL_HANDLE;
 uint32_t graphicsQueueFamilyIndex_selected = UINT32_MAX;
 VkPhysicalDeviceMemoryProperties vkPhysicalDeviceMemoryProperties;
+VkPhysicalDeviceFeatures vkPhysicalDeviceFeatures;
 
 //
 uint32_t physicalDeviceCount = 0;
@@ -120,9 +121,7 @@ VertexData vertexData_position;
 
 // Uniform Related Declarations
 struct MyUniformData {
-    glm::mat4 modelMatrix;
-    glm::mat4 viewMatrix;
-    glm::mat4 projectionMatrix;
+    glm::mat4 mvpMatrix;
 };
 
 typedef struct {
@@ -135,6 +134,7 @@ UniformData uniformData;
 // Shader Variables
 VkShaderModule vkShaderModule_vertex = VK_NULL_HANDLE;
 VkShaderModule vkShaderModule_fragment = VK_NULL_HANDLE;
+VkShaderModule vkShaderModule_geometry = VK_NULL_HANDLE;
 
 // Descriptor Set Layout
 VkDescriptorSetLayout vkDescriptorSetLayout = VK_NULL_HANDLE;
@@ -617,7 +617,7 @@ VkResult initialize(void) {
     memset((void*)&vkClearColorValue, 0, sizeof(VkClearColorValue));
     vkClearColorValue.float32[0] = 0.0f;
     vkClearColorValue.float32[1] = 0.0f;
-    vkClearColorValue.float32[2] = 1.0f;
+    vkClearColorValue.float32[2] = 0.0f;
     vkClearColorValue.float32[3] = 1.0f; // analogous to glClearColor
 
     // Build Command Buffers
@@ -1052,6 +1052,12 @@ void uninitialize(void){
         vkDestroyShaderModule(vkDevice, vkShaderModule_fragment, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyShaderModule() Succeed for Fragment Shader!\n");
         vkShaderModule_fragment = VK_NULL_HANDLE;
+    }
+
+    if(vkShaderModule_geometry) {
+        vkDestroyShaderModule(vkDevice, vkShaderModule_geometry, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyShaderModule() Succeed for Geometry Shader!\n");
+        vkShaderModule_geometry = VK_NULL_HANDLE;
     }
 
     if(vkShaderModule_vertex) {
@@ -1655,7 +1661,6 @@ VkResult getPhysicalDevice() {
 
     vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice_selected, &vkPhysicalDeviceMemoryProperties);
 
-    VkPhysicalDeviceFeatures vkPhysicalDeviceFeatures;
     memset((void*)&vkPhysicalDeviceFeatures, 0, sizeof(VkPhysicalDeviceFeatures));
 
     vkGetPhysicalDeviceFeatures(vkPhysicalDevice_selected, &vkPhysicalDeviceFeatures);
@@ -1861,10 +1866,18 @@ VkResult createVulkanDevice () {
     vkDeviceCreateInfo.ppEnabledExtensionNames = enabledDeviceExtensionNames_array;
     vkDeviceCreateInfo.enabledLayerCount = 0; // these are deprecated in current version
     vkDeviceCreateInfo.ppEnabledLayerNames = NULL; // these are deprecated in current version
-    vkDeviceCreateInfo.pEnabledFeatures = NULL;
     // !NEWLY ADDED CODE : set VkDeviceQueueCreateInfo
     vkDeviceCreateInfo.queueCreateInfoCount = 1;
     vkDeviceCreateInfo.pQueueCreateInfos = &vkDeviceQueueCreateInfo;
+
+    // ! For Geometry Shader
+    if(vkPhysicalDeviceFeatures.geometryShader == VK_TRUE) {
+        vkDeviceCreateInfo.pEnabledFeatures = &vkPhysicalDeviceFeatures;
+    } else {
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        fprintf(fptr, "createVulkanDevice(): Selected Physical Device Does Not Supports Geometry Shader!.\n");
+        return (vkResult);
+    }
 
     vkResult = vkCreateDevice(
         vkPhysicalDevice_selected,
@@ -2474,19 +2487,14 @@ VkResult updateUniformBuffer(void) {
     struct MyUniformData myUniformData;
     memset((void*)&myUniformData, 0, sizeof(struct MyUniformData));
 
-    myUniformData.modelMatrix = glm::mat4(1.0f);
-    glm::mat4 translateMat = glm::mat4(1.0f);
-    glm::mat4 rotateMat = glm::mat4(1.0f);
-    
-    translateMat *= glm::translate(
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
+    modelMatrix = glm::translate(
         glm::mat4(1.0f),
         glm::vec3(0.0f, 0.0f, -4.0f)
     );
 
-    myUniformData.modelMatrix = translateMat;
-
-    myUniformData.viewMatrix = glm::mat4(1.0f);
-    myUniformData.projectionMatrix = glm::mat4(1.0f);
+    glm::mat4 viewMatrix = glm::mat4(1.0f);
+    glm::mat4 projectionMatrix = glm::mat4(1.0f);
 
     glm::mat4 perspectiveProjectionMatrix = glm::mat4(1.0f);
 
@@ -2499,7 +2507,7 @@ VkResult updateUniformBuffer(void) {
 
     perspectiveProjectionMatrix[1][1] *= -1.0f; // Invert Y axis for Vulkan
 
-    myUniformData.projectionMatrix = perspectiveProjectionMatrix;
+    myUniformData.mvpMatrix = perspectiveProjectionMatrix * viewMatrix * modelMatrix;
 
     void *data = NULL;
 
@@ -2590,6 +2598,63 @@ VkResult createShaders(void) {
     }
     fprintf(fptr, "createShaders(): Vertex Shader Module Created Successful!.\n");
 
+    // for geometry shadder
+    szFileName = "shader.geom.spv";
+    fileSize = 0;
+
+    fp = fopen(szFileName, "rb");
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createShaders(): fopen() failed to open Geometry Shader spir-v file!.\n");
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createShaders(): fopen() succeed to open Geometry Shader spir-v file!.\n");
+    }
+
+    fseek(fp, 0l, SEEK_END);
+    fileSize = ftell(fp);
+    if(fileSize == 0) {
+        fprintf(fptr, "createShaders(): ftell() gave file size: 0.\n");
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return (vkResult);
+    }
+    fseek(fp, 0l, SEEK_SET);
+
+    shaderData = (char*)malloc(fileSize * sizeof(char));
+
+    retVal = fread(shaderData, fileSize, 1, fp);
+    if(retVal != 1) {
+        fprintf(fptr, "createShaders(): fread() failed to read Geometry Shader file!.\n");
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createShaders(): fread() succeed to read Geometry Shader file!.\n");
+    }
+    fclose(fp);
+    fp = NULL;
+
+    memset((void*)&vkShaderModuleCreateInfo, 0, sizeof(VkShaderModuleCreateInfo));
+
+    vkShaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    vkShaderModuleCreateInfo.pNext = NULL;
+    vkShaderModuleCreateInfo.flags = 0;
+    vkShaderModuleCreateInfo.codeSize = fileSize;
+    vkShaderModuleCreateInfo.pCode = (uint32_t*)shaderData;
+
+    vkResult = vkCreateShaderModule(vkDevice, &vkShaderModuleCreateInfo, NULL, &vkShaderModule_geometry);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createShaders(): vkCreateShaderModule() for Geometry Shader Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createShaders(): vkCreateShaderModule() for Geometry Shader Successful!.\n");
+    }
+
+    if(shaderData) {
+        free(shaderData);
+        shaderData = NULL;
+    }
+    fprintf(fptr, "createShaders(): Geometry Shader Module Created Successful!.\n");
+
     // for fragment shader
     szFileName = "shader.frag.spv";
     fileSize = 0;
@@ -2662,7 +2727,7 @@ VkResult createDescriptorSetLayout(void) {
     vkDescriptorSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     vkDescriptorSetLayoutBinding.binding = 0; // this 0 is  the binding index, we will use this index in shader
     vkDescriptorSetLayoutBinding.descriptorCount = 1; 
-    vkDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // this binding will be used in vertex shader
+    vkDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
     vkDescriptorSetLayoutBinding.pImmutableSamplers = NULL; // we don't have any immutable samplers for now
 
     //Create Descriptor Set Layout Create Info
@@ -2995,7 +3060,7 @@ VkResult createPipeline(void) {
 
 
     // Shader Stage State
-    VkPipelineShaderStageCreateInfo vkPipelineShaderStageCreateInfo_array[2];
+    VkPipelineShaderStageCreateInfo vkPipelineShaderStageCreateInfo_array[3];
     memset((void*)vkPipelineShaderStageCreateInfo_array, 0, sizeof(VkPipelineShaderStageCreateInfo) * _ARRAYSIZE(vkPipelineShaderStageCreateInfo_array));
 
     // Vertex Shader Stage
@@ -3007,14 +3072,23 @@ VkResult createPipeline(void) {
     vkPipelineShaderStageCreateInfo_array[0].pName = "main"; // entry point name
     vkPipelineShaderStageCreateInfo_array[0].pSpecializationInfo = NULL;
 
-    // Fragment Shader Stage
+    // Geometry Shader Stage
     vkPipelineShaderStageCreateInfo_array[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vkPipelineShaderStageCreateInfo_array[1].pNext = NULL;
     vkPipelineShaderStageCreateInfo_array[1].flags = 0;
-    vkPipelineShaderStageCreateInfo_array[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    vkPipelineShaderStageCreateInfo_array[1].module = vkShaderModule_fragment;
+    vkPipelineShaderStageCreateInfo_array[1].stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+    vkPipelineShaderStageCreateInfo_array[1].module = vkShaderModule_geometry;
     vkPipelineShaderStageCreateInfo_array[1].pName = "main"; // entry point name
     vkPipelineShaderStageCreateInfo_array[1].pSpecializationInfo = NULL;
+
+    // Fragment Shader Stage
+    vkPipelineShaderStageCreateInfo_array[2].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vkPipelineShaderStageCreateInfo_array[2].pNext = NULL;
+    vkPipelineShaderStageCreateInfo_array[2].flags = 0;
+    vkPipelineShaderStageCreateInfo_array[2].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    vkPipelineShaderStageCreateInfo_array[2].module = vkShaderModule_fragment;
+    vkPipelineShaderStageCreateInfo_array[2].pName = "main"; // entry point name
+    vkPipelineShaderStageCreateInfo_array[2].pSpecializationInfo = NULL;
 
 
     // Tessellation State
