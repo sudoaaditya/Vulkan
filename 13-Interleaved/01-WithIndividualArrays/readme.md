@@ -1,0 +1,1 @@
+Colored Cube is template for this code
