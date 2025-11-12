@@ -124,12 +124,15 @@ const char *enabledValidationLayerNames_array[1]; //VK_LAYER_KHRONOS_validation
 VkDebugReportCallbackEXT vkDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT_fnptr = NULL;
 
-unsigned int numVertices;
-unsigned int numElements;
-float sphere_vertices[1146];
-float sphere_normals[1146];
-float sphere_textures[764];
-unsigned short sphere_elements[2280];
+// Vertex Buffers
+float *pPositions = NULL;
+float *pNormals = NULL;
+float *pTexCoords = NULL;
+unsigned int *pElements = NULL;
+
+unsigned int numFaceIndices = 0;
+unsigned int numElements = 0;
+unsigned int numVerts = 0;
 
 // Vertex Buffer
 typedef struct {
@@ -182,6 +185,9 @@ VkRect2D vkRect2D_scissor;
 VkPipeline vkPipeline = VK_NULL_HANDLE;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
+
+float angleTeapot = 0.0f;
+BOOL bAnimate = FALSE;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
     // Func
@@ -274,7 +280,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
             }
         } else {
             if(gbWindowMinimized == FALSE) {
-                if(gbActiveWindow == TRUE) {
+                if(gbActiveWindow == TRUE && bAnimate == TRUE) {
                     update();
                 }
                 vkResult = display();
@@ -356,6 +362,11 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
                 case 'F':
                     ToggleFullScreen();
                     break;
+
+                case 'a':
+                case 'A':
+                    bAnimate = !bAnimate;
+                    break;
                 
                 default:
                     break;
@@ -431,6 +442,7 @@ VkResult initialize(void) {
     VkResult createSwapchainImagesAndImageViews(void);
     VkResult createCommandPool(void);
     VkResult createCommandBuffers(void);
+    void addTriangle(float[3][3], float[3][3], float[3][2]);
     VkResult createVertexBuffer(void);
     VkResult createIndexBuffer(void);
     VkResult createUniformBuffer(void);
@@ -445,7 +457,6 @@ VkResult initialize(void) {
     VkResult createSemaphores(void);
     VkResult createFences(void);
     VkResult buildCommandBuffers(void);
-
 
     // varibales
     VkResult vkResult = VK_SUCCESS;
@@ -531,6 +542,41 @@ VkResult initialize(void) {
         return (vkResult);
     } else {
         fprintf(fptr, "initialize(): createCommandBuffers() Successful!.\n\n");
+    }
+
+    // Add Teapot Model Data
+    // calculate no of face indices
+    numFaceIndices = sizeof(face_indicies) / sizeof(face_indicies[0]);
+
+    // Position
+    pPositions = (float *)malloc(sizeof(float) * 3 * numFaceIndices);
+    // Normal
+    pNormals = (float *)malloc(sizeof(float) * 3 * numFaceIndices);
+    // TexCoord
+    pTexCoords = (float *)malloc(sizeof(float) * 2 * numFaceIndices);
+    // Elements
+    pElements = (unsigned int *)malloc(sizeof(unsigned int) * 3 * numFaceIndices);
+
+    // Declare tmp array to hol dtriangel vertices
+    float vert[3][3];
+    float norm[3][3];
+    float tex[3][2];
+
+    for(unsigned int i = 0; i < numFaceIndices; i++) {
+        for(int j = 0; j < 3; j++) {
+            vert[j][0] = vertices[face_indicies[i][j + 0]][0];
+            vert[j][1] = vertices[face_indicies[i][j + 0]][1];
+            vert[j][2] = vertices[face_indicies[i][j + 0]][2];
+
+            norm[j][0] = normals[face_indicies[i][j + 3]][0];
+            norm[j][1] = normals[face_indicies[i][j + 3]][1];
+            norm[j][2] = normals[face_indicies[i][j + 3]][2];
+
+            tex[j][0] = textures[face_indicies[i][j + 6]][0];
+            tex[j][1] = textures[face_indicies[i][j + 6]][1];
+        }
+
+        addTriangle(vert, norm, tex);
     }
 
     // Create Vertex Buffer
@@ -1135,6 +1181,31 @@ void uninitialize(void){
         uniformData.vkBuffer = VK_NULL_HANDLE;
     }
 
+    // Free allocated memory for model data
+    if(pElements) {
+        free(pElements);
+        pElements = NULL;
+        fprintf(fptr, "uninitialize(): freed pElements!.\n");
+    }
+
+    if(pTexCoords) {
+        free(pTexCoords);
+        pTexCoords = NULL;
+        fprintf(fptr, "uninitialize(): freed pTexCoords!.\n");
+    }
+
+    if(pNormals) {
+        free(pNormals);
+        pNormals = NULL;
+        fprintf(fptr, "uninitialize(): freed pNormals!.\n");
+    }
+
+    if(pPositions) {
+        free(pPositions);
+        pPositions = NULL;
+        fprintf(fptr, "uninitialize(): freed pPositions!.\n");
+    }
+
     // Destroy Vertex Buffer Position
     if(vertexData_position.vkDeviceMemory) {
         vkFreeMemory(vkDevice, vertexData_position.vkDeviceMemory, NULL);
@@ -1313,6 +1384,11 @@ void uninitialize(void){
 
 void update(void) {
 
+    // code
+    angleTeapot += 0.5f;
+    if(angleTeapot >= 360.0f) {
+        angleTeapot = 0.0f;
+    }
 }
 
 //! //////////////////////////////////////// Definations of vulkan Related Functions ///////////////////////////////////////////////
@@ -2527,7 +2603,6 @@ VkResult createCommandBuffers(void) {
     return (vkResult);
 }
 
-
 VkResult createVertexBuffer(void) {
     // variables
     VkResult vkResult = VK_SUCCESS;
@@ -2543,7 +2618,7 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-    vkBufferCreateInfo.size = sizeof(sphere_vertices);
+    vkBufferCreateInfo.size = sizeof(float) * 3 * numVerts;
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
@@ -2623,7 +2698,7 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 12
-    memcpy(data, sphere_vertices, sizeof(sphere_vertices));
+    memcpy(data, pPositions, sizeof(float) * 3 * numVerts);
 
     // Step 13
     vkUnmapMemory(vkDevice, vertexData_position.vkDeviceMemory);
@@ -2638,7 +2713,7 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-    vkBufferCreateInfo.size = sizeof(sphere_normals);
+    vkBufferCreateInfo.size = sizeof(float) * 3 * numVerts;
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
@@ -2716,7 +2791,7 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 12
-    memcpy(data, sphere_normals, sizeof(sphere_normals));
+    memcpy(data, pNormals, sizeof(float) * 3 * numVerts);
 
     // Step 13
     vkUnmapMemory(vkDevice, vertexData_normal.vkDeviceMemory);
@@ -2731,7 +2806,7 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-    vkBufferCreateInfo.size = sizeof(sphere_textures);
+    vkBufferCreateInfo.size = sizeof(float) * 2 * numVerts;
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
@@ -2809,7 +2884,7 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 12
-    memcpy(data, sphere_textures, sizeof(sphere_textures));
+    memcpy(data, pTexCoords, sizeof(float) * 2 * numVerts);
 
     // Step 13
     vkUnmapMemory(vkDevice, vertexData_texcoord.vkDeviceMemory);
@@ -2831,7 +2906,7 @@ VkResult createIndexBuffer(void) {
     vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-    vkBufferCreateInfo.size = sizeof(sphere_elements);
+    vkBufferCreateInfo.size = sizeof(unsigned int) * numElements;
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     
     // Setp 4
@@ -2911,7 +2986,7 @@ VkResult createIndexBuffer(void) {
     }
 
     // Step 12
-    memcpy(data, sphere_elements, sizeof(sphere_elements));
+    memcpy(data, pElements, sizeof(unsigned int) * numElements);
 
     // Step 13
     vkUnmapMemory(vkDevice, vertexData_elements.vkDeviceMemory);
@@ -3024,7 +3099,13 @@ VkResult updateUniformBuffer(void) {
         glm::vec3(0.0f, 0.0f, -2.0f)
     );
 
-    myUniformData.modelMatrix = translateMat;
+    rotateMat *= glm::rotate(
+        glm::mat4(1.0f),
+        glm::radians(angleTeapot),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    myUniformData.modelMatrix = translateMat * rotateMat;
 
     myUniformData.viewMatrix = glm::mat4(1.0f);
     myUniformData.projectionMatrix = glm::mat4(1.0f);
@@ -3887,7 +3968,7 @@ VkResult buildCommandBuffers(void) {
             vkCommandBuffer_array[i],
             vertexData_elements.vkBuffer,
             0, // offset is 0
-            VK_INDEX_TYPE_UINT16 // we are using 16 bit uint index matches with declared array in vertexData_position_index
+            VK_INDEX_TYPE_UINT32 // we are using 16 bit uint index matches with declared array in vertexData_position_index
         );
 
         // Here we should call vulkan drawing functions!
@@ -3930,4 +4011,108 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(
 ) {
     fprintf(fptr, "AMK_VALIDATION: debugReportCallback() :  %s (%d) = %s\n", pLayerPrefix, messageCode, pMessage);
     return VK_FALSE; // return false to ignore this message
+}
+
+// Add Triangle [ For loading model ]
+void addTriangle(float single_vertex[3][3], float single_normal[3][3], float single_texCoord[3][2])
+{
+	// function declarations
+	BOOL closeEnough(const float, const float, const float);
+	void normalizeVector(float[3]);
+
+	// code
+	unsigned int maxElements = numFaceIndices * 3;
+	const float e = 0.00001f; // How small a difference to equate
+
+	// First thing we do is make sure the normals are unit length!
+	// It's almost always a good idea to work with pre-normalized normals
+	normalizeVector(single_normal[0]);
+	normalizeVector(single_normal[1]);
+	normalizeVector(single_normal[2]);
+
+	// Search for match - triangle consists of three verts
+	for (unsigned int i = 0; i < 3; i++)
+	{
+		unsigned int j = 0;
+		for (j = 0; j < numVerts; j++)
+		{
+			// If the vertex positions are the same
+			if (closeEnough(pPositions[j * 3], single_vertex[i][0], e) &&
+				closeEnough(pPositions[(j * 3) + 1], single_vertex[i][1], e) &&
+				closeEnough(pPositions[(j * 3) + 2], single_vertex[i][2], e) &&
+
+				// AND the Normal is the same...
+				closeEnough(pNormals[j * 3], single_normal[i][0], e) &&
+				closeEnough(pNormals[(j * 3) + 1], single_normal[i][1], e) &&
+				closeEnough(pNormals[(j * 3) + 2], single_normal[i][2], e) &&
+
+				// And Texture is the same...
+				closeEnough(pTexCoords[j * 2], single_texCoord[i][0], e) &&
+				closeEnough(pTexCoords[(j * 2) + 1], single_texCoord[i][1], e))
+			{
+				// Then add the index only
+				pElements[numElements] = j;
+				numElements++;
+				break;
+			}
+		}
+
+		// No match for this vertex, add to end of list
+		if (j == numVerts && numVerts < maxElements && numElements < maxElements)
+		{
+			pPositions[numVerts * 3] = single_vertex[i][0];
+			pPositions[(numVerts * 3) + 1] = single_vertex[i][1];
+			pPositions[(numVerts * 3) + 2] = single_vertex[i][2];
+
+			pNormals[numVerts * 3] = single_normal[i][0];
+			pNormals[(numVerts * 3) + 1] = single_normal[i][1];
+			pNormals[(numVerts * 3) + 2] = single_normal[i][2];
+
+			pTexCoords[numVerts * 2] = single_texCoord[i][0];
+			pTexCoords[(numVerts * 2) + 1] = single_texCoord[i][1];
+
+			pElements[numElements] = numVerts;
+			numElements++;
+			numVerts++;
+		}
+	}
+}
+
+void normalizeVector(float u[3])
+{
+	// function declarations
+	void scaleVector(float[3], const float);
+	float getVectorLength(const float[3]);
+
+	// code
+	scaleVector(u, 1.0f / getVectorLength(u));
+}
+
+void scaleVector(float v[3], const float scale)
+{
+	// code
+	v[0] *= scale;
+	v[1] *= scale;
+	v[2] *= scale;
+}
+
+float getVectorLength(const float u[3])
+{
+	// function declarations
+	float getVectorLengthSquared(const float[3]);
+
+	// code
+	return(sqrtf(getVectorLengthSquared(u)));
+}
+
+float getVectorLengthSquared(const float u[3])
+{
+	// code
+	return((u[0] * u[0]) + (u[1] * u[1]) + (u[2] * u[2]));
+}
+
+BOOL closeEnough(const float fCandidate, const float fCompare, const float fEpsilon)
+{
+	// code
+	return((fabs(fCandidate - fCompare) < fEpsilon));
 }
