@@ -380,6 +380,39 @@ createIndexBuffer(): vkBindBufferMemory() Successful for Index Buffer!.
 createIndexBuffer(): vkMapMemory() Successful for Index Buffer!.
 initialize(): createIndexBuffer() Successful!.
 
+createTexture(): Texture Image Loaded Successfully! Width: 512, Height: 512, Channels: 1, Size: 1048576 bytes
+createTexture(): vkCreateBuffer() Successful for Staging Buffer!.
+createTexture(): vkAllocateMemory() Successful for Staging Buffer!.
+createTexture(): vkBindBufferMemory() Successful for Staging Buffer!.
+createTexture(): vkMapMemory() Successful for Staging Buffer!.
+createTexture(): Image Data Copied to Staging Buffer Successful & Freed stbi Image Data!.
+createTexture(): vkCreateImage() Successful for Texture Image!.
+createTexture(): vkAllocateMemory() Successful for Texture Image!.
+createTexture(): vkBindImageMemory() Successful for Texture Image!.
+createTexture(): vkAllocateCommandBuffers() Successful for Transition Image Layout!.
+createTexture(): vkBeginCommandBuffer() Successful for Transition Image Layout!.
+createTexture(): vkEndCommandBuffer() Successful for Transition Image Layout!.
+createTexture(): vkQueueSubmit() Successful for Transition Image Layout!.
+createTexture(): vkQueueWaitIdle() Successful for Transition Image Layout!.
+createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout!.
+createTexture(): vkAllocateCommandBuffers() Successful for Buffer to Image Copy!.
+createTexture(): vkBeginCommandBuffer() Successful for Buffer to Image Copy!.
+createTexture(): vkEndCommandBuffer() Successful for Buffer to Image Copy!.
+createTexture(): vkQueueSubmit() Successful for Buffer to Image Copy!.
+createTexture(): vkQueueWaitIdle() Successful for Buffer to Image Copy!.
+createTexture(): vkFreeCommandBuffers() Successful for Buffer to Image Copy!.
+createTexture(): vkAllocateCommandBuffers() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkBeginCommandBuffer() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkEndCommandBuffer() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkQueueSubmit() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkQueueWaitIdle() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkFreeMemory() Successful for Staging Buffer!.
+createTexture(): vkDestroyBuffer() Successful for Staging Buffer!.
+createTexture(): vkCreateImageView() Successful for Texture Image!.
+createTexture(): vkCreateSampler() Successful for Texture Sampler!.
+initialize(): createTexture() Successful!.
+
 createUniformBuffer(): vkCreateBuffer() Successful!.
 createUniformBuffer(): vkAllocateMemory() Successful!.
 createUniformBuffer(): vkBindBufferMemory() Successful!.
@@ -457,6 +490,10 @@ uninitialize(): vkDestroyShaderModule() Succeed for Fragment Shader!
 uninitialize(): vkDestroyShaderModule() Succeed for Vertex Shader!
 uninitialize(): vkFreeMemory() Succeed for Uniform Buffer!
 uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!
+uninitialize(): vkDestroySampler() Succeed for Texture Sampler!
+uninitialize(): vkDestroyImageView() Succeed for Texture Image View!
+uninitialize(): vkFreeMemory() Succeed for Texture Image Memory!
+uninitialize(): vkDestroyImage() Succeed for Texture Image!
 uninitialize(): freed pElements!.
 uninitialize(): freed pTexCoords!.
 uninitialize(): freed pNormals!.
