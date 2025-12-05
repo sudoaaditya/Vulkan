@@ -3,6 +3,7 @@
 #include<stdlib.h>
 
 #include "vk.h"
+#include "Teapot.h"
 
 // header & macros for texture
 #define STB_IMAGE_IMPLEMENTATION
@@ -15,8 +16,8 @@
 // glm related macros & header files
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE // clip space depth range is [0, 1]
-#include "../../glm/glm.hpp"
-#include "../../glm/gtc/matrix_transform.hpp"
+#include "../glm/glm.hpp"
+#include "../glm/gtc/matrix_transform.hpp"
 
 // vulkan related libraries
 #pragma comment(lib, "vulkan-1.lib")
@@ -173,15 +174,120 @@ VkViewport vkViewport;
 VkRect2D vkRect2D_scissor;
 VkPipeline vkPipeline = VK_NULL_HANDLE;
 
-// Texture Related Variables
-VkImage vkImage_texture = VK_NULL_HANDLE;
-VkDeviceMemory vkDeviceMemory_texture = VK_NULL_HANDLE;
-VkImageView vkImageView_texture = VK_NULL_HANDLE;
-// Texture Sampler
-VkSampler vkSampler_texture = VK_NULL_HANDLE;
-
 // For Rotation
 float angle = 0.0f;
+
+// FBO Related Variables
+#define FBO_WIDTH 512
+#define FBO_HEIGHT 512
+
+int fboWidth = FBO_WIDTH;
+int fboHeight = FBO_HEIGHT;
+
+// Surface Format
+VkFormat vkFormat_color_fbo = VK_FORMAT_UNDEFINED;
+
+// Fbo Image related Variables
+VkImage vkImage_fbo = VK_NULL_HANDLE;
+VkDeviceMemory vkDeviceMemory_fbo = VK_NULL_HANDLE;
+VkImageView vkImageView_fbo = VK_NULL_HANDLE;
+VkSampler vkSampler_fbo = VK_NULL_HANDLE;
+
+// For Depth Image
+VkFormat vkFormat_depth_fbo = VK_FORMAT_UNDEFINED;
+VkImage vkImage_depth_fbo = VK_NULL_HANDLE;
+VkDeviceMemory vkDeviceMemory_depth_fbo = VK_NULL_HANDLE;
+VkImageView vkImageView_depth_fbo = VK_NULL_HANDLE;
+
+// Command Buffer
+VkCommandBuffer vkCommandBuffer_fbo = VK_NULL_HANDLE;
+
+// Render Pass
+VkRenderPass vkRenderPass_fbo = VK_NULL_HANDLE;
+
+// Frame Buffer
+VkFramebuffer vkFramebuffer_fbo = VK_NULL_HANDLE;
+
+// Fences & Semaphore
+VkSemaphore vkSemaphore_fbo = VK_NULL_HANDLE;
+
+// Build Command Buffers
+VkClearColorValue vkClearColorValue_fbo;
+VkClearDepthStencilValue vkClearDepthStencilValue_fbo;
+
+// Render Variables
+BOOL bInitialized_fbo = FALSE;
+
+// Vertex Buffers
+float *pPositions = NULL;
+float *pNormals = NULL;
+float *pTexCoords = NULL;
+unsigned int *pElements = NULL;
+
+unsigned int numFaceIndices = 0;
+unsigned int numElements = 0;
+unsigned int numVerts = 0;
+
+// Position
+VertexData vertexData_position_fbo;
+// Normal
+VertexData vertexData_normal_fbo;
+// Texture
+VertexData vertexData_texcoord_fbo;
+// Indices
+VertexData vertexData_elements_fbo;
+
+// Uniform Related Declarations
+struct MyUniformData_fbo {
+    glm::mat4 modelMatrix;
+    glm::mat4 viewMatrix;
+    glm::mat4 projectionMatrix;
+    // Light Related Uniform
+    float lightAmbient[4]; // ambient
+    float lightDiffuse[4]; // diffuse
+    float lightSpecular[4]; // specular
+    float lightPosition[4]; // light position
+    // For Material
+    float materialAmbient[4]; // ambient
+    float materialDiffuse[4]; // diffuse
+    float materialSpecular[4]; // specular
+    float materialShininess; // shininess
+};
+
+UniformData uniformData_fbo;
+
+// Shader Variables
+VkShaderModule vkShaderModule_vertex_fbo = VK_NULL_HANDLE;
+VkShaderModule vkShaderModule_fragment_fbo = VK_NULL_HANDLE;
+
+// Descriptor Set Layout
+VkDescriptorSetLayout vkDescriptorSetLayout_fbo = VK_NULL_HANDLE;
+
+// Pipeline Layout
+VkPipelineLayout vkPipelineLayout_fbo = VK_NULL_HANDLE;
+
+// Descriptor Pool
+VkDescriptorPool vkDescriptorPool_fbo = VK_NULL_HANDLE;
+
+// Descriptor Set
+VkDescriptorSet vkDescriptorSet_fbo = VK_NULL_HANDLE;
+
+// Pipeline
+VkViewport vkViewport_fbo;
+VkRect2D vkRect2D_scissor_fbo;
+VkPipeline vkPipeline_fbo = VK_NULL_HANDLE;
+
+// Texture Related Variables
+VkImage vkImage_texture_fbo = VK_NULL_HANDLE;
+VkDeviceMemory vkDeviceMemory_texture_fbo = VK_NULL_HANDLE;
+VkImageView vkImageView_texture_fbo = VK_NULL_HANDLE;
+// Texture Sampler
+VkSampler vkSampler_texture_fbo = VK_NULL_HANDLE;
+
+float angleTeapot = 0.0f;
+BOOL bAnimate = FALSE;
+BOOL bLight = FALSE;
+BOOL bTexture = FALSE;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
@@ -237,7 +343,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
     hwnd = CreateWindowEx(WS_EX_APPWINDOW,
             szAppName,
-            TEXT("AMK_Vulkan : Kundali Texture"),
+            TEXT("AMK_Vulkan : Render To Texture"),
             WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE,
             xPos,
             yPos,
@@ -358,6 +464,21 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
                 case 'F':
                     ToggleFullScreen();
                     break;
+
+                case 'a':
+                case 'A':
+                    bAnimate = !bAnimate;
+                    break;
+
+                case 'l':
+                case 'L':
+                    bLight = !bLight;
+                    break;
+
+                case 't':
+                case 'T':
+                    bTexture = !bTexture;
+                    break;
                 
                 default:
                     break;
@@ -434,7 +555,6 @@ VkResult initialize(void) {
     VkResult createCommandPool(void);
     VkResult createCommandBuffers(void);
     VkResult createVertexBuffer(void);
-    VkResult createTexture(const char*);
     VkResult createUniformBuffer(void);
     VkResult createShaders(void);
     VkResult createDescriptorSetLayout(void);
@@ -544,15 +664,6 @@ VkResult initialize(void) {
         fprintf(fptr, "initialize(): createVertexBuffer() Successful!.\n\n");
     }
 
-    // Create Texture
-    vkResult = createTexture("Vijay_Kundali.png");
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "initialize(): createTexture() Failed!.\n");
-        return (vkResult);
-    } else {
-        fprintf(fptr, "initialize(): createTexture() Successful!.\n\n");
-    }
-
     // Create Uniform Buffer
     vkResult = createUniformBuffer();
     if(vkResult != VK_SUCCESS) {
@@ -561,7 +672,6 @@ VkResult initialize(void) {
     } else {
         fprintf(fptr, "initialize(): createUniformBuffer() Successful!.\n\n");
     }
-
 
     // Create Shaders
     vkResult = createShaders();
@@ -655,9 +765,9 @@ VkResult initialize(void) {
 
     // initialize clear color values
     memset((void*)&vkClearColorValue, 0, sizeof(VkClearColorValue));
-    vkClearColorValue.float32[0] = 0.0f;
-    vkClearColorValue.float32[1] = 0.0f;
-    vkClearColorValue.float32[2] = 0.0f;
+    vkClearColorValue.float32[0] = 1.0f;
+    vkClearColorValue.float32[1] = 1.0f;
+    vkClearColorValue.float32[2] = 1.0f;
     vkClearColorValue.float32[3] = 1.0f; // analogous to glClearColor
 
     // initialize clear depth stencil values
@@ -1135,34 +1245,6 @@ void uninitialize(void){
         vkDestroyBuffer(vkDevice, uniformData.vkBuffer, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!\n");
         uniformData.vkBuffer = VK_NULL_HANDLE;
-    }
-
-    // Destroy Texture Sampler
-    if(vkSampler_texture) {
-        vkDestroySampler(vkDevice, vkSampler_texture, NULL);
-        fprintf(fptr, "uninitialize(): vkDestroySampler() Succeed for Texture Sampler!\n");
-        vkSampler_texture = VK_NULL_HANDLE;
-    }
-
-    // Destroy Texture Image View
-    if(vkImageView_texture) {
-        vkDestroyImageView(vkDevice, vkImageView_texture, NULL);
-        fprintf(fptr, "uninitialize(): vkDestroyImageView() Succeed for Texture Image View!\n");
-        vkImageView_texture = VK_NULL_HANDLE;
-    }
-
-    // Destroy Texture Image Memory
-    if(vkDeviceMemory_texture) {
-        vkFreeMemory(vkDevice, vkDeviceMemory_texture, NULL);
-        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Texture Image Memory!\n");
-        vkDeviceMemory_texture = VK_NULL_HANDLE;
-    }
-
-    // Destroy Texture Image
-    if(vkImage_texture) {
-        vkDestroyImage(vkDevice, vkImage_texture, NULL);
-        fprintf(fptr, "uninitialize(): vkDestroyImage() Succeed for Texture Image!\n");
-        vkImage_texture = VK_NULL_HANDLE;
     }
 
     // Destroy Vertex Buffer Texcoord
@@ -2851,597 +2933,6 @@ VkResult createVertexBuffer(void) {
     return(vkResult);
 }
 
-VkResult createTexture(const char*  textureFileName) {
-    // variables
-    VkResult vkResult = VK_SUCCESS;
-
-    //Code!
-    // Step 1: Load Texture Image Information
-    FILE *fp = NULL;
-    fp = fopen(textureFileName, "rb");
-    if(fp == NULL) {
-        fprintf(fptr, "createTexture(): Failed to open texture file: %s\n", textureFileName);
-        vkResult = VK_ERROR_INITIALIZATION_FAILED;
-        return(vkResult);
-    }
-    
-    uint8_t *image_data = NULL;
-    int texture_width, texture_height, texture_channels;
-
-    image_data = stbi_load_from_file(fp, &texture_width, &texture_height, &texture_channels, STBI_rgb_alpha);
-    if(image_data == NULL || texture_width <= 0 || texture_height <= 0 || texture_channels <= 0) {
-        fprintf(fptr, "createTexture(): Failed to load texture image data from stbi_load_from_file for file: %s\n", textureFileName);
-        vkResult = VK_ERROR_INITIALIZATION_FAILED;
-        fclose(fp);
-        return(vkResult);
-    }
-
-    VkDeviceSize image_size = texture_width * texture_height * 4; // 4 channels (RGBA)
-
-    fprintf(fptr, "createTexture(): Texture Image Loaded Successfully! Width: %d, Height: %d, Channels: %d, Size: %llu bytes\n", 
-        texture_width, texture_height, texture_channels, (unsigned long long)image_size);
-
-    // Step 2: Create Staging Buffer
-    VkBuffer vkBuffer_stagingBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory vkDeviceMemory_stagingBuffer = VK_NULL_HANDLE;
-    
-    VkBufferCreateInfo vkBufferCreateInfo_stagingBuffer;
-    memset((void*)&vkBufferCreateInfo_stagingBuffer, 0, sizeof(VkBufferCreateInfo));
-
-    vkBufferCreateInfo_stagingBuffer.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    vkBufferCreateInfo_stagingBuffer.pNext = NULL;
-    vkBufferCreateInfo_stagingBuffer.flags = 0;
-    vkBufferCreateInfo_stagingBuffer.size = image_size;
-    vkBufferCreateInfo_stagingBuffer.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    vkBufferCreateInfo_stagingBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo_stagingBuffer, NULL, &vkBuffer_stagingBuffer);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkCreateBuffer() Failed for Staging Buffer!.\n");
-        return(vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkCreateBuffer() Successful for Staging Buffer!.\n");
-    }
-
-    // Get Memory Requirements for Staging Buffer
-    VkMemoryRequirements vkMemoryRequirements_stagingBuffer;
-    memset((void*)&vkMemoryRequirements_stagingBuffer, 0, sizeof(VkMemoryRequirements));
-
-    vkGetBufferMemoryRequirements(vkDevice, vkBuffer_stagingBuffer, &vkMemoryRequirements_stagingBuffer);
-    
-    // Allocate Memory for Staging Buffer
-    VkMemoryAllocateInfo vkMemoryAllocateInfo_stagingBuffer;
-    memset((void*)&vkMemoryAllocateInfo_stagingBuffer, 0, sizeof(VkMemoryAllocateInfo));
-
-    vkMemoryAllocateInfo_stagingBuffer.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    vkMemoryAllocateInfo_stagingBuffer.pNext = NULL;
-    vkMemoryAllocateInfo_stagingBuffer.allocationSize = vkMemoryRequirements_stagingBuffer.size;
-    vkMemoryAllocateInfo_stagingBuffer.memoryTypeIndex = 0;
-
-    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
-        if((vkMemoryRequirements_stagingBuffer.memoryTypeBits & 1) == 1) {
-            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
-                vkMemoryAllocateInfo_stagingBuffer.memoryTypeIndex = i;
-                break;
-            }
-        }
-        vkMemoryRequirements_stagingBuffer.memoryTypeBits >>= 1;
-    }
-
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_stagingBuffer, NULL, &vkDeviceMemory_stagingBuffer);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkAllocateMemory() Failed for Staging Buffer!.\n");
-        return(vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkAllocateMemory() Successful for Staging Buffer!.\n");
-    }
-
-    vkBindBufferMemory(vkDevice, vkBuffer_stagingBuffer, vkDeviceMemory_stagingBuffer, 0);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkBindBufferMemory() Failed for Staging Buffer!.\n");
-        return(vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkBindBufferMemory() Successful for Staging Buffer!.\n");
-    }
-
-    void * data = NULL;
-
-    vkResult = vkMapMemory(
-        vkDevice,
-        vkDeviceMemory_stagingBuffer,
-        0,
-        image_size,
-        0,
-        &data
-    );
-
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkMapMemory() Failed for Staging Buffer!.\n");
-        return(vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkMapMemory() Successful for Staging Buffer!.\n");
-    }
-
-    memcpy(data, image_data, image_size);
-
-    vkUnmapMemory(vkDevice, vkDeviceMemory_stagingBuffer);
-    
-    // As Copying of Image Data is done, we can free Image Data from stbi
-    stbi_image_free(image_data);
-    image_data = NULL;
-    fprintf(fptr, "createTexture(): Image Data Copied to Staging Buffer Successful & Freed stbi Image Data!.\n");
-    fclose(fp);
-
-    // Step 3: Create VKImage for Texture
-    VkImageCreateInfo vkImageCreateInfo;
-    memset((void*)&vkImageCreateInfo, 0, sizeof(VkImageCreateInfo));
-
-    vkImageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    vkImageCreateInfo.pNext = NULL;
-    vkImageCreateInfo.flags = 0;
-    vkImageCreateInfo.imageType = VK_IMAGE_TYPE_2D; // 2D Image
-    vkImageCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM; // RGBA format [To have portability on mobile and desktop we are using UNORM else we can use VK_FORMAT_R8G8B8A8_SRGB]
-    vkImageCreateInfo.extent.width = texture_width; 
-    vkImageCreateInfo.extent.height = texture_height;
-    vkImageCreateInfo.extent.depth = 1;
-    vkImageCreateInfo.mipLevels = 1;
-    vkImageCreateInfo.arrayLayers = 1;
-    vkImageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    vkImageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    vkImageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    vkImageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    vkImageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // Initial Layout is Undefined as we will be transferring data to it
-
-    vkResult = vkCreateImage(vkDevice, &vkImageCreateInfo, NULL, &vkImage_texture);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkCreateImage() Failed for Texture Image!.\n");
-        return(vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkCreateImage() Successful for Texture Image!.\n");
-    }
-
-    VkMemoryRequirements vkMemoryRequirements_image;
-    memset((void*)&vkMemoryRequirements_image, 0, sizeof(VkMemoryRequirements));
-
-    vkGetImageMemoryRequirements(vkDevice, vkImage_texture, &vkMemoryRequirements_image);
-
-    VkMemoryAllocateInfo vkMemoryAllocateInfo_image;
-    memset((void*)&vkMemoryAllocateInfo_image, 0, sizeof(VkMemoryAllocateInfo));
-
-    vkMemoryAllocateInfo_image.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    vkMemoryAllocateInfo_image.pNext = NULL;
-    vkMemoryAllocateInfo_image.allocationSize = vkMemoryRequirements_image.size;
-    vkMemoryAllocateInfo_image.memoryTypeIndex = 0; // this will be set in next step
-
-    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
-        if((vkMemoryRequirements_image.memoryTypeBits & 1) == 1) {
-            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-                vkMemoryAllocateInfo_image.memoryTypeIndex = i;
-                break;
-            }
-        }
-        vkMemoryRequirements_image.memoryTypeBits >>= 1;
-    }
-
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_image, NULL, &vkDeviceMemory_texture);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkAllocateMemory() Failed for Texture Image!.\n");
-        return(vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkAllocateMemory() Successful for Texture Image!.\n");
-    }
-
-    vkResult = vkBindImageMemory(vkDevice, vkImage_texture, vkDeviceMemory_texture, 0);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkBindImageMemory() Failed for Texture Image!.\n");
-        return(vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkBindImageMemory() Successful for Texture Image!.\n");
-    }
-
-    // Step 4: Create Image Transition Layout
-    VkCommandBufferAllocateInfo vkCommandBufferAllocateInfo_transition_image_layout;
-    memset((void*)&vkCommandBufferAllocateInfo_transition_image_layout, 0, sizeof(VkCommandBufferAllocateInfo));
-
-    vkCommandBufferAllocateInfo_transition_image_layout.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    vkCommandBufferAllocateInfo_transition_image_layout.pNext = NULL;
-    vkCommandBufferAllocateInfo_transition_image_layout.commandPool = vkCommandPool;
-    vkCommandBufferAllocateInfo_transition_image_layout.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    vkCommandBufferAllocateInfo_transition_image_layout.commandBufferCount = 1;
-
-    VkCommandBuffer vkCommandBuffer_transition_image_layout = VK_NULL_HANDLE;
-    vkResult = vkAllocateCommandBuffers(vkDevice, &vkCommandBufferAllocateInfo_transition_image_layout, &vkCommandBuffer_transition_image_layout);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Failed for Transition Image Layout!.\n");
-        return(vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Successful for Transition Image Layout!.\n");
-    }
-
-    VkCommandBufferBeginInfo vkCommandBufferBeginInfo_transition_image_layout;
-        memset((void*)&vkCommandBufferBeginInfo_transition_image_layout, 0, sizeof(VkCommandBufferBeginInfo));
-
-    vkCommandBufferBeginInfo_transition_image_layout.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    vkCommandBufferBeginInfo_transition_image_layout.pNext = NULL;
-    vkCommandBufferBeginInfo_transition_image_layout.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // we will submit this command buffer only once
-
-    vkResult = vkBeginCommandBuffer(vkCommandBuffer_transition_image_layout, &vkCommandBufferBeginInfo_transition_image_layout);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkBeginCommandBuffer() Failed for Transition Image Layout!.\n");
-        return (vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkBeginCommandBuffer() Successful for Transition Image Layout!.\n");
-    }
-
-    VkPipelineStageFlags vkPipelineStageFlags_source = 0;
-    VkPipelineStageFlags vkPipelineStageFlags_destination = 0;
-
-    VkImageMemoryBarrier vkImageMemoryBarrier;
-    memset((void*)&vkImageMemoryBarrier, 0, sizeof(VkImageMemoryBarrier));
-
-    vkImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    vkImageMemoryBarrier.pNext = NULL;
-    vkImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    vkImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    vkImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    vkImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    vkImageMemoryBarrier.image = vkImage_texture;
-    vkImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkImageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-    vkImageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-    vkImageMemoryBarrier.subresourceRange.layerCount = 1;
-    vkImageMemoryBarrier.subresourceRange.levelCount = 1;
-
-    if(vkImageMemoryBarrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && vkImageMemoryBarrier.newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-
-        vkImageMemoryBarrier.srcAccessMask = 0;
-        vkImageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        
-        vkPipelineStageFlags_source = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        vkPipelineStageFlags_destination = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-    } else if(vkImageMemoryBarrier.oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && vkImageMemoryBarrier.newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-        vkImageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        vkImageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        
-        vkPipelineStageFlags_source = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        vkPipelineStageFlags_destination = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    } else {
-        fprintf(fptr, "createTexture(): Unsuppored Texture Layout Transition!.\n");
-        vkResult = VK_ERROR_INITIALIZATION_FAILED;
-        return(vkResult);
-    }
-
-    vkCmdPipelineBarrier(
-        vkCommandBuffer_transition_image_layout,
-        vkPipelineStageFlags_source,
-        vkPipelineStageFlags_destination,
-        0, // No flags
-        0, NULL, // No memory barriers
-        0, NULL, // No buffer barriers
-        1, &vkImageMemoryBarrier // Image Barrier
-    );
-
-    vkResult = vkEndCommandBuffer(vkCommandBuffer_transition_image_layout);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkEndCommandBuffer() Failed for Transition Image Layout!.\n");
-        return(vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkEndCommandBuffer() Successful for Transition Image Layout!.\n");
-    }
-
-    VkSubmitInfo vkSubmitInfo_image_transition_layout;
-    memset((void*)&vkSubmitInfo_image_transition_layout, 0, sizeof(VkSubmitInfo));
-
-    vkSubmitInfo_image_transition_layout.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    vkSubmitInfo_image_transition_layout.pNext = NULL;
-    vkSubmitInfo_image_transition_layout.commandBufferCount = 1;
-    vkSubmitInfo_image_transition_layout.pCommandBuffers = &vkCommandBuffer_transition_image_layout;
-
-    vkResult = vkQueueSubmit(vkQueue, 1, &vkSubmitInfo_image_transition_layout, VK_NULL_HANDLE);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkQueueSubmit() Failed for Transition Image Layout!.\n");
-        return (vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkQueueSubmit() Successful for Transition Image Layout!.\n");
-    }
-
-    vkResult = vkQueueWaitIdle(vkQueue);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkQueueWaitIdle() Failed for Transition Image Layout!.\n");
-        return (vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkQueueWaitIdle() Successful for Transition Image Layout!.\n");
-    }
-
-    if(vkCommandBuffer_transition_image_layout){ 
-        vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_transition_image_layout);
-        fprintf(fptr, "createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout!.\n");
-        vkCommandBuffer_transition_image_layout = VK_NULL_HANDLE;
-    }
-
-    // Step 5: Copy Staging Buffer to Texture Image
-    VkCommandBufferAllocateInfo vkCommandBufferAllocateInfo_buffer_to_image_copy;
-    memset((void*)&vkCommandBufferAllocateInfo_buffer_to_image_copy, 0, sizeof(VkCommandBufferAllocateInfo));
-
-    vkCommandBufferAllocateInfo_buffer_to_image_copy.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    vkCommandBufferAllocateInfo_buffer_to_image_copy.pNext = NULL;
-    vkCommandBufferAllocateInfo_buffer_to_image_copy.commandPool = vkCommandPool;
-    vkCommandBufferAllocateInfo_buffer_to_image_copy.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    vkCommandBufferAllocateInfo_buffer_to_image_copy.commandBufferCount = 1;
-
-    VkCommandBuffer vkCommandBuffer_buffer_to_image_copy = VK_NULL_HANDLE;
-    vkResult = vkAllocateCommandBuffers(vkDevice, &vkCommandBufferAllocateInfo_buffer_to_image_copy, &vkCommandBuffer_buffer_to_image_copy);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Failed for Buffer to Image Copy!.\n");
-        return(vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Successful for Buffer to Image Copy!.\n");
-    }
-
-    VkCommandBufferBeginInfo vkCommandBufferBeginInfo_buffer_to_image_copy;
-    memset((void*)&vkCommandBufferBeginInfo_buffer_to_image_copy, 0, sizeof(VkCommandBufferBeginInfo));
-
-    vkCommandBufferBeginInfo_buffer_to_image_copy.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    vkCommandBufferBeginInfo_buffer_to_image_copy.pNext = NULL;
-    vkCommandBufferBeginInfo_buffer_to_image_copy.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // we will submit this command buffer only once
-
-    vkResult = vkBeginCommandBuffer(vkCommandBuffer_buffer_to_image_copy, &vkCommandBufferBeginInfo_buffer_to_image_copy);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkBeginCommandBuffer() Failed for Buffer to Image Copy!.\n");
-        return (vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkBeginCommandBuffer() Successful for Buffer to Image Copy!.\n");
-    }
-
-    VkBufferImageCopy vkBufferImageCopy;
-    memset((void*)&vkBufferImageCopy, 0, sizeof(VkBufferImageCopy));
-    // this is not used a sstandard structure
-    vkBufferImageCopy.bufferOffset = 0;
-    vkBufferImageCopy.bufferRowLength = 0;
-    vkBufferImageCopy.bufferImageHeight = 0;
-    vkBufferImageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkBufferImageCopy.imageSubresource.mipLevel = 0;
-    vkBufferImageCopy.imageSubresource.baseArrayLayer = 0;
-    vkBufferImageCopy.imageSubresource.layerCount = 1;
-    vkBufferImageCopy.imageOffset.x = 0;
-    vkBufferImageCopy.imageOffset.y = 0;
-    vkBufferImageCopy.imageOffset.z = 0;
-    vkBufferImageCopy.imageExtent.width = texture_width;
-    vkBufferImageCopy.imageExtent.height = texture_height;
-    vkBufferImageCopy.imageExtent.depth = 1;
-
-    vkCmdCopyBufferToImage(
-        vkCommandBuffer_buffer_to_image_copy,
-        vkBuffer_stagingBuffer,
-        vkImage_texture,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        1, // Number of regions
-        &vkBufferImageCopy
-    );
-
-    vkResult = vkEndCommandBuffer(vkCommandBuffer_buffer_to_image_copy);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkEndCommandBuffer() Failed for Buffer to Image Copy!.\n");
-        return(vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkEndCommandBuffer() Successful for Buffer to Image Copy!.\n");
-    }
-
-    VkSubmitInfo vkSubmitInfo_image_buffer_to_image_copy;
-    memset((void*)&vkSubmitInfo_image_buffer_to_image_copy, 0, sizeof(VkSubmitInfo));
-
-    vkSubmitInfo_image_buffer_to_image_copy.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    vkSubmitInfo_image_buffer_to_image_copy.pNext = NULL;
-    vkSubmitInfo_image_buffer_to_image_copy.commandBufferCount = 1;
-    vkSubmitInfo_image_buffer_to_image_copy.pCommandBuffers = &vkCommandBuffer_buffer_to_image_copy;
-
-    vkResult = vkQueueSubmit(vkQueue, 1, &vkSubmitInfo_image_buffer_to_image_copy, VK_NULL_HANDLE);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkQueueSubmit() Failed for Buffer to Image Copy!.\n");
-        return (vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkQueueSubmit() Successful for Buffer to Image Copy!.\n");
-    }
-
-    vkResult = vkQueueWaitIdle(vkQueue);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkQueueWaitIdle() Failed for Buffer to Image Copy!.\n");
-        return (vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkQueueWaitIdle() Successful for Buffer to Image Copy!.\n");
-    }
-
-    if(vkCommandBuffer_buffer_to_image_copy){ 
-        vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_buffer_to_image_copy);
-        fprintf(fptr, "createTexture(): vkFreeCommandBuffers() Successful for Buffer to Image Copy!.\n");
-        vkCommandBuffer_buffer_to_image_copy = VK_NULL_HANDLE;
-    }
-
-    // Step 6: Image Layout Transition to Shader Read Only
-    vkCommandBuffer_transition_image_layout = VK_NULL_HANDLE;
-    memset((void*)&vkCommandBufferAllocateInfo_transition_image_layout, 0, sizeof(VkCommandBufferAllocateInfo));
-
-    vkCommandBufferAllocateInfo_transition_image_layout.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    vkCommandBufferAllocateInfo_transition_image_layout.pNext = NULL;
-    vkCommandBufferAllocateInfo_transition_image_layout.commandPool = vkCommandPool;
-    vkCommandBufferAllocateInfo_transition_image_layout.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    vkCommandBufferAllocateInfo_transition_image_layout.commandBufferCount = 1;
-
-    vkResult = vkAllocateCommandBuffers(vkDevice, &vkCommandBufferAllocateInfo_transition_image_layout, &vkCommandBuffer_transition_image_layout);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Failed for Transition Image Layout for Shaders!.\n");
-        return(vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Successful for Transition Image Layout for Shaders!.\n");
-    }
-
-    memset((void*)&vkCommandBufferBeginInfo_transition_image_layout, 0, sizeof(VkCommandBufferBeginInfo));
-
-    vkCommandBufferBeginInfo_transition_image_layout.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    vkCommandBufferBeginInfo_transition_image_layout.pNext = NULL;
-    vkCommandBufferBeginInfo_transition_image_layout.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // we will submit this command buffer only once
-
-    vkResult = vkBeginCommandBuffer(vkCommandBuffer_transition_image_layout, &vkCommandBufferBeginInfo_transition_image_layout);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkBeginCommandBuffer() Failed for Transition Image Layout for Shaders!.\n");
-        return (vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkBeginCommandBuffer() Successful for Transition Image Layout for Shaders!.\n");
-    }
-
-    vkPipelineStageFlags_source = 0;
-    vkPipelineStageFlags_destination = 0;
-
-    memset((void*)&vkImageMemoryBarrier, 0, sizeof(VkImageMemoryBarrier));
-
-    vkImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    vkImageMemoryBarrier.pNext = NULL;
-    vkImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    vkImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    vkImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    vkImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    vkImageMemoryBarrier.image = vkImage_texture;
-    vkImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkImageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-    vkImageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-    vkImageMemoryBarrier.subresourceRange.layerCount = 1;
-    vkImageMemoryBarrier.subresourceRange.levelCount = 1;
-
-    if(vkImageMemoryBarrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && vkImageMemoryBarrier.newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-
-        vkImageMemoryBarrier.srcAccessMask = 0;
-        vkImageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        
-        vkPipelineStageFlags_source = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        vkPipelineStageFlags_destination = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-    } else if(vkImageMemoryBarrier.oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && vkImageMemoryBarrier.newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-        vkImageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        vkImageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        
-        vkPipelineStageFlags_source = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        vkPipelineStageFlags_destination = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    } else {
-        fprintf(fptr, "createTexture(): Unsuppored Texture Layout Transition for Shaders!.\n");
-        vkResult = VK_ERROR_INITIALIZATION_FAILED;
-        return(vkResult);
-    }
-
-    vkCmdPipelineBarrier(
-        vkCommandBuffer_transition_image_layout,
-        vkPipelineStageFlags_source,
-        vkPipelineStageFlags_destination,
-        0, // No flags
-        0, NULL, // No memory barriers
-        0, NULL, // No buffer barriers
-        1, &vkImageMemoryBarrier // Image Barrier
-    );
-
-    vkResult = vkEndCommandBuffer(vkCommandBuffer_transition_image_layout);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkEndCommandBuffer() Failed for Transition Image Layout for Shaders!.\n");
-        return(vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkEndCommandBuffer() Successful for Transition Image Layout for Shaders!.\n");
-    }
-
-    memset((void*)&vkSubmitInfo_image_transition_layout, 0, sizeof(VkSubmitInfo));
-
-    vkSubmitInfo_image_transition_layout.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    vkSubmitInfo_image_transition_layout.pNext = NULL;
-    vkSubmitInfo_image_transition_layout.commandBufferCount = 1;
-    vkSubmitInfo_image_transition_layout.pCommandBuffers = &vkCommandBuffer_transition_image_layout;
-
-    vkResult = vkQueueSubmit(vkQueue, 1, &vkSubmitInfo_image_transition_layout, VK_NULL_HANDLE);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkQueueSubmit() Failed for Transition Image Layout for Shaders!.\n");
-        return (vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkQueueSubmit() Successful for Transition Image Layout for Shaders!.\n");
-    }
-
-    vkResult = vkQueueWaitIdle(vkQueue);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkQueueWaitIdle() Failed for Transition Image Layout for Shaders!.\n");
-        return (vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkQueueWaitIdle() Successful for Transition Image Layout for Shaders!.\n");
-    }
-
-    if(vkCommandBuffer_transition_image_layout){ 
-        vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_transition_image_layout);
-        fprintf(fptr, "createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout for Shaders!.\n");
-        vkCommandBuffer_transition_image_layout = VK_NULL_HANDLE;
-    }
-
-    // Step 7: Remove Local Staging Buffer
-    if(vkBuffer_stagingBuffer) {
-        vkFreeMemory(vkDevice, vkDeviceMemory_stagingBuffer, NULL);
-        fprintf(fptr, "createTexture(): vkFreeMemory() Successful for Staging Buffer!.\n");
-        vkDeviceMemory_stagingBuffer = VK_NULL_HANDLE;
-    }
-    if(vkBuffer_stagingBuffer) {
-        vkDestroyBuffer(vkDevice, vkBuffer_stagingBuffer, NULL);
-        fprintf(fptr, "createTexture(): vkDestroyBuffer() Successful for Staging Buffer!.\n");
-        vkBuffer_stagingBuffer = VK_NULL_HANDLE;
-    }
-
-    // Step 8: Create Image View for Texture
-    VkImageViewCreateInfo vkImageViewCreateInfo;
-    memset((void*)&vkImageViewCreateInfo, 0, sizeof(VkImageViewCreateInfo));
-    
-    vkImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    vkImageViewCreateInfo.pNext = NULL;
-    vkImageViewCreateInfo.flags = 0;
-    vkImageViewCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM; // Same format as Image
-    vkImageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkImageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-    vkImageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-    vkImageViewCreateInfo.subresourceRange.layerCount = 1;
-    vkImageViewCreateInfo.subresourceRange.levelCount = 1;
-    vkImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    vkImageViewCreateInfo.image = vkImage_texture;
-
-    vkResult = vkCreateImageView(vkDevice, &vkImageViewCreateInfo, NULL, &vkImageView_texture);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkCreateImageView() Failed for Texture Image!.\n");
-        return (vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkCreateImageView() Successful for Texture Image!.\n");
-    }
-
-    // Step 9: Create Sampler for Texture
-    VkSamplerCreateInfo vkSamplerCreateInfo;
-    memset((void*)&vkSamplerCreateInfo, 0, sizeof(VkSamplerCreateInfo));
-
-    vkSamplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    vkSamplerCreateInfo.pNext = NULL;
-    vkSamplerCreateInfo.magFilter = VK_FILTER_LINEAR; // Linear Filtering
-    vkSamplerCreateInfo.minFilter = VK_FILTER_LINEAR;
-    vkSamplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR; // Linear Mipmapping
-    vkSamplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT; // Repeat Texture
-    vkSamplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    vkSamplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    vkSamplerCreateInfo.anisotropyEnable = VK_FALSE; // Disable Anisotropy
-    vkSamplerCreateInfo.maxAnisotropy = 16.0f; // Maximum Anisotropy
-    vkSamplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_WHITE; // Border Color
-    vkSamplerCreateInfo.unnormalizedCoordinates = VK_FALSE; // Normalized Coordinates
-    vkSamplerCreateInfo.compareEnable = VK_FALSE; // Disable Comparison
-    vkSamplerCreateInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-
-    vkResult = vkCreateSampler(vkDevice, &vkSamplerCreateInfo, NULL, &vkSampler_texture);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createTexture(): vkCreateSampler() Failed for Texture Sampler!.\n");
-        return (vkResult);
-    } else {
-        fprintf(fptr, "createTexture(): vkCreateSampler() Successful for Texture Sampler!.\n");
-    }
-
-    return(vkResult);
-}
-
-
 VkResult createUniformBuffer (void) {
     // functions
     VkResult updateUniformBuffer(void);
@@ -3881,8 +3372,8 @@ VkResult createDescriptorSet(void) {
     memset((void*)&vkDescriptorImageInfo, 0, sizeof(VkDescriptorImageInfo));
 
     vkDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    vkDescriptorImageInfo.imageView = vkImageView_texture;
-    vkDescriptorImageInfo.sampler = vkSampler_texture;
+    vkDescriptorImageInfo.imageView = NULL;
+    vkDescriptorImageInfo.sampler = NULL;
 
     // Now update the descriptor set with the buffer directly to the shader
     // we will write to the shader
@@ -4473,3 +3964,1426 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(
     fprintf(fptr, "AMK_VALIDATION: debugReportCallback() :  %s (%d) = %s\n", pLayerPrefix, messageCode, pMessage);
     return VK_FALSE; // return false to ignore this message
 }
+
+
+//! FBO RELATED FUNCTIONS
+
+VkResult resize_fbo(int fbo_width, int fbo_height) {
+    // Function declarations
+    VkResult createSwapchainImagesAndImageViews_fbo(void);
+    VkResult createCommandBuffers_fbo(void);
+    VkResult createPipelineLayout_fbo(void);
+    VkResult createPipeline_fbo(void);
+    VkResult createFramebuffer_fbo(void);
+    VkResult createRenderPass_fbo(void);
+    VkResult buildCommandBuffer_fbo(void);
+
+    // Variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Code
+    if(fbo_height <= 0)
+        fbo_height = 1;
+
+    // If control comes here before initialization is done, then return false
+    if(bInitialized_fbo == FALSE) {
+        fprintf(fptr, "resize_fbo(): initialization is not completed or failed\n");
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return (vkResult);
+    }
+
+    // As recreation of swapchain is required, we are going to repeat many steps of initialization again
+    // hence set bInitialized_fbo to FALSE
+    bInitialized_fbo = FALSE; // this will prevent display() function to execute before resize() is done
+
+    // Set Global Width & Height
+    fboWidth = fbo_width;
+    fboHeight = fbo_height;
+
+    // Check if vkSwapchainKHR is NULL, if it is NULL then we cannot proceed
+    if(vkSwapchainKHR == VK_NULL_HANDLE) {
+        fprintf(fptr, "resize_fbo(): vkSwapchainKHR is NULL cannot proceed!.\n");
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return (vkResult);
+    }
+
+    // Destroy Frame Buffers
+    if(vkFramebuffer_fbo) {
+        vkDestroyFramebuffer(vkDevice, vkFramebuffer_fbo, NULL);
+        vkFramebuffer_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy  Command Buffers
+    if(vkCommandBuffer_fbo) {
+        vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_fbo);
+        vkCommandBuffer_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Pipeline
+    if(vkPipeline_fbo) {
+        vkDestroyPipeline(vkDevice, vkPipeline_fbo, NULL);
+        vkPipeline_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Pipeline Layout
+    if(vkPipelineLayout_fbo) {
+        vkDestroyPipelineLayout(vkDevice, vkPipelineLayout_fbo, NULL);
+        vkPipelineLayout_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Render Pass
+    if(vkRenderPass_fbo) {
+        vkDestroyRenderPass(vkDevice, vkRenderPass_fbo, NULL);
+        vkRenderPass_fbo = VK_NULL_HANDLE;
+    }
+
+    // destroy depth stencil image view
+    if(vkImageView_depth_fbo) {
+        vkDestroyImageView(vkDevice, vkImageView_depth_fbo, NULL);
+        vkImageView_depth_fbo = VK_NULL_HANDLE;
+    }
+
+    // destroy depth stencil image
+    if(vkImage_depth_fbo) {
+        vkDestroyImage(vkDevice, vkImage_depth_fbo, NULL);
+        vkImage_depth_fbo = VK_NULL_HANDLE;
+    }
+
+    // destroy depth stencil memory
+    if(vkDeviceMemory_depth_fbo) {
+        vkFreeMemory(vkDevice, vkDeviceMemory_depth_fbo, NULL);
+        vkDeviceMemory_depth_fbo = VK_NULL_HANDLE;
+    }
+
+    if(vkSampler_fbo){
+        vkDestroySampler(vkDevice, vkSampler_fbo, NULL);
+        vkSampler_fbo = VK_NULL_HANDLE;
+    }
+
+    if(vkImageView_fbo){
+        vkDestroyImageView(vkDevice, vkImageView_fbo, NULL);
+        vkImageView_fbo = VK_NULL_HANDLE;
+    }
+
+    if(vkDeviceMemory_fbo){
+        vkFreeMemory(vkDevice, vkDeviceMemory_fbo, NULL);
+        vkDeviceMemory_fbo = VK_NULL_HANDLE;
+    }
+
+    if(vkImage_fbo){
+        vkDestroyImage(vkDevice, vkImage_fbo, NULL);
+        vkImage_fbo = VK_NULL_HANDLE;
+    }
+
+    // RECREATE FOR RESIZE
+
+    // Create Swapchain Images & Image Views
+    vkResult = createSwapchainImagesAndImageViews_fbo();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize_fbo(): createSwapchainImagesAndImageViews_fbo() Failed!.\n");
+        return (vkResult);
+    }
+
+    // Create Render Pass
+    vkResult = createRenderPass_fbo();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize_fbo(): createRenderPass_fbo() Failed!.\n");
+        return (vkResult);
+    }
+
+    // Create Pipeline Layout
+    vkResult = createPipelineLayout_fbo();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize_fbo(): createPipelineLayout_fbo() Failed!.\n");
+        return (vkResult);
+    }
+
+    // Create Pipeline
+    vkResult = createPipeline_fbo();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize_fbo(): createPipeline_fbo() Failed!.\n");
+        return (vkResult);
+    }
+
+    // Create Framebuffers
+    vkResult = createFramebuffer_fbo();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize_fbo(): createFramebuffer_fbo() Failed!.\n");
+        return (vkResult);
+    }
+    
+    // Create Command Buffer
+    vkResult = createCommandBuffers_fbo();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize_fbo(): createCommandBuffers_fbo() Failed!.\n");
+        return (vkResult);
+    }
+
+    // Build Command Buffers
+    vkResult = buildCommandBuffer_fbo();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "resize_fbo(): buildCommandBuffer_fbo() Failed!.\n");
+        return (vkResult);
+    }
+
+    // add extra new line for better readability
+    fprintf(fptr, "\n\n");
+
+    bInitialized_fbo = TRUE;
+
+    return (vkResult);
+}
+
+void update_fbo(void) {
+
+    // code
+    angleTeapot += 0.5f;
+    if(angleTeapot >= 360.0f) {
+        angleTeapot = 0.0f;
+    }
+}
+
+void uninitialize_fbo(void){
+
+    // Destroy Semaphore
+    if(vkSemaphore_fbo) {
+        vkDestroySemaphore(vkDevice, vkSemaphore_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroySemaphore() for Render Complete Succeed!\n");
+        vkSemaphore_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Frame Buffers
+    if(vkFramebuffer_fbo) {
+        vkDestroyFramebuffer(vkDevice, vkFramebuffer_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyFramebuffer() Succeed!.\n");
+        vkFramebuffer_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Pipeline
+    if(vkPipeline_fbo) {
+        vkDestroyPipeline(vkDevice, vkPipeline_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyPipeline() Succeed!\n");
+        vkPipeline_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Render Pass
+    if(vkRenderPass_fbo) {
+        vkDestroyRenderPass(vkDevice, vkRenderPass_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyRenderPass() Succeed!\n");
+        vkRenderPass_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Descriptor Pool
+    // When descriptor pool is destroyed, all the descriptor sets created from it are destroyed internally
+    // so we  don't need to destroy descriptor set explicitly 
+    if(vkDescriptorPool_fbo) {
+        vkDestroyDescriptorPool(vkDevice, vkDescriptorPool_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDescriptorPool_fbo & vkDescriptorSet_fbo Destroy Succeed!\n");
+        vkDescriptorPool_fbo = VK_NULL_HANDLE;
+        vkDescriptorSet_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Pipeline Layout
+    if(vkPipelineLayout_fbo) {
+        vkDestroyPipelineLayout(vkDevice, vkPipelineLayout_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyPipelineLayout() Succeed!\n");
+        vkPipelineLayout_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Descriptor Set Layout
+    if(vkDescriptorSetLayout_fbo) {
+        vkDestroyDescriptorSetLayout(vkDevice, vkDescriptorSetLayout_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyDescriptorSetLayout() Succeed!\n");
+        vkDescriptorSetLayout_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Shader
+    if(vkShaderModule_fragment_fbo) {
+        vkDestroyShaderModule(vkDevice, vkShaderModule_fragment_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyShaderModule() Succeed for Fragment Shader!\n");
+        vkShaderModule_fragment_fbo = VK_NULL_HANDLE;
+    }
+
+    if(vkShaderModule_vertex_fbo) {
+        vkDestroyShaderModule(vkDevice, vkShaderModule_vertex_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyShaderModule() Succeed for Vertex Shader!\n");
+        vkShaderModule_vertex_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Uniform Buffer
+    if(uniformData_fbo.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, uniformData_fbo.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkFreeMemory() Succeed for Uniform Buffer!\n");
+        uniformData_fbo.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+
+    if(uniformData_fbo.vkBuffer) {
+        vkDestroyBuffer(vkDevice, uniformData_fbo.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyBuffer() Succeed for Uniform Buffer!\n");
+        uniformData_fbo.vkBuffer = VK_NULL_HANDLE;
+    }
+
+    // Destroy Texture Sampler
+    if(vkSampler_texture_fbo) {
+        vkDestroySampler(vkDevice, vkSampler_texture_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroySampler() Succeed for Texture Sampler!\n");
+        vkSampler_texture_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Texture Image View
+    if(vkImageView_texture_fbo) {
+        vkDestroyImageView(vkDevice, vkImageView_texture_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyImageView() Succeed for Texture Image View!\n");
+        vkImageView_texture_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Texture Image Memory
+    if(vkDeviceMemory_texture_fbo) {
+        vkFreeMemory(vkDevice, vkDeviceMemory_texture_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkFreeMemory() Succeed for Texture Image Memory!\n");
+        vkDeviceMemory_texture_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy Texture Image
+    if(vkImage_texture_fbo) {
+        vkDestroyImage(vkDevice, vkImage_texture_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyImage() Succeed for Texture Image!\n");
+        vkImage_texture_fbo = VK_NULL_HANDLE;
+    }
+
+    // Free allocated memory for model data
+    if(pElements) {
+        free(pElements);
+        pElements = NULL;
+        fprintf(fptr, "uninitialize_fbo(): freed pElements!.\n");
+    }
+
+    if(pTexCoords) {
+        free(pTexCoords);
+        pTexCoords = NULL;
+        fprintf(fptr, "uninitialize_fbo(): freed pTexCoords!.\n");
+    }
+
+    if(pNormals) {
+        free(pNormals);
+        pNormals = NULL;
+        fprintf(fptr, "uninitialize_fbo(): freed pNormals!.\n");
+    }
+
+    if(pPositions) {
+        free(pPositions);
+        pPositions = NULL;
+        fprintf(fptr, "uninitialize_fbo(): freed pPositions!.\n");
+    }
+
+    // Destroy Vertex Buffer Position
+    if(vertexData_position_fbo.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, vertexData_position_fbo.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkFreeMemory() Succeed for Vertex Buffer for Position!\n");
+        vertexData_position_fbo.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+
+    if(vertexData_position_fbo.vkBuffer) {
+        vkDestroyBuffer(vkDevice, vertexData_position_fbo.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyBuffer() Succeed for Vertex Buffer for Position!\n");
+        vertexData_position_fbo.vkBuffer = VK_NULL_HANDLE;
+    }
+
+    // Destroy Vertex Buffer Normal
+    if(vertexData_normal_fbo.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, vertexData_normal_fbo.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkFreeMemory() Succeed for Vertex Buffer for Normal!\n");
+        vertexData_normal_fbo.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+
+    if(vertexData_normal_fbo.vkBuffer) {
+        vkDestroyBuffer(vkDevice, vertexData_normal_fbo.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyBuffer() Succeed for Vertex Buffer for Normal!\n");
+        vertexData_normal_fbo.vkBuffer = VK_NULL_HANDLE;
+    }
+
+    // Destroy Index Buffer
+    if(vertexData_elements_fbo.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, vertexData_elements_fbo.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkFreeMemory() Succeed for Index Buffer!\n");
+        vertexData_elements_fbo.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+    if(vertexData_elements_fbo.vkBuffer) {
+        vkDestroyBuffer(vkDevice, vertexData_elements_fbo.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyBuffer() Succeed for Index Buffer!\n");
+        vertexData_elements_fbo.vkBuffer = VK_NULL_HANDLE;
+    }
+
+    if(vertexData_texcoord_fbo.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, vertexData_texcoord_fbo.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkFreeMemory() Succeed for Vertex Buffer for Texcoord!\n");
+        vertexData_texcoord_fbo.vkDeviceMemory = VK_NULL_HANDLE;
+    }
+
+    if(vertexData_texcoord_fbo.vkBuffer) {
+        vkDestroyBuffer(vkDevice, vertexData_texcoord_fbo.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyBuffer() Succeed for Vertex Buffer for Texcoord!\n");
+        vertexData_texcoord_fbo.vkBuffer = VK_NULL_HANDLE;
+    }
+
+    // Destroy  Command Buffer
+    if(vkCommandBuffer_fbo) {
+        vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_fbo);
+        fprintf(fptr, "uninitialize_fbo(): vkFreeCommandBuffers() Succeed!\n");
+        vkCommandBuffer_fbo = VK_NULL_HANDLE;
+    }
+
+    // destroy depth stencil image view
+    if(vkImageView_depth_fbo) {
+        vkDestroyImageView(vkDevice, vkImageView_depth_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyImageView() Succeed for Depth Stencil Image View!\n");
+        vkImageView_depth_fbo = VK_NULL_HANDLE;
+    }
+
+    // destroy depth stencil image
+    if(vkImage_depth_fbo) {
+        vkDestroyImage(vkDevice, vkImage_depth_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyImage() Succeed for Depth Stencil Image!\n");
+        vkImage_depth_fbo = VK_NULL_HANDLE;
+    }
+
+    // destroy depth stencil memory
+    if(vkDeviceMemory_depth_fbo) {
+        vkFreeMemory(vkDevice, vkDeviceMemory_depth_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkFreeMemory() Succeed for Depth Stencil Memory!\n");
+        vkDeviceMemory_depth_fbo = VK_NULL_HANDLE;
+    }
+
+    // Destroy fbo 
+    if(vkSampler_fbo){
+        vkDestroySampler(vkDevice, vkSampler_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroySampler() Succeed for FBO Sampler!\n");
+        vkSampler_fbo = VK_NULL_HANDLE;
+    }
+
+    if(vkImageView_fbo){
+        vkDestroyImageView(vkDevice, vkImageView_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyImageView() Succeed for FBO Image View!\n");
+        vkImageView_fbo = VK_NULL_HANDLE;
+    }
+
+    if(vkDeviceMemory_fbo){
+        vkFreeMemory(vkDevice, vkDeviceMemory_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkFreeMemory() Succeed for FBO Image Memory!\n");
+        vkDeviceMemory_fbo = VK_NULL_HANDLE;
+    }
+
+    if(vkImage_fbo){
+        vkDestroyImage(vkDevice, vkImage_fbo, NULL);
+        fprintf(fptr, "uninitialize_fbo(): vkDestroyImage() Succeed for FBO Image!\n");
+        vkImage_fbo = VK_NULL_HANDLE;
+    }
+}
+
+VkResult createCommandBuffers_fbo(void) {
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Step 1: Init and Allocate VkCommandBufferAllocateInfo
+    VkCommandBufferAllocateInfo vkCommandBufferAllocateInfo;
+    memset((void*)&vkCommandBufferAllocateInfo, 0, sizeof(VkCommandBufferAllocateInfo));
+
+    vkCommandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    vkCommandBufferAllocateInfo.pNext = NULL;
+    vkCommandBufferAllocateInfo.commandPool = vkCommandPool;
+    vkCommandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vkCommandBufferAllocateInfo.commandBufferCount = 1;
+
+    // Step 3: Allocat eeach command buffer in loop with allocateInfo struct
+    vkResult = vkAllocateCommandBuffers(vkDevice, &vkCommandBufferAllocateInfo, &vkCommandBuffer_fbo);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createCommandBuffers_fbo(): vkCreatvkAllocateCommandBufferseImageView() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createCommandBuffers_fbo(): vkAllocateCommandBuffers() Successful!.\n");
+    }
+
+    return (vkResult);
+}
+
+VkResult createVertexBuffer_fbo(void) {
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // VertexData for Triangle Position
+    // Step 2
+    memset((void*)&vertexData_position_fbo, 0, sizeof(VertexData));
+
+    // Step 3
+    VkBufferCreateInfo vkBufferCreateInfo;
+    memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
+
+    vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCreateInfo.pNext = NULL;
+    vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
+    vkBufferCreateInfo.size = sizeof(float) * 3 * numVerts;
+    vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    
+    // Setp 4
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_position_fbo.vkBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkCreateBuffer() Failed for Position!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkCreateBuffer() Successful for Position!.\n");
+    }
+
+    // Step 5
+    VkMemoryRequirements vkMemoryRequirements;
+    memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, vertexData_position_fbo.vkBuffer, &vkMemoryRequirements);
+
+    // Step 6
+    VkMemoryAllocateInfo vkMemoryAllocateInfo;
+    memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo.pNext = NULL;
+    vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
+    vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
+
+    // Step A 
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        // Step B
+        if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
+            // Step C
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+                // Step D
+                vkMemoryAllocateInfo.memoryTypeIndex = i;
+                break;
+            }
+        }
+        // Step E
+        vkMemoryRequirements.memoryTypeBits >>= 1;
+    }
+
+    //Setp 9
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_position_fbo.vkDeviceMemory);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkAllocateMemory() Failed for Position!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkAllocateMemory() Successful for Position!.\n");
+    }
+
+    // Step 10
+    vkResult = vkBindBufferMemory(vkDevice, vertexData_position_fbo.vkBuffer, vertexData_position_fbo.vkDeviceMemory, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkBindBufferMemory() Failed for Position!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkBindBufferMemory() Successful for Position!.\n");
+    }
+
+    // Step 11
+    void *data = NULL;
+
+    vkResult = vkMapMemory(
+        vkDevice,
+        vertexData_position_fbo.vkDeviceMemory,
+        0,
+        vkMemoryAllocateInfo.allocationSize,
+        0,
+        &data
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkMapMemory() Failed for Position!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkMapMemory() Successful for Position!.\n");
+    }
+
+    // Step 12
+    memcpy(data, pPositions, sizeof(float) * 3 * numVerts);
+
+    // Step 13
+    vkUnmapMemory(vkDevice, vertexData_position_fbo.vkDeviceMemory);
+
+
+    // For Normal
+    memset((void*)&vertexData_normal_fbo, 0, sizeof(VertexData));
+
+    // Step 3
+    memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
+
+    vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCreateInfo.pNext = NULL;
+    vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
+    vkBufferCreateInfo.size = sizeof(float) * 3 * numVerts;
+    vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    
+    // Setp 4
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_normal_fbo.vkBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkCreateBuffer() Failed for Normals!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkCreateBuffer() Successful for Normals!.\n");
+    }
+
+    // Step 5
+    memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, vertexData_normal_fbo.vkBuffer, &vkMemoryRequirements);
+
+    // Step 6
+    memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo.pNext = NULL;
+    vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
+    vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
+
+    // Step A 
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        // Step B
+        if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
+            // Step C
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+                // Step D
+                vkMemoryAllocateInfo.memoryTypeIndex = i;
+                break;
+            }
+        }
+        // Step E
+        vkMemoryRequirements.memoryTypeBits >>= 1;
+    }
+
+    //Setp 9
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_normal_fbo.vkDeviceMemory);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkAllocateMemory() Failed for Normals!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkAllocateMemory() Successful for Normals!.\n");
+    }
+
+    // Step 10
+    vkResult = vkBindBufferMemory(vkDevice, vertexData_normal_fbo.vkBuffer, vertexData_normal_fbo.vkDeviceMemory, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkBindBufferMemory() Failed for Normals!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkBindBufferMemory() Successful for Normals!.\n");
+    }
+
+    // Step 11
+    data = NULL;
+
+    vkResult = vkMapMemory(
+        vkDevice,
+        vertexData_normal_fbo.vkDeviceMemory,
+        0,
+        vkMemoryAllocateInfo.allocationSize,
+        0,
+        &data
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkMapMemory() Failed for Normals!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkMapMemory() Successful for Normals!.\n");
+    }
+
+    // Step 12
+    memcpy(data, pNormals, sizeof(float) * 3 * numVerts);
+
+    // Step 13
+    vkUnmapMemory(vkDevice, vertexData_normal_fbo.vkDeviceMemory);
+
+    // For Texcoord
+    // For Normal
+    memset((void*)&vertexData_texcoord_fbo, 0, sizeof(VertexData));
+
+    // Step 3
+    memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
+
+    vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCreateInfo.pNext = NULL;
+    vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
+    vkBufferCreateInfo.size = sizeof(float) * 2 * numVerts;
+    vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    
+    // Setp 4
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_texcoord_fbo.vkBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkCreateBuffer() Failed for Texcoords!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkCreateBuffer() Successful for Texcoords!.\n");
+    }
+
+    // Step 5
+    memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, vertexData_texcoord_fbo.vkBuffer, &vkMemoryRequirements);
+
+    // Step 6
+    memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo.pNext = NULL;
+    vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
+    vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
+
+    // Step A 
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        // Step B
+        if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
+            // Step C
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+                // Step D
+                vkMemoryAllocateInfo.memoryTypeIndex = i;
+                break;
+            }
+        }
+        // Step E
+        vkMemoryRequirements.memoryTypeBits >>= 1;
+    }
+
+    //Setp 9
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_texcoord_fbo.vkDeviceMemory);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkAllocateMemory() Failed for Texcoords!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkAllocateMemory() Successful for Texcoords!.\n");
+    }
+
+    // Step 10
+    vkResult = vkBindBufferMemory(vkDevice, vertexData_texcoord_fbo.vkBuffer, vertexData_texcoord_fbo.vkDeviceMemory, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkBindBufferMemory() Failed for Texcoords!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkBindBufferMemory() Successful for Texcoords!.\n");
+    }
+
+    // Step 11
+    data = NULL;
+
+    vkResult = vkMapMemory(
+        vkDevice,
+        vertexData_texcoord_fbo.vkDeviceMemory,
+        0,
+        vkMemoryAllocateInfo.allocationSize,
+        0,
+        &data
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkMapMemory() Failed for Texcoords!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createVertexBuffer_fbo(): vkMapMemory() Successful for Texcoords!.\n");
+    }
+
+    // Step 12
+    memcpy(data, pTexCoords, sizeof(float) * 2 * numVerts);
+
+    // Step 13
+    vkUnmapMemory(vkDevice, vertexData_texcoord_fbo.vkDeviceMemory);
+
+    return(vkResult);
+}
+
+VkResult createIndexBuffer(void) {
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Step 2
+    memset((void*)&vertexData_elements_fbo, 0, sizeof(VertexData));
+
+    // Step 3
+    VkBufferCreateInfo vkBufferCreateInfo;
+    memset((void*)&vkBufferCreateInfo, 0, sizeof(VkBufferCreateInfo));
+
+    vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCreateInfo.pNext = NULL;
+    vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
+    vkBufferCreateInfo.size = sizeof(unsigned int) * numElements;
+    vkBufferCreateInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    
+    // Setp 4
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_elements_fbo.vkBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createIndexBuffer_fbo(): vkCreateBuffer() Failed for Index Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createIndexBuffer_fbo(): vkCreateBuffer() Successful for Index Buffer!.\n");
+    }
+
+    // Step 5
+    VkMemoryRequirements vkMemoryRequirements;
+    VkMemoryAllocateInfo vkMemoryAllocateInfo;
+    memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, vertexData_elements_fbo.vkBuffer, &vkMemoryRequirements);
+
+    // Step 6
+    memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo.pNext = NULL;
+    vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
+    vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
+
+    // Step A 
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        // Step B
+        if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
+            // Step C
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+                // Step D
+                vkMemoryAllocateInfo.memoryTypeIndex = i;
+                break;
+            }
+        }
+        // Step E
+        vkMemoryRequirements.memoryTypeBits >>= 1;
+    }
+
+    //Setp 9
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_elements_fbo.vkDeviceMemory);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createIndexBuffer_fbo(): vkAllocateMemory() Failed for Index Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createIndexBuffer_fbo(): vkAllocateMemory() Successful for Index Buffer!.\n");
+    }
+
+    // Step 10
+    vkResult = vkBindBufferMemory(vkDevice, vertexData_elements_fbo.vkBuffer, vertexData_elements_fbo.vkDeviceMemory, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createIndexBuffer_fbo(): vkBindBufferMemory() Failed for Index Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createIndexBuffer_fbo(): vkBindBufferMemory() Successful for Index Buffer!.\n");
+    }
+
+    // Step 11
+    void *data = NULL;
+
+    vkResult = vkMapMemory(
+        vkDevice,
+        vertexData_elements_fbo.vkDeviceMemory,
+        0,
+        vkMemoryAllocateInfo.allocationSize,
+        0,
+        &data
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createIndexBuffer_fbo(): vkMapMemory() Failed for Index Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createIndexBuffer_fbo(): vkMapMemory() Successful for Index Buffer!.\n");
+    }
+
+    // Step 12
+    memcpy(data, pElements, sizeof(unsigned int) * numElements);
+
+    // Step 13
+    vkUnmapMemory(vkDevice, vertexData_elements_fbo.vkDeviceMemory);
+
+    return (vkResult);
+}
+
+VkResult createTexture(const char*  textureFileName) {
+// variables
+    VkResult vkResult = VK_SUCCESS;
+
+    //Code!
+    // Step 1: Load Texture Image Information
+    FILE *fp = NULL;
+    fp = fopen(textureFileName, "rb");
+    if(fp == NULL) {
+        fprintf(fptr, "createTexture(): Failed to open texture file: %s\n", textureFileName);
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return(vkResult);
+    }
+    
+    uint8_t *image_data = NULL;
+    int texture_width, texture_height, texture_channels;
+
+    image_data = stbi_load_from_file(fp, &texture_width, &texture_height, &texture_channels, STBI_rgb_alpha);
+    if(image_data == NULL || texture_width <= 0 || texture_height <= 0 || texture_channels <= 0) {
+        fprintf(fptr, "createTexture(): Failed to load texture image data from stbi_load_from_file for file: %s\n", textureFileName);
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        fclose(fp);
+        return(vkResult);
+    }
+
+    VkDeviceSize image_size = texture_width * texture_height * 4; // 4 channels (RGBA)
+
+    fprintf(fptr, "createTexture(): Texture Image Loaded Successfully! Width: %d, Height: %d, Channels: %d, Size: %llu bytes\n", 
+        texture_width, texture_height, texture_channels, (unsigned long long)image_size);
+
+    // Step 2: Create Staging Buffer
+    VkBuffer vkBuffer_stagingBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory vkDeviceMemory_stagingBuffer = VK_NULL_HANDLE;
+    
+    VkBufferCreateInfo vkBufferCreateInfo_stagingBuffer;
+    memset((void*)&vkBufferCreateInfo_stagingBuffer, 0, sizeof(VkBufferCreateInfo));
+
+    vkBufferCreateInfo_stagingBuffer.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCreateInfo_stagingBuffer.pNext = NULL;
+    vkBufferCreateInfo_stagingBuffer.flags = 0;
+    vkBufferCreateInfo_stagingBuffer.size = image_size;
+    vkBufferCreateInfo_stagingBuffer.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    vkBufferCreateInfo_stagingBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo_stagingBuffer, NULL, &vkBuffer_stagingBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkCreateBuffer() Failed for Staging Buffer!.\n");
+        return(vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkCreateBuffer() Successful for Staging Buffer!.\n");
+    }
+
+    // Get Memory Requirements for Staging Buffer
+    VkMemoryRequirements vkMemoryRequirements_stagingBuffer;
+    memset((void*)&vkMemoryRequirements_stagingBuffer, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, vkBuffer_stagingBuffer, &vkMemoryRequirements_stagingBuffer);
+    
+    // Allocate Memory for Staging Buffer
+    VkMemoryAllocateInfo vkMemoryAllocateInfo_stagingBuffer;
+    memset((void*)&vkMemoryAllocateInfo_stagingBuffer, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo_stagingBuffer.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo_stagingBuffer.pNext = NULL;
+    vkMemoryAllocateInfo_stagingBuffer.allocationSize = vkMemoryRequirements_stagingBuffer.size;
+    vkMemoryAllocateInfo_stagingBuffer.memoryTypeIndex = 0;
+
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        if((vkMemoryRequirements_stagingBuffer.memoryTypeBits & 1) == 1) {
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+                vkMemoryAllocateInfo_stagingBuffer.memoryTypeIndex = i;
+                break;
+            }
+        }
+        vkMemoryRequirements_stagingBuffer.memoryTypeBits >>= 1;
+    }
+
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_stagingBuffer, NULL, &vkDeviceMemory_stagingBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkAllocateMemory() Failed for Staging Buffer!.\n");
+        return(vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkAllocateMemory() Successful for Staging Buffer!.\n");
+    }
+
+    vkBindBufferMemory(vkDevice, vkBuffer_stagingBuffer, vkDeviceMemory_stagingBuffer, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkBindBufferMemory() Failed for Staging Buffer!.\n");
+        return(vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkBindBufferMemory() Successful for Staging Buffer!.\n");
+    }
+
+    void * data = NULL;
+
+    vkResult = vkMapMemory(
+        vkDevice,
+        vkDeviceMemory_stagingBuffer,
+        0,
+        image_size,
+        0,
+        &data
+    );
+
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkMapMemory() Failed for Staging Buffer!.\n");
+        return(vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkMapMemory() Successful for Staging Buffer!.\n");
+    }
+
+    memcpy(data, image_data, image_size);
+
+    vkUnmapMemory(vkDevice, vkDeviceMemory_stagingBuffer);
+    
+    // As Copying of Image Data is done, we can free Image Data from stbi
+    stbi_image_free(image_data);
+    image_data = NULL;
+    fprintf(fptr, "createTexture(): Image Data Copied to Staging Buffer Successful & Freed stbi Image Data!.\n");
+    fclose(fp);
+
+    // Step 3: Create VKImage for Texture
+    VkImageCreateInfo vkImageCreateInfo;
+    memset((void*)&vkImageCreateInfo, 0, sizeof(VkImageCreateInfo));
+
+    vkImageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    vkImageCreateInfo.pNext = NULL;
+    vkImageCreateInfo.flags = 0;
+    vkImageCreateInfo.imageType = VK_IMAGE_TYPE_2D; // 2D Image
+    vkImageCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM; // RGBA format [To have portability on mobile and desktop we are using UNORM else we can use VK_FORMAT_R8G8B8A8_SRGB]
+    vkImageCreateInfo.extent.width = texture_width; 
+    vkImageCreateInfo.extent.height = texture_height;
+    vkImageCreateInfo.extent.depth = 1;
+    vkImageCreateInfo.mipLevels = 1;
+    vkImageCreateInfo.arrayLayers = 1;
+    vkImageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkImageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    vkImageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    vkImageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    vkImageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // Initial Layout is Undefined as we will be transferring data to it
+
+    vkResult = vkCreateImage(vkDevice, &vkImageCreateInfo, NULL, &vkImage_texture_fbo);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkCreateImage() Failed for Texture Image!.\n");
+        return(vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkCreateImage() Successful for Texture Image!.\n");
+    }
+
+    VkMemoryRequirements vkMemoryRequirements_image;
+    memset((void*)&vkMemoryRequirements_image, 0, sizeof(VkMemoryRequirements));
+
+    vkGetImageMemoryRequirements(vkDevice, vkImage_texture_fbo, &vkMemoryRequirements_image);
+
+    VkMemoryAllocateInfo vkMemoryAllocateInfo_image;
+    memset((void*)&vkMemoryAllocateInfo_image, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo_image.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo_image.pNext = NULL;
+    vkMemoryAllocateInfo_image.allocationSize = vkMemoryRequirements_image.size;
+    vkMemoryAllocateInfo_image.memoryTypeIndex = 0; // this will be set in next step
+
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        if((vkMemoryRequirements_image.memoryTypeBits & 1) == 1) {
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+                vkMemoryAllocateInfo_image.memoryTypeIndex = i;
+                break;
+            }
+        }
+        vkMemoryRequirements_image.memoryTypeBits >>= 1;
+    }
+
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_image, NULL, &vkDeviceMemory_texture_fbo);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkAllocateMemory() Failed for Texture Image!.\n");
+        return(vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkAllocateMemory() Successful for Texture Image!.\n");
+    }
+
+    vkResult = vkBindImageMemory(vkDevice, vkImage_texture_fbo, vkDeviceMemory_texture_fbo, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkBindImageMemory() Failed for Texture Image!.\n");
+        return(vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkBindImageMemory() Successful for Texture Image!.\n");
+    }
+
+    // Step 4: Create Image Transition Layout
+    VkCommandBufferAllocateInfo vkCommandBufferAllocateInfo_transition_image_layout;
+    memset((void*)&vkCommandBufferAllocateInfo_transition_image_layout, 0, sizeof(VkCommandBufferAllocateInfo));
+
+    vkCommandBufferAllocateInfo_transition_image_layout.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    vkCommandBufferAllocateInfo_transition_image_layout.pNext = NULL;
+    vkCommandBufferAllocateInfo_transition_image_layout.commandPool = vkCommandPool;
+    vkCommandBufferAllocateInfo_transition_image_layout.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vkCommandBufferAllocateInfo_transition_image_layout.commandBufferCount = 1;
+
+    VkCommandBuffer vkCommandBuffer_transition_image_layout = VK_NULL_HANDLE;
+    vkResult = vkAllocateCommandBuffers(vkDevice, &vkCommandBufferAllocateInfo_transition_image_layout, &vkCommandBuffer_transition_image_layout);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Failed for Transition Image Layout!.\n");
+        return(vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Successful for Transition Image Layout!.\n");
+    }
+
+    VkCommandBufferBeginInfo vkCommandBufferBeginInfo_transition_image_layout;
+        memset((void*)&vkCommandBufferBeginInfo_transition_image_layout, 0, sizeof(VkCommandBufferBeginInfo));
+
+    vkCommandBufferBeginInfo_transition_image_layout.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    vkCommandBufferBeginInfo_transition_image_layout.pNext = NULL;
+    vkCommandBufferBeginInfo_transition_image_layout.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // we will submit this command buffer only once
+
+    vkResult = vkBeginCommandBuffer(vkCommandBuffer_transition_image_layout, &vkCommandBufferBeginInfo_transition_image_layout);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkBeginCommandBuffer() Failed for Transition Image Layout!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkBeginCommandBuffer() Successful for Transition Image Layout!.\n");
+    }
+
+    VkPipelineStageFlags vkPipelineStageFlags_source = 0;
+    VkPipelineStageFlags vkPipelineStageFlags_destination = 0;
+
+    VkImageMemoryBarrier vkImageMemoryBarrier;
+    memset((void*)&vkImageMemoryBarrier, 0, sizeof(VkImageMemoryBarrier));
+
+    vkImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    vkImageMemoryBarrier.pNext = NULL;
+    vkImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    vkImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    vkImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    vkImageMemoryBarrier.image = vkImage_texture_fbo;
+    vkImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkImageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+    vkImageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+    vkImageMemoryBarrier.subresourceRange.layerCount = 1;
+    vkImageMemoryBarrier.subresourceRange.levelCount = 1;
+
+    if(vkImageMemoryBarrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && vkImageMemoryBarrier.newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+
+        vkImageMemoryBarrier.srcAccessMask = 0;
+        vkImageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        
+        vkPipelineStageFlags_source = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        vkPipelineStageFlags_destination = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+    } else if(vkImageMemoryBarrier.oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && vkImageMemoryBarrier.newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        vkImageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        vkImageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        
+        vkPipelineStageFlags_source = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        vkPipelineStageFlags_destination = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else {
+        fprintf(fptr, "createTexture(): Unsuppored Texture Layout Transition!.\n");
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return(vkResult);
+    }
+
+    vkCmdPipelineBarrier(
+        vkCommandBuffer_transition_image_layout,
+        vkPipelineStageFlags_source,
+        vkPipelineStageFlags_destination,
+        0, // No flags
+        0, NULL, // No memory barriers
+        0, NULL, // No buffer barriers
+        1, &vkImageMemoryBarrier // Image Barrier
+    );
+
+    vkResult = vkEndCommandBuffer(vkCommandBuffer_transition_image_layout);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkEndCommandBuffer() Failed for Transition Image Layout!.\n");
+        return(vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkEndCommandBuffer() Successful for Transition Image Layout!.\n");
+    }
+
+    VkSubmitInfo vkSubmitInfo_image_transition_layout;
+    memset((void*)&vkSubmitInfo_image_transition_layout, 0, sizeof(VkSubmitInfo));
+
+    vkSubmitInfo_image_transition_layout.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    vkSubmitInfo_image_transition_layout.pNext = NULL;
+    vkSubmitInfo_image_transition_layout.commandBufferCount = 1;
+    vkSubmitInfo_image_transition_layout.pCommandBuffers = &vkCommandBuffer_transition_image_layout;
+
+    vkResult = vkQueueSubmit(vkQueue, 1, &vkSubmitInfo_image_transition_layout, VK_NULL_HANDLE);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkQueueSubmit() Failed for Transition Image Layout!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkQueueSubmit() Successful for Transition Image Layout!.\n");
+    }
+
+    vkResult = vkQueueWaitIdle(vkQueue);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkQueueWaitIdle() Failed for Transition Image Layout!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkQueueWaitIdle() Successful for Transition Image Layout!.\n");
+    }
+
+    if(vkCommandBuffer_transition_image_layout){ 
+        vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_transition_image_layout);
+        fprintf(fptr, "createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout!.\n");
+        vkCommandBuffer_transition_image_layout = VK_NULL_HANDLE;
+    }
+
+    // Step 5: Copy Staging Buffer to Texture Image
+    VkCommandBufferAllocateInfo vkCommandBufferAllocateInfo_buffer_to_image_copy;
+    memset((void*)&vkCommandBufferAllocateInfo_buffer_to_image_copy, 0, sizeof(VkCommandBufferAllocateInfo));
+
+    vkCommandBufferAllocateInfo_buffer_to_image_copy.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    vkCommandBufferAllocateInfo_buffer_to_image_copy.pNext = NULL;
+    vkCommandBufferAllocateInfo_buffer_to_image_copy.commandPool = vkCommandPool;
+    vkCommandBufferAllocateInfo_buffer_to_image_copy.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vkCommandBufferAllocateInfo_buffer_to_image_copy.commandBufferCount = 1;
+
+    VkCommandBuffer vkCommandBuffer_buffer_to_image_copy = VK_NULL_HANDLE;
+    vkResult = vkAllocateCommandBuffers(vkDevice, &vkCommandBufferAllocateInfo_buffer_to_image_copy, &vkCommandBuffer_buffer_to_image_copy);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Failed for Buffer to Image Copy!.\n");
+        return(vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Successful for Buffer to Image Copy!.\n");
+    }
+
+    VkCommandBufferBeginInfo vkCommandBufferBeginInfo_buffer_to_image_copy;
+    memset((void*)&vkCommandBufferBeginInfo_buffer_to_image_copy, 0, sizeof(VkCommandBufferBeginInfo));
+
+    vkCommandBufferBeginInfo_buffer_to_image_copy.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    vkCommandBufferBeginInfo_buffer_to_image_copy.pNext = NULL;
+    vkCommandBufferBeginInfo_buffer_to_image_copy.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // we will submit this command buffer only once
+
+    vkResult = vkBeginCommandBuffer(vkCommandBuffer_buffer_to_image_copy, &vkCommandBufferBeginInfo_buffer_to_image_copy);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkBeginCommandBuffer() Failed for Buffer to Image Copy!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkBeginCommandBuffer() Successful for Buffer to Image Copy!.\n");
+    }
+
+    VkBufferImageCopy vkBufferImageCopy;
+    memset((void*)&vkBufferImageCopy, 0, sizeof(VkBufferImageCopy));
+    // this is not used a sstandard structure
+    vkBufferImageCopy.bufferOffset = 0;
+    vkBufferImageCopy.bufferRowLength = 0;
+    vkBufferImageCopy.bufferImageHeight = 0;
+    vkBufferImageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkBufferImageCopy.imageSubresource.mipLevel = 0;
+    vkBufferImageCopy.imageSubresource.baseArrayLayer = 0;
+    vkBufferImageCopy.imageSubresource.layerCount = 1;
+    vkBufferImageCopy.imageOffset.x = 0;
+    vkBufferImageCopy.imageOffset.y = 0;
+    vkBufferImageCopy.imageOffset.z = 0;
+    vkBufferImageCopy.imageExtent.width = texture_width;
+    vkBufferImageCopy.imageExtent.height = texture_height;
+    vkBufferImageCopy.imageExtent.depth = 1;
+
+    vkCmdCopyBufferToImage(
+        vkCommandBuffer_buffer_to_image_copy,
+        vkBuffer_stagingBuffer,
+        vkImage_texture_fbo,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1, // Number of regions
+        &vkBufferImageCopy
+    );
+
+    vkResult = vkEndCommandBuffer(vkCommandBuffer_buffer_to_image_copy);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkEndCommandBuffer() Failed for Buffer to Image Copy!.\n");
+        return(vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkEndCommandBuffer() Successful for Buffer to Image Copy!.\n");
+    }
+
+    VkSubmitInfo vkSubmitInfo_image_buffer_to_image_copy;
+    memset((void*)&vkSubmitInfo_image_buffer_to_image_copy, 0, sizeof(VkSubmitInfo));
+
+    vkSubmitInfo_image_buffer_to_image_copy.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    vkSubmitInfo_image_buffer_to_image_copy.pNext = NULL;
+    vkSubmitInfo_image_buffer_to_image_copy.commandBufferCount = 1;
+    vkSubmitInfo_image_buffer_to_image_copy.pCommandBuffers = &vkCommandBuffer_buffer_to_image_copy;
+
+    vkResult = vkQueueSubmit(vkQueue, 1, &vkSubmitInfo_image_buffer_to_image_copy, VK_NULL_HANDLE);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkQueueSubmit() Failed for Buffer to Image Copy!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkQueueSubmit() Successful for Buffer to Image Copy!.\n");
+    }
+
+    vkResult = vkQueueWaitIdle(vkQueue);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkQueueWaitIdle() Failed for Buffer to Image Copy!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkQueueWaitIdle() Successful for Buffer to Image Copy!.\n");
+    }
+
+    if(vkCommandBuffer_buffer_to_image_copy){ 
+        vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_buffer_to_image_copy);
+        fprintf(fptr, "createTexture(): vkFreeCommandBuffers() Successful for Buffer to Image Copy!.\n");
+        vkCommandBuffer_buffer_to_image_copy = VK_NULL_HANDLE;
+    }
+
+    // Step 6: Image Layout Transition to Shader Read Only
+    vkCommandBuffer_transition_image_layout = VK_NULL_HANDLE;
+    memset((void*)&vkCommandBufferAllocateInfo_transition_image_layout, 0, sizeof(VkCommandBufferAllocateInfo));
+
+    vkCommandBufferAllocateInfo_transition_image_layout.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    vkCommandBufferAllocateInfo_transition_image_layout.pNext = NULL;
+    vkCommandBufferAllocateInfo_transition_image_layout.commandPool = vkCommandPool;
+    vkCommandBufferAllocateInfo_transition_image_layout.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vkCommandBufferAllocateInfo_transition_image_layout.commandBufferCount = 1;
+
+    vkResult = vkAllocateCommandBuffers(vkDevice, &vkCommandBufferAllocateInfo_transition_image_layout, &vkCommandBuffer_transition_image_layout);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Failed for Transition Image Layout for Shaders!.\n");
+        return(vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Successful for Transition Image Layout for Shaders!.\n");
+    }
+
+    memset((void*)&vkCommandBufferBeginInfo_transition_image_layout, 0, sizeof(VkCommandBufferBeginInfo));
+
+    vkCommandBufferBeginInfo_transition_image_layout.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    vkCommandBufferBeginInfo_transition_image_layout.pNext = NULL;
+    vkCommandBufferBeginInfo_transition_image_layout.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // we will submit this command buffer only once
+
+    vkResult = vkBeginCommandBuffer(vkCommandBuffer_transition_image_layout, &vkCommandBufferBeginInfo_transition_image_layout);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkBeginCommandBuffer() Failed for Transition Image Layout for Shaders!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkBeginCommandBuffer() Successful for Transition Image Layout for Shaders!.\n");
+    }
+
+    vkPipelineStageFlags_source = 0;
+    vkPipelineStageFlags_destination = 0;
+
+    memset((void*)&vkImageMemoryBarrier, 0, sizeof(VkImageMemoryBarrier));
+
+    vkImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    vkImageMemoryBarrier.pNext = NULL;
+    vkImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    vkImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    vkImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    vkImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    vkImageMemoryBarrier.image = vkImage_texture_fbo;
+    vkImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkImageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+    vkImageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+    vkImageMemoryBarrier.subresourceRange.layerCount = 1;
+    vkImageMemoryBarrier.subresourceRange.levelCount = 1;
+
+    if(vkImageMemoryBarrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && vkImageMemoryBarrier.newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+
+        vkImageMemoryBarrier.srcAccessMask = 0;
+        vkImageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        
+        vkPipelineStageFlags_source = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        vkPipelineStageFlags_destination = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+    } else if(vkImageMemoryBarrier.oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && vkImageMemoryBarrier.newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        vkImageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        vkImageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        
+        vkPipelineStageFlags_source = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        vkPipelineStageFlags_destination = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else {
+        fprintf(fptr, "createTexture(): Unsuppored Texture Layout Transition for Shaders!.\n");
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return(vkResult);
+    }
+
+    vkCmdPipelineBarrier(
+        vkCommandBuffer_transition_image_layout,
+        vkPipelineStageFlags_source,
+        vkPipelineStageFlags_destination,
+        0, // No flags
+        0, NULL, // No memory barriers
+        0, NULL, // No buffer barriers
+        1, &vkImageMemoryBarrier // Image Barrier
+    );
+
+    vkResult = vkEndCommandBuffer(vkCommandBuffer_transition_image_layout);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkEndCommandBuffer() Failed for Transition Image Layout for Shaders!.\n");
+        return(vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkEndCommandBuffer() Successful for Transition Image Layout for Shaders!.\n");
+    }
+
+    memset((void*)&vkSubmitInfo_image_transition_layout, 0, sizeof(VkSubmitInfo));
+
+    vkSubmitInfo_image_transition_layout.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    vkSubmitInfo_image_transition_layout.pNext = NULL;
+    vkSubmitInfo_image_transition_layout.commandBufferCount = 1;
+    vkSubmitInfo_image_transition_layout.pCommandBuffers = &vkCommandBuffer_transition_image_layout;
+
+    vkResult = vkQueueSubmit(vkQueue, 1, &vkSubmitInfo_image_transition_layout, VK_NULL_HANDLE);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkQueueSubmit() Failed for Transition Image Layout for Shaders!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkQueueSubmit() Successful for Transition Image Layout for Shaders!.\n");
+    }
+
+    vkResult = vkQueueWaitIdle(vkQueue);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkQueueWaitIdle() Failed for Transition Image Layout for Shaders!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkQueueWaitIdle() Successful for Transition Image Layout for Shaders!.\n");
+    }
+
+    if(vkCommandBuffer_transition_image_layout){ 
+        vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_transition_image_layout);
+        fprintf(fptr, "createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout for Shaders!.\n");
+        vkCommandBuffer_transition_image_layout = VK_NULL_HANDLE;
+    }
+
+    // Step 7: Remove Local Staging Buffer
+    if(vkBuffer_stagingBuffer) {
+        vkFreeMemory(vkDevice, vkDeviceMemory_stagingBuffer, NULL);
+        fprintf(fptr, "createTexture(): vkFreeMemory() Successful for Staging Buffer!.\n");
+        vkDeviceMemory_stagingBuffer = VK_NULL_HANDLE;
+    }
+    if(vkBuffer_stagingBuffer) {
+        vkDestroyBuffer(vkDevice, vkBuffer_stagingBuffer, NULL);
+        fprintf(fptr, "createTexture(): vkDestroyBuffer() Successful for Staging Buffer!.\n");
+        vkBuffer_stagingBuffer = VK_NULL_HANDLE;
+    }
+
+    // Step 8: Create Image View for Texture
+    VkImageViewCreateInfo vkImageViewCreateInfo;
+    memset((void*)&vkImageViewCreateInfo, 0, sizeof(VkImageViewCreateInfo));
+    
+    vkImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    vkImageViewCreateInfo.pNext = NULL;
+    vkImageViewCreateInfo.flags = 0;
+    vkImageViewCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM; // Same format as Image
+    vkImageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkImageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+    vkImageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    vkImageViewCreateInfo.subresourceRange.layerCount = 1;
+    vkImageViewCreateInfo.subresourceRange.levelCount = 1;
+    vkImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    vkImageViewCreateInfo.image = vkImage_texture_fbo;
+
+    vkResult = vkCreateImageView(vkDevice, &vkImageViewCreateInfo, NULL, &vkImageView_texture_fbo);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkCreateImageView() Failed for Texture Image!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkCreateImageView() Successful for Texture Image!.\n");
+    }
+
+    // Step 9: Create Sampler for Texture
+    VkSamplerCreateInfo vkSamplerCreateInfo;
+    memset((void*)&vkSamplerCreateInfo, 0, sizeof(VkSamplerCreateInfo));
+
+    vkSamplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    vkSamplerCreateInfo.pNext = NULL;
+    vkSamplerCreateInfo.magFilter = VK_FILTER_LINEAR; // Linear Filtering
+    vkSamplerCreateInfo.minFilter = VK_FILTER_LINEAR;
+    vkSamplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR; // Linear Mipmapping
+    vkSamplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT; // Repeat Texture
+    vkSamplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    vkSamplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    vkSamplerCreateInfo.anisotropyEnable = VK_FALSE; // Disable Anisotropy
+    vkSamplerCreateInfo.maxAnisotropy = 16.0f; // Maximum Anisotropy
+    vkSamplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_WHITE; // Border Color
+    vkSamplerCreateInfo.unnormalizedCoordinates = VK_FALSE; // Normalized Coordinates
+    vkSamplerCreateInfo.compareEnable = VK_FALSE; // Disable Comparison
+    vkSamplerCreateInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+    vkResult = vkCreateSampler(vkDevice, &vkSamplerCreateInfo, NULL, &vkSampler_texture_fbo);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkCreateSampler() Failed for Texture Sampler!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkCreateSampler() Successful for Texture Sampler!.\n");
+    }
+
+    return(vkResult);
+}
+
