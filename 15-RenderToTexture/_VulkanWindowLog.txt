@@ -1,5 +1,6 @@
 Log Created Successful!!
 
+resize_fbo(): initialization is not completed or failed
 resize(): initialization is not completed or failed
 fillInstanceExtensionNames(): vkEnumerateInstanceExtensionProperties() First Call Successful!.
 fillInstanceExtensionNames(): vkEnumerateInstanceExtensionProperties() Second Call Successful!.
@@ -353,6 +354,17 @@ createSwapchainImagesAndImageViews(): vkBindDev() Successful!.
 createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for Depth Image!.
 initialize(): createSwapchainImagesAndImageViews() Successful!.
 
+createSwapchainImagesAndImageViews_fbo(): vkCreateImage() Successful for FBO Image!.
+createSwapchainImagesAndImageViews_fbo(): vkAllocateMemory() Successful for FBO Image!.
+createSwapchainImagesAndImageViews_fbo(): vkBindImageMemory() Successful for FBO Image!.
+createSwapchainImagesAndImageViews_fbo(): vkCreateImageView() Successful for FBO Image!.
+createSwapchainImagesAndImageViews_fbo(): vkCreateSampler() Successful for FBO Sampler!.
+createSwapchainImagesAndImageViews_fbo(): vkCreateImage() Successful for Depth Image!.
+createSwapchainImagesAndImageViews_fbo(): vkAllocateMemory() Successful!.
+createSwapchainImagesAndImageViews_fbo(): vkBindDev() Successful!.
+createSwapchainImagesAndImageViews_fbo(): vkCreateImageView() Successful for Depth Image!.
+initialize(): createSwapchainImagesAndImageViews_fbo() Successful!.
+
 createCommandPool(): vkCreateCommandPool() Successful!.
 initialize(): createCommandPool() Successful!.
 
@@ -360,7 +372,311 @@ createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
 createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
 initialize(): createCommandBuffers() Successful!.
 
+createCommandBuffers_fbo(): vkAllocateCommandBuffers() Successful!.
+initialize(): createCommandBuffers_fbo() Successful!.
+
 createVertexBuffer(): vkCreateBuffer() Successful for Position!.
 createVertexBuffer(): vkAllocateMemory() Successful for Position!.
 createVertexBuffer(): vkBindBufferMemory() Successful for Position!.
-createVertexBuffer(): vkMap
+createVertexBuffer(): vkMapMemory() Successful for Position!.
+
+createVertexBuffer(): vkCreateBuffer() Successful for TexCoord!.
+createVertexBuffer(): vkAllocateMemory() Successful for TexCoord!.
+createVertexBuffer(): vkBindBufferMemory() Successful for TexCoord!.
+createVertexBuffer(): vkMapMemory() Successful for TexCoord!.
+initialize(): createVertexBuffer() Successful!.
+
+createVertexBuffer_fbo(): vkCreateBuffer() Successful for Position!.
+createVertexBuffer_fbo(): vkAllocateMemory() Successful for Position!.
+createVertexBuffer_fbo(): vkBindBufferMemory() Successful for Position!.
+createVertexBuffer_fbo(): vkMapMemory() Successful for Position!.
+createVertexBuffer_fbo(): vkCreateBuffer() Successful for Normals!.
+createVertexBuffer_fbo(): vkAllocateMemory() Successful for Normals!.
+createVertexBuffer_fbo(): vkBindBufferMemory() Successful for Normals!.
+createVertexBuffer_fbo(): vkMapMemory() Successful for Normals!.
+createVertexBuffer_fbo(): vkCreateBuffer() Successful for Texcoords!.
+createVertexBuffer_fbo(): vkAllocateMemory() Successful for Texcoords!.
+createVertexBuffer_fbo(): vkBindBufferMemory() Successful for Texcoords!.
+createVertexBuffer_fbo(): vkMapMemory() Successful for Texcoords!.
+initialize(): createVertexBuffer_fbo() Successful!.
+
+createIndexBuffer_fbo(): vkCreateBuffer() Successful for Index Buffer!.
+createIndexBuffer_fbo(): vkAllocateMemory() Successful for Index Buffer!.
+createIndexBuffer_fbo(): vkBindBufferMemory() Successful for Index Buffer!.
+createIndexBuffer_fbo(): vkMapMemory() Successful for Index Buffer!.
+initialize(): createIndexBuffer_fbo() Successful!.
+
+createTexture(): Texture Image Loaded Successfully! Width: 512, Height: 512, Channels: 1, Size: 1048576 bytes
+createTexture(): vkCreateBuffer() Successful for Staging Buffer!.
+createTexture(): vkAllocateMemory() Successful for Staging Buffer!.
+createTexture(): vkBindBufferMemory() Successful for Staging Buffer!.
+createTexture(): vkMapMemory() Successful for Staging Buffer!.
+createTexture(): Image Data Copied to Staging Buffer Successful & Freed stbi Image Data!.
+createTexture(): vkCreateImage() Successful for Texture Image!.
+createTexture(): vkAllocateMemory() Successful for Texture Image!.
+createTexture(): vkBindImageMemory() Successful for Texture Image!.
+createTexture(): vkAllocateCommandBuffers() Successful for Transition Image Layout!.
+createTexture(): vkBeginCommandBuffer() Successful for Transition Image Layout!.
+createTexture(): vkEndCommandBuffer() Successful for Transition Image Layout!.
+createTexture(): vkQueueSubmit() Successful for Transition Image Layout!.
+createTexture(): vkQueueWaitIdle() Successful for Transition Image Layout!.
+createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout!.
+createTexture(): vkAllocateCommandBuffers() Successful for Buffer to Image Copy!.
+createTexture(): vkBeginCommandBuffer() Successful for Buffer to Image Copy!.
+createTexture(): vkEndCommandBuffer() Successful for Buffer to Image Copy!.
+createTexture(): vkQueueSubmit() Successful for Buffer to Image Copy!.
+createTexture(): vkQueueWaitIdle() Successful for Buffer to Image Copy!.
+createTexture(): vkFreeCommandBuffers() Successful for Buffer to Image Copy!.
+createTexture(): vkAllocateCommandBuffers() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkBeginCommandBuffer() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkEndCommandBuffer() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkQueueSubmit() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkQueueWaitIdle() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkFreeCommandBuffers() Successful for Transition Image Layout for Shaders!.
+createTexture(): vkFreeMemory() Successful for Staging Buffer!.
+createTexture(): vkDestroyBuffer() Successful for Staging Buffer!.
+createTexture(): vkCreateImageView() Successful for Texture Image!.
+createTexture(): vkCreateSampler() Successful for Texture Sampler!.
+initialize(): createTexture() Successful!.
+
+createUniformBuffer(): vkCreateBuffer() Successful!.
+createUniformBuffer(): vkAllocateMemory() Successful!.
+createUniformBuffer(): vkBindBufferMemory() Successful!.
+createUniformBuffer(): updateUniformBuffer() Successful!.
+initialize(): createUniformBuffer() Successful!.
+
+createUniformBuffer_fbo(): vkCreateBuffer() Successful!.
+createUniformBuffer_fbo(): vkAllocateMemory() Successful!.
+createUniformBuffer_fbo(): vkBindBufferMemory() Successful!.
+createUniformBuffer_fbo(): updateUniformBuffer() Successful!.
+initialize(): createUniformBuffer_fbo() Successful!.
+
+createShaders(): fopen() succeed to open Vertex Shader spir-v file!.
+createShaders(): fread() succeed to read Vertex Shader file!.
+createShaders(): vkCreateShaderModule() for Vertex Shader Successful!.
+createShaders(): Vertex Shader Module Created Successful!.
+createShaders(): fopen() succeed to open Fragment Shader spir-v file!.
+createShaders(): fread() succeed to read Fragment Shader file!.
+createShaders(): vkCreateShaderModule() for Fragment Shader Successful!.
+createShaders(): Fragment Shader Module Created Successful!.
+initialize(): createShaders() Successful!.
+
+createShaders_fbo(): fopen() succeed to open Vertex Shader spir-v file!.
+createShaders_fbo(): fread() succeed to read Vertex Shader file!.
+createShaders_fbo(): vkCreateShaderModule() for Vertex Shader Successful!.
+createShaders_fbo(): Vertex Shader Module Created Successful!.
+createShaders_fbo(): fopen() succeed to open Fragment Shader spir-v file!.
+createShaders_fbo(): fread() succeed to read Fragment Shader file!.
+createShaders_fbo(): vkCreateShaderModule() for Fragment Shader Successful!.
+createShaders_fbo(): Fragment Shader Module Created Successful!.
+initialize(): createShaders_fbo() Successful!.
+
+createDescriptorSetLayout(): vkCreateDescriptorSetLayout() Successful!.
+initialize(): createDescriptorSetLayout() Successful!.
+
+createDescriptorSetLayout_fbo(): vkCreateDescriptorSetLayout() Successful!.
+initialize(): createDescriptorSetLayout_fbo() Successful!.
+
+createPipelineLayout(): vkCreatePipelineLayout() Successful!.
+initialize(): createPipelineLayout() Successful!.
+
+createPipelineLayout_fbo(): vkCreatePipelineLayout() Successful!.
+initialize(): createPipelineLayout_fbo() Successful!.
+
+createDescriptorPool(): vkCreateDescriptorPool() Successful!.
+initialize(): createDescriptorPool() Successful!.
+
+createDescriptorPool_fbo(): vkCreateDescriptorPool() Successful!.
+initialize(): createDescriptorPool_fbo() Successful!.
+
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkUpdateDescriptorSets() Successful!.
+initialize(): createDescriptorSet() Successful!.
+
+createDescriptorSet_fbo(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet_fbo(): vkUpdateDescriptorSets() Successful!.
+initialize(): createDescriptorSet_fbo() Successful!.
+
+createRenderPass(): vkCreateRenderPass() Successful!.
+initialize(): createRenderPass() Successful!.
+
+createRenderPass_fbo(): vkCreateRenderPass() Successful!.
+initialize(): createRenderPass_fbo() Successful!.
+
+createPipeline(): vkCreatePipelineCache() Successful!.
+createPipeline(): vkCreateGraphicsPipelines() Successful!.
+initialize(): createPipeline() Successful!.
+
+createPipeline_fbo(): vkCreatePipelineCache() Successful!.
+createPipeline_fbo(): vkCreateGraphicsPipelines() Successful!.
+initialize(): createPipeline_fbo() Successful!.
+
+createFramebuffers(): vkCreateFramebuffer() Successful for {0}!.
+createFramebuffers(): vkCreateFramebuffer() Successful for {1}!.
+initialize(): createFramebuffers() Successful!.
+
+createFramebuffer_fbo(): vkCreateFramebuffer() Successful!.
+initialize(): createFramebuffer_fbo() Successful!.
+
+createSemaphores(): vkCreateSemaphore() Successful for Back Buffer Semaphore!.
+createSemaphores(): vkCreateSemaphore() Successful for Render Complete Semaphore!.
+initialize(): createSemaphores() Successful!.
+
+createSemaphore_fbo(): vkCreateSemaphore() Successful!.
+initialize(): createSemaphore_fbo() Successful!.
+
+createFences(): vkCreateFence() Successful for {0}!.
+createFences(): vkCreateFence() Successful for {1}!.
+initialize(): createFences() Successful!.
+
+buildCommandBuffers(): vkResetCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkBeginCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkEndCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkResetCommandBuffer() Successful for {1}!.
+buildCommandBuffers(): vkBeginCommandBuffer() Successful for {1}!.
+buildCommandBuffers(): vkEndCommandBuffer() Successful for {1}!.
+initialize(): buildCommandBuffers() Successful!.
+
+buildCommandBuffer_fbo(): vkResetCommandBuffer() Successful!.
+buildCommandBuffer_fbo(): vkBeginCommandBuffer() Successful!.
+buildCommandBuffer_fbo(): vkEndCommandBuffer() Successful!.
+initialize(): buildCommandBuffer_fbo() Successful!.
+
+initialize(): Initialization Successful!.
+WinMain(): initialize() Successful!.
+createSwapchainImagesAndImageViews_fbo(): vkCreateImage() Successful for FBO Image!.
+createSwapchainImagesAndImageViews_fbo(): vkAllocateMemory() Successful for FBO Image!.
+createSwapchainImagesAndImageViews_fbo(): vkBindImageMemory() Successful for FBO Image!.
+createSwapchainImagesAndImageViews_fbo(): vkCreateImageView() Successful for FBO Image!.
+createSwapchainImagesAndImageViews_fbo(): vkCreateSampler() Successful for FBO Sampler!.
+createSwapchainImagesAndImageViews_fbo(): vkCreateImage() Successful for Depth Image!.
+createSwapchainImagesAndImageViews_fbo(): vkAllocateMemory() Successful!.
+createSwapchainImagesAndImageViews_fbo(): vkBindDev() Successful!.
+createSwapchainImagesAndImageViews_fbo(): vkCreateImageView() Successful for Depth Image!.
+createRenderPass_fbo(): vkCreateRenderPass() Successful!.
+createPipelineLayout_fbo(): vkCreatePipelineLayout() Successful!.
+createPipeline_fbo(): vkCreatePipelineCache() Successful!.
+createPipeline_fbo(): vkCreateGraphicsPipelines() Successful!.
+createFramebuffer_fbo(): vkCreateFramebuffer() Successful!.
+createCommandBuffers_fbo(): vkAllocateCommandBuffers() Successful!.
+buildCommandBuffer_fbo(): vkResetCommandBuffer() Successful!.
+buildCommandBuffer_fbo(): vkBeginCommandBuffer() Successful!.
+buildCommandBuffer_fbo(): vkEndCommandBuffer() Successful!.
+
+
+getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() first Call Successful!. [Found 5 Formats]
+getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() Second Call Successful!.
+getPhysicalDeviceSurfaceFormatAndColorSpace(): vkSurfaceFormatKHR_array freed.
+createSwapchain(): getPhysicalDeviceSurfaceFormatAndColorSpace() Successful!.
+createSwapchain(): vkGetPhysicalDeviceSurfaceCapabilitiesKHR() Successful!.
+createSwapchain(): desiredNumberOfSwapchainImages is : 2, [Min: 2, Max: 8]
+createSwapchain(): Swapchain Image Width : 1536 X Height : 864
+getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() first Call Successful!. [Found 4 Present Modes]
+getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() Second Call Successful!.
+getPhysicalDeviceSurfacePresentMode(): VK_PRESENT_MODE_MAILBOX_KHR Present Mode found!.
+getPhysicalDeviceSurfacePresentMode(): vkPresentModeKHR_array freed.
+createSwapchain(): getPhysicalDeviceSurfacePresentMode() Successful!.
+createSwapchain(): vkCreateSwapchainKHR() Successful!.
+createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Successful!. : Swapchain Image Count : [2]
+createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Second Call Successful!.
+createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {0}!.
+createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {1}!.
+getSupportedDepthFormat(): Supported Depth Format Found: 130
+createSwapchainImagesAndImageViews(): getSupportedDepthFormat() Successful!.
+createSwapchainImagesAndImageViews(): vkCreateImage() Successful for Depth Image!.
+createSwapchainImagesAndImageViews(): vkAllocateMemory() Successful!.
+createSwapchainImagesAndImageViews(): vkBindDev() Successful!.
+createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for Depth Image!.
+createRenderPass(): vkCreateRenderPass() Successful!.
+createPipelineLayout(): vkCreatePipelineLayout() Successful!.
+createPipeline(): vkCreatePipelineCache() Successful!.
+createPipeline(): vkCreateGraphicsPipelines() Successful!.
+createFramebuffers(): vkCreateFramebuffer() Successful for {0}!.
+createFramebuffers(): vkCreateFramebuffer() Successful for {1}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
+createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
+createDescriptorSet(): vkAllocateDescriptorSets() Successful!.
+createDescriptorSet(): vkUpdateDescriptorSets() Successful!.
+buildCommandBuffers(): vkResetCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkBeginCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkEndCommandBuffer() Successful for {0}!.
+buildCommandBuffers(): vkResetCommandBuffer() Successful for {1}!.
+buildCommandBuffers(): vkBeginCommandBuffer() Successful for {1}!.
+buildCommandBuffers(): vkEndCommandBuffer() Successful for {1}!.
+
+
+
+uninitialize(): vkDeviceWaitIdle is done!
+uninitialize_fbo(): vkDestroySemaphore() for Render Complete Succeed!
+uninitialize_fbo(): vkDestroyFramebuffer() Succeed!.
+uninitialize_fbo(): vkDestroyPipeline() Succeed!
+uninitialize_fbo(): vkDestroyRenderPass() Succeed!
+uninitialize_fbo(): vkDescriptorPool_fbo & vkDescriptorSet_fbo Destroy Succeed!
+uninitialize_fbo(): vkDestroyPipelineLayout() Succeed!
+uninitialize_fbo(): vkDestroyDescriptorSetLayout() Succeed!
+uninitialize_fbo(): vkDestroyShaderModule() Succeed for Fragment Shader!
+uninitialize_fbo(): vkDestroyShaderModule() Succeed for Vertex Shader!
+uninitialize_fbo(): vkFreeMemory() Succeed for Uniform Buffer!
+uninitialize_fbo(): vkDestroyBuffer() Succeed for Uniform Buffer!
+uninitialize_fbo(): vkDestroySampler() Succeed for Texture Sampler!
+uninitialize_fbo(): vkDestroyImageView() Succeed for Texture Image View!
+uninitialize_fbo(): vkFreeMemory() Succeed for Texture Image Memory!
+uninitialize_fbo(): vkDestroyImage() Succeed for Texture Image!
+uninitialize_fbo(): freed pElements!.
+uninitialize_fbo(): freed pTexCoords!.
+uninitialize_fbo(): freed pNormals!.
+uninitialize_fbo(): freed pPositions!.
+uninitialize_fbo(): vkFreeMemory() Succeed for Vertex Buffer for Position!
+uninitialize_fbo(): vkDestroyBuffer() Succeed for Vertex Buffer for Position!
+uninitialize_fbo(): vkFreeMemory() Succeed for Vertex Buffer for Normal!
+uninitialize_fbo(): vkDestroyBuffer() Succeed for Vertex Buffer for Normal!
+uninitialize_fbo(): vkFreeMemory() Succeed for Index Buffer!
+uninitialize_fbo(): vkDestroyBuffer() Succeed for Index Buffer!
+uninitialize_fbo(): vkFreeMemory() Succeed for Vertex Buffer for Texcoord!
+uninitialize_fbo(): vkDestroyBuffer() Succeed for Vertex Buffer for Texcoord!
+uninitialize_fbo(): vkFreeCommandBuffers() Succeed!
+uninitialize_fbo(): vkDestroyImageView() Succeed for Depth Stencil Image View!
+uninitialize_fbo(): vkDestroyImage() Succeed for Depth Stencil Image!
+uninitialize_fbo(): vkFreeMemory() Succeed for Depth Stencil Memory!
+uninitialize_fbo(): vkDestroySampler() Succeed for FBO Sampler!
+uninitialize_fbo(): vkDestroyImageView() Succeed for FBO Image View!
+uninitialize_fbo(): vkFreeMemory() Succeed for FBO Image Memory!
+uninitialize_fbo(): vkDestroyImage() Succeed for FBO Image!
+uninitialize(): vkDestroyFence() Succeed for {0}!.
+uninitialize(): vkDestroyFence() Succeed for {1}!.
+uninitialize(): freed vkFence_array!.
+uninitialize(): vkDestroySemaphore() for Render Complete Succeed!
+uninitialize(): vkDestroySemaphore() for Back Buffer Succeed!
+uninitialize(): vkDestroyFramebuffer() Succeed for {0}!.
+uninitialize(): vkDestroyFramebuffer() Succeed for {1}!.
+uninitialize(): freed vkFramebuffer_array!.
+uninitialize(): vkDestroyPipeline() Succeed!
+uninitialize(): vkDestroyRenderPass() Succeed!
+uninitialize(): vkDescriptorPool & vkDescriptorSet Destroy Succeed!
+uninitialize(): vkDestroyPipelineLayout() Succeed!
+uninitialize(): vkDestroyDescriptorSetLayout() Succeed!
+uninitialize(): vkDestroyShaderModule() Succeed for Fragment Shader!
+uninitialize(): vkDestroyShaderModule() Succeed for Vertex Shader!
+uninitialize(): vkFreeMemory() Succeed for Uniform Buffer!
+uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for TexCoord!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for TexCoord!
+uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Position!
+uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Position!
+uninitialize(): vkFreeCommandBuffers() Succeed for {0}
+uninitialize(): vkFreeCommandBuffers() Succeed for {1}
+uninitialize(): freed vkCommandBuffer_array!.
+uninitialize(): vkDestroyCommandPool Successful!.
+uninitialize(): vkDestroyImageView() Succeed for Depth Stencil Image View!
+uninitialize(): vkDestroyImage() Succeed for Depth Stencil Image!
+uninitialize(): vkFreeMemory() Succeed for Depth Stencil Memory!
+uninitialize(): vkDestroyImageView() Succeed for {0}
+uninitialize(): vkDestroyImageView() Succeed for {1}
+uninitialize(): freed swapchainImageView_array!.
+uninitialize(): freed swapchainImage_array!.
+uninitialize(): vkDestroySwapchainKHR() Succeed!
+uninitialize(): vkDestroyDevice() Succeed!
+uninitialize(): vkDestroySurfaceKHR() Succeed
+uninitialize(): vkDestroyDebugReportCallbackEXT_fnptr() Succeed
+uninitialize(): vkDestroyInstance() Succeed
+uninitialize(): File Closed Successfully..

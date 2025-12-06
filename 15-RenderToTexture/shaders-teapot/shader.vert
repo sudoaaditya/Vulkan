@@ -19,6 +19,9 @@ layout(binding = 0) uniform myUniformData {
     vec4 materialDiffuse;
     vec4 materialSpecular;
     float materialShininess;
+    // Key Pressed Uniform
+    uint lKeyPressed;
+    uint textureEnabled;
 } uMyUniforms;
 
 layout(location = 0) out vec2 out_texCoord;
@@ -28,10 +31,12 @@ layout(location = 3) out vec3 out_lightDirection;
 
 void main (void) {
     // code
-    vec4 eyeCoords = uMyUniforms.viewMatrix * uMyUniforms.modelMatrix * vPosition;
-    out_tNormal = mat3(uMyUniforms.viewMatrix * uMyUniforms.modelMatrix) * vNormal;
-    out_lightDirection = vec3(uMyUniforms.lightPosition - eyeCoords);
-    out_viewerVector = vec3(-eyeCoords.xyz);
+    if(uMyUniforms.lKeyPressed == 1) {
+        vec4 eyeCoords = uMyUniforms.viewMatrix * uMyUniforms.modelMatrix * vPosition;
+        out_tNormal = mat3(uMyUniforms.viewMatrix * uMyUniforms.modelMatrix) * vNormal;
+        out_lightDirection = vec3(uMyUniforms.lightPosition - eyeCoords);
+        out_viewerVector = vec3(-eyeCoords.xyz);
+    }
 
     gl_Position = uMyUniforms.projectionMatrix * uMyUniforms.viewMatrix * uMyUniforms.modelMatrix * vPosition;
     out_texCoord = vTexCoord;

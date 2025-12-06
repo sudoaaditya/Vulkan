@@ -20,6 +20,9 @@ layout(binding = 0) uniform myUniformData {
     vec4 materialDiffuse;
     vec4 materialSpecular;
     float materialShininess;
+    // Key Pressed Uniform
+    int lKeyPressed;
+    int textureEnabled;
 } uMyUniforms;
 
 layout(binding = 1) uniform sampler2D uTextureSampler;
@@ -28,21 +31,31 @@ layout(location = 0) out vec4 FragColor;
 
 void main(void) {
     vec3 phong_ads_light;
-    vec3 n_tNormal = normalize(out_tNormal);
-    vec3 n_lightDirection = normalize(out_lightDirection);
-    vec3 n_viewerVec = normalize(out_viewerVector);
+    vec3 textureColor;
 
-    float tn_dot_ld = max(dot(n_lightDirection, n_tNormal), 0.0);
-    vec3 reflectionVector = reflect(-n_lightDirection, n_tNormal);
-    float rv_dot_vv_pow_shine = pow(max(dot(reflectionVector, n_viewerVec), 0.0), uMyUniforms.materialShininess);
+    if(uMyUniforms.lKeyPressed == 1) {
+        vec3 n_tNormal = normalize(out_tNormal);
+        vec3 n_lightDirection = normalize(out_lightDirection);
+        vec3 n_viewerVec = normalize(out_viewerVector);
 
-    vec3 ambient = vec3(uMyUniforms.lightAmbient * uMyUniforms.materialAmbient);
-    vec3 diffuse = vec3(uMyUniforms.lightDiffuse * uMyUniforms.materialDiffuse * tn_dot_ld);
-    vec3 specular = vec3(uMyUniforms.lightSpecular * uMyUniforms.materialSpecular * rv_dot_vv_pow_shine);
-    
-    phong_ads_light = ambient + diffuse + specular;
+        float tn_dot_ld = max(dot(n_lightDirection, n_tNormal), 0.0);
+        vec3 reflectionVector = reflect(-n_lightDirection, n_tNormal);
+        float rv_dot_vv_pow_shine = pow(max(dot(reflectionVector, n_viewerVec), 0.0), uMyUniforms.materialShininess);
 
-    vec3 textureColor = texture(uTextureSampler, out_texCoord).rgb;
+        vec3 ambient = vec3(uMyUniforms.lightAmbient * uMyUniforms.materialAmbient);
+        vec3 diffuse = vec3(uMyUniforms.lightDiffuse * uMyUniforms.materialDiffuse * tn_dot_ld);
+        vec3 specular = vec3(uMyUniforms.lightSpecular * uMyUniforms.materialSpecular * rv_dot_vv_pow_shine);
+        
+        phong_ads_light = ambient + diffuse + specular;
+    } else {
+        phong_ads_light = vec3(1.0, 1.0, 1.0);
+    }
+
+    if(uMyUniforms.textureEnabled == 1) {
+        textureColor = texture(uTextureSampler, out_texCoord).rgb;
+    } else {
+        textureColor = vec3(1.0, 1.0, 1.0);
+    }
 
     FragColor = vec4(textureColor * vec3(1.0) * phong_ads_light, 1.0);
 }
