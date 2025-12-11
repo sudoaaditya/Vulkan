@@ -3,7 +3,14 @@
 
 layout(location = 0) out vec4 FragColor;
 
+layout(binding = 0) uniform mvpMatrix {
+    mat4 modelMatrix;
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
+    vec4 color;
+} uMVP;
+
 void main(void) {
 
-    FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    FragColor = uMVP.color;
 }
