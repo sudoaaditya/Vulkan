@@ -14,4 +14,5 @@ void main (void) {
 
     // code
     gl_Position = uMVP.projectionMatrix * uMVP.viewMatrix * uMVP.modelMatrix * vPosition;
+    gl_PointSize = 2.0;
 }

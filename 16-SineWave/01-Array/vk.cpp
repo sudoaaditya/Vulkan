@@ -87,9 +87,6 @@ VkImageView vkImageView_depth = VK_NULL_HANDLE;
 // Command Pool
 VkCommandPool vkCommandPool = VK_NULL_HANDLE;
 
-// Command Buffer
-VkCommandBuffer *vkCommandBuffer_array;
-
 // Render Pass
 VkRenderPass vkRenderPass = VK_NULL_HANDLE;
 
@@ -122,14 +119,13 @@ typedef struct {
     VkDeviceMemory vkDeviceMemory;
 } VertexData;
 
-// Position
-VertexData vertexData_position;
 
 // Uniform Related Declarations
 struct MyUniformData {
     glm::mat4 modelMatrix;
     glm::mat4 viewMatrix;
     glm::mat4 projectionMatrix;
+    glm::vec4 color;
 };
 
 typedef struct {
@@ -159,6 +155,16 @@ VkDescriptorSet vkDescriptorSet = VK_NULL_HANDLE;
 VkViewport vkViewport;
 VkRect2D vkRect2D_scissor;
 VkPipeline vkPipeline = VK_NULL_HANDLE;
+
+// Sine Wave Related
+float pos_1024_graphics[1024][1024][4];
+// to do 512, 256, 128, 64 on your own
+VertexData vertex_position_1024x1024_graphics;
+VkCommandBuffer *vkCommandBuffer_for_1024x1024_graphics_array = NULL;
+
+BOOL bMesh1024Chosen = TRUE;
+char colorFromKey = 'O'; // O - Orange, R - Red, G - Green, B - Blue, W - White
+float animationTime = 0.0f;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
@@ -335,6 +341,40 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
                 case 'F':
                     ToggleFullScreen();
                     break;
+
+                case 52: // Key '4'
+                    bMesh1024Chosen = TRUE;
+                    break;
+
+                case 'O':
+                case 'o':
+                    colorFromKey = 'O';
+                    break;
+
+                case 'R':
+                case 'r':
+                    colorFromKey = 'R';
+                    break;
+
+                case 'G':
+                case 'g':
+                    colorFromKey = 'G';
+                    break;
+
+                case 'B':
+                case 'b':
+                    colorFromKey = 'B';
+                    break;
+
+                case 'W':
+                case 'w':
+                    colorFromKey = 'W';
+                    break;
+
+                case 'K':
+                case 'k':
+                    colorFromKey = 'K';
+                    break;
                 
                 default:
                     break;
@@ -409,8 +449,9 @@ VkResult initialize(void) {
     VkResult createSwapchain(VkBool32);
     VkResult createSwapchainImagesAndImageViews(void);
     VkResult createCommandPool(void);
-    VkResult createCommandBuffers(void);
-    VkResult createVertexBuffer(void);
+    VkResult createCommandBuffers(VkCommandBuffer **);
+    void initializeSineWaveArrays(int, int);
+    VkResult createVertexBuffer(uint32_t, uint32_t, VertexData*);
     VkResult createUniformBuffer(void);
     VkResult createShaders(void);
     VkResult createDescriptorSetLayout(void);
@@ -503,21 +544,25 @@ VkResult initialize(void) {
     }
 
     // Command Buffer
-    vkResult = createCommandBuffers();
+    vkResult = createCommandBuffers(&vkCommandBuffer_for_1024x1024_graphics_array);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "initialize(): createCommandBuffers() Failed!.\n");
+        fprintf(fptr, "initialize(): createCommandBuffers() Failed for 1024X1024!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "initialize(): createCommandBuffers() Successful!.\n\n");
+        fprintf(fptr, "initialize(): createCommandBuffers() Successful for 1024X1024!.\n\n");
     }
 
+    // Initialize Sine Wave Arrays
+    initializeSineWaveArrays(1024, 1024);
+
     // Create Vertex Buffer
-    vkResult = createVertexBuffer();
+    memset((void*)&vertex_position_1024x1024_graphics, 0, sizeof(VertexData));
+    vkResult = createVertexBuffer(1024, 1024, &vertex_position_1024x1024_graphics);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "initialize(): createVertexBuffer() Failed!.\n");
+        fprintf(fptr, "initialize(): createVertexBuffer() Failed for 1024X1024!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "initialize(): createVertexBuffer() Successful!.\n\n");
+        fprintf(fptr, "initialize(): createVertexBuffer() Successful for 1024X1024!.\n\n");
     }
 
     // Create Uniform Buffer
@@ -624,7 +669,7 @@ VkResult initialize(void) {
     memset((void*)&vkClearColorValue, 0, sizeof(VkClearColorValue));
     vkClearColorValue.float32[0] = 0.0f;
     vkClearColorValue.float32[1] = 0.0f;
-    vkClearColorValue.float32[2] = 1.0f;
+    vkClearColorValue.float32[2] = 0.0f;
     vkClearColorValue.float32[3] = 1.0f; // analogous to glClearColor
 
     // initialize clear depth stencil values
@@ -652,7 +697,7 @@ VkResult resize(int width, int height) {
     // Function declarations
     VkResult createSwapchain(VkBool32);
     VkResult createSwapchainImagesAndImageViews(void);
-    VkResult createCommandBuffers(void);
+    VkResult createCommandBuffers(VkCommandBuffer **);
     VkResult createPipelineLayout(void);
     VkResult createPipeline(void);
     VkResult createFramebuffers(void);
@@ -708,16 +753,16 @@ VkResult resize(int width, int height) {
     }
 
     // Destroy  Command Buffers
-    if(vkCommandBuffer_array) {
+    if(vkCommandBuffer_for_1024x1024_graphics_array) {
         for(uint32_t i = 0; i < swapchainImageCount; i++) {
-            vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_array[i]);
-            vkCommandBuffer_array[i] = VK_NULL_HANDLE;
+            vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_for_1024x1024_graphics_array[i]);
+            vkCommandBuffer_for_1024x1024_graphics_array[i] = VK_NULL_HANDLE;
         }
     }
 
-    if(vkCommandBuffer_array) {
-        free(vkCommandBuffer_array);
-        vkCommandBuffer_array = NULL;
+    if(vkCommandBuffer_for_1024x1024_graphics_array) {
+        free(vkCommandBuffer_for_1024x1024_graphics_array);
+        vkCommandBuffer_for_1024x1024_graphics_array = NULL;
     }
 
     // Destroy Pipeline
@@ -836,9 +881,9 @@ VkResult resize(int width, int height) {
     }
     
     // Create Command Buffer
-    vkResult = createCommandBuffers();
+    vkResult = createCommandBuffers(&vkCommandBuffer_for_1024x1024_graphics_array);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "resize(): createCommandBuffers() Failed!.\n");
+        fprintf(fptr, "resize(): createCommandBuffers() Failed for 1024X1024!.\n");
         return (vkResult);
     }
 
@@ -862,9 +907,11 @@ VkResult display(void) {
     // Function declarations
     VkResult resize(int, int);
     VkResult updateUniformBuffer(void);
+    VkResult buildCommandBuffers(void);
 
     // Variables
     VkResult vkResult = VK_SUCCESS;
+    VkCommandBuffer *vkCommandBuffer_array = NULL;
 
     // Code
     //if control comes here before initialization is done, then return false
@@ -873,6 +920,17 @@ VkResult display(void) {
         fprintf(fptr, "display(): bInitialized is FALSE!.\n");
         return (vkResult);
     }
+
+    if(bMesh1024Chosen == TRUE) {
+        vkCommandBuffer_array = vkCommandBuffer_for_1024x1024_graphics_array;
+    }
+
+    // Build Command Buffers
+    vkResult = buildCommandBuffers();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "display(): buildCommandBuffers() Failed!.\n");
+        return (vkResult);
+    } 
 
     // Acquire index of next swapchain image
     vkResult = vkAcquireNextImageKHR(
@@ -1104,31 +1162,31 @@ void uninitialize(void){
     }
 
     // Destroy Vertex Buffer
-    if(vertexData_position.vkDeviceMemory) {
-        vkFreeMemory(vkDevice, vertexData_position.vkDeviceMemory, NULL);
-        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer!\n");
-        vertexData_position.vkDeviceMemory = VK_NULL_HANDLE;
+    if(vertex_position_1024x1024_graphics.vkDeviceMemory) {
+        vkFreeMemory(vkDevice, vertex_position_1024x1024_graphics.vkDeviceMemory, NULL);
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for 1024X1024!\n");
+        vertex_position_1024x1024_graphics.vkDeviceMemory = VK_NULL_HANDLE;
     }
 
-    if(vertexData_position.vkBuffer) {
-        vkDestroyBuffer(vkDevice, vertexData_position.vkBuffer, NULL);
-        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer!\n");
-        vertexData_position.vkBuffer = VK_NULL_HANDLE;
+    if(vertex_position_1024x1024_graphics.vkBuffer) {
+        vkDestroyBuffer(vkDevice, vertex_position_1024x1024_graphics.vkBuffer, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for 1024X1024!\n");
+        vertex_position_1024x1024_graphics.vkBuffer = VK_NULL_HANDLE;
     }
 
     // Destroy  Command Buffers
-    if(vkCommandBuffer_array) {
+    if(vkCommandBuffer_for_1024x1024_graphics_array) {
         for(uint32_t i = 0; i < swapchainImageCount; i++) {
-            vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_array[i]);
-            fprintf(fptr, "uninitialize(): vkFreeCommandBuffers() Succeed for {%d}\n", i);
-            vkCommandBuffer_array[i] = VK_NULL_HANDLE;
+            vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_for_1024x1024_graphics_array[i]);
+            fprintf(fptr, "uninitialize(): vkFreeCommandBuffers() Succeed for 1024X1024 at {%d}\n", i);
+            vkCommandBuffer_for_1024x1024_graphics_array[i] = VK_NULL_HANDLE;
         }
     }
 
-    if(vkCommandBuffer_array) {
-        free(vkCommandBuffer_array);
-        fprintf(fptr, "uninitialize(): freed vkCommandBuffer_array!.\n");
-        vkCommandBuffer_array = NULL;
+    if(vkCommandBuffer_for_1024x1024_graphics_array) {
+        free(vkCommandBuffer_for_1024x1024_graphics_array);
+        fprintf(fptr, "uninitialize(): freed vkCommandBuffer_for_1024x1024_graphics_array!.\n");
+        vkCommandBuffer_for_1024x1024_graphics_array = NULL;
     }
 
     // Destroy the command pool
@@ -1244,6 +1302,7 @@ void uninitialize(void){
 
 void update(void) {
 
+    animationTime += 0.05f;
 }
 
 //! //////////////////////////////////////// Definations of vulkan Related Functions ///////////////////////////////////////////////
@@ -2427,9 +2486,11 @@ VkResult createCommandPool(void) {
     return (vkResult);
 }
 
-VkResult createCommandBuffers(void) {
+VkResult createCommandBuffers(VkCommandBuffer **ppVkCommandBuffer_array) {
     // variables
     VkResult vkResult = VK_SUCCESS;
+    // Command Buffer   
+    VkCommandBuffer *vkCommandBuffer_array;
 
     // Step 1: Init and Allocate VkCommandBufferAllocateInfo
     VkCommandBufferAllocateInfo vkCommandBufferAllocateInfo;
@@ -2455,20 +2516,19 @@ VkResult createCommandBuffers(void) {
         }
     }
 
+    *ppVkCommandBuffer_array = vkCommandBuffer_array;
+
     return (vkResult);
 }
 
 
-VkResult createVertexBuffer(void) {
+VkResult createVertexBuffer(uint32_t mesh_width, uint32_t mesh_height, VertexData *pVertexData) {
     // variables
     VkResult vkResult = VK_SUCCESS;
+    // Position
+    VertexData vertexData_position;
 
-    // Step 1
-    float triangle_position[] = {
-        0.0f, 1.0f, 0.0f,
-        -1.0f, -1.0f, 0.0f,
-        1.0f, -1.0f, 0.0f
-    };
+    uint32_t totalVertexBufferSize = mesh_width * mesh_height * sizeof(float) * 4; // 3 for x,y,z,w
 
     // Step 2
     memset((void*)&vertexData_position, 0, sizeof(VertexData));
@@ -2480,7 +2540,7 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-    vkBufferCreateInfo.size = sizeof(triangle_position);
+    vkBufferCreateInfo.size = totalVertexBufferSize;
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
@@ -2560,12 +2620,26 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 12
-    memcpy(data, triangle_position, sizeof(triangle_position));
+    if(mesh_width == 1024 && mesh_height == 1024) {
+        memcpy(data, pos_1024_graphics, totalVertexBufferSize);
+    }
 
     // Step 13
     vkUnmapMemory(vkDevice, vertexData_position.vkDeviceMemory);
 
+    *pVertexData = vertexData_position;
+
     return(vkResult);
+}
+
+void initializeSineWaveArrays(int mesh_width, int c) {
+    for(int i = 0; i < mesh_width; i++) {
+        for(int j = 0; j < mesh_width; j++) {
+            for(int k = 0; k < 4; k++) {
+                pos_1024_graphics[i][j][k] = 0.0f;
+            }
+        }
+    }
 }
 
 
@@ -2667,7 +2741,7 @@ VkResult updateUniformBuffer(void) {
     myUniformData.modelMatrix = glm::mat4(1.0f);
     myUniformData.modelMatrix = glm::translate(
         glm::mat4(1.0f),
-        glm::vec3(0.0f, 0.0f, -3.0f)
+        glm::vec3(0.0f, 0.0f, -2.0f)
     );
 
     myUniformData.viewMatrix = glm::mat4(1.0f);
@@ -2685,6 +2759,27 @@ VkResult updateUniformBuffer(void) {
     perspectiveProjectionMatrix[1][1] *= -1.0f; // Invert Y axis for Vulkan
 
     myUniformData.projectionMatrix = perspectiveProjectionMatrix;
+
+    // For Color
+    if(colorFromKey == 'K') {
+        // only case where background changes to white
+        myUniformData.color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); // Black
+    } else {
+        // for all other colors BG with be back
+        if(colorFromKey == 'R') {
+            myUniformData.color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // Red
+        } else if(colorFromKey == 'G') {
+            myUniformData.color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f); // Green
+        } else if(colorFromKey == 'B') {
+            myUniformData.color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f); // Blue
+        } else if(colorFromKey == 'B'){
+            myUniformData.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // White
+        } else if(colorFromKey == 'O') {
+            myUniformData.color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f); // Orange
+        } else {
+            myUniformData.color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f); // Orange
+        }
+    }
 
     void *data = NULL;
 
@@ -2847,7 +2942,7 @@ VkResult createDescriptorSetLayout(void) {
     vkDescriptorSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     vkDescriptorSetLayoutBinding.binding = 0; // this 0 is  the binding index, we will use this index in shader
     vkDescriptorSetLayoutBinding.descriptorCount = 1; 
-    vkDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // this binding will be used in vertex shader
+    vkDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT; // this binding will be used in vertex shader
     vkDescriptorSetLayoutBinding.pImmutableSamplers = NULL; // we don't have any immutable samplers for now
 
     //Create Descriptor Set Layout Create Info
@@ -3093,7 +3188,7 @@ VkResult createPipeline(void) {
     memset((void*)vkVertexInputBindingDescription_array, 0, sizeof(VkVertexInputBindingDescription) * _ARRAYSIZE(vkVertexInputBindingDescription_array));
 
     vkVertexInputBindingDescription_array[0].binding = 0; // 0th binding index
-    vkVertexInputBindingDescription_array[0].stride = sizeof(float) * 3;
+    vkVertexInputBindingDescription_array[0].stride = sizeof(float) * 4; // vec4 position
     vkVertexInputBindingDescription_array[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     VkVertexInputAttributeDescription vkVertexInputAttributeDescription_array[1];
@@ -3101,7 +3196,7 @@ VkResult createPipeline(void) {
 
     vkVertexInputAttributeDescription_array[0].binding = 0;
     vkVertexInputAttributeDescription_array[0].location = 0;
-    vkVertexInputAttributeDescription_array[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+    vkVertexInputAttributeDescription_array[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
     vkVertexInputAttributeDescription_array[0].offset = 0; 
     
     VkPipelineVertexInputStateCreateInfo vkPipelineVertexInputStateCreateInfo;
@@ -3122,7 +3217,7 @@ VkResult createPipeline(void) {
     vkPipelineInputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     vkPipelineInputAssemblyStateCreateInfo.pNext = NULL;
     vkPipelineInputAssemblyStateCreateInfo.flags = 0;
-    vkPipelineInputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    vkPipelineInputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 
     // Rasterization State
     VkPipelineRasterizationStateCreateInfo vkPipelineRasterizationStateCreateInfo;
@@ -3409,6 +3504,16 @@ VkResult createFences(void) {
 VkResult buildCommandBuffers(void) {
     // variables
     VkResult vkResult = VK_SUCCESS;
+    // Command Buffer
+    VkCommandBuffer *vkCommandBuffer_array;
+
+    // function declaration
+    VkResult prepareSineWaveForCPU(uint32_t, uint32_t, float);
+
+    if(bMesh1024Chosen == TRUE) {
+        prepareSineWaveForCPU(1024, 1024, animationTime);
+        vkCommandBuffer_array = vkCommandBuffer_for_1024x1024_graphics_array;
+    }
 
     for(uint32_t i = 0; i < swapchainImageCount; i++) {
         // Reset Command Buffers
@@ -3442,6 +3547,14 @@ VkResult buildCommandBuffers(void) {
         // Set Clear Values
         VkClearValue vkClearValue_array[2];
         memset((void*)vkClearValue_array, 0, sizeof(VkClearValue) * _ARRAYSIZE(vkClearValue_array));
+
+        if(colorFromKey == 'K') {
+            VkClearColorValue vkClearColorValue_white = { 1.0f, 1.0f, 1.0f, 1.0f };
+            vkClearColorValue = vkClearColorValue_white;
+        } else {
+            VkClearColorValue vkClearColorValue_black = { 0.0f, 0.0f, 0.0f, 1.0f };
+            vkClearColorValue = vkClearColorValue_black;
+        }
 
         vkClearValue_array[0].color = vkClearColorValue;
         vkClearValue_array[1].depthStencil = vkClearDepthStencilValue;
@@ -3485,12 +3598,14 @@ VkResult buildCommandBuffers(void) {
         vkCmdBindVertexBuffers(
             vkCommandBuffer_array[i], 
             0, 1,
-            &vertexData_position.vkBuffer,
+            &vertex_position_1024x1024_graphics.vkBuffer,
             vkDeviceSize_offset_array
         );
 
         // Here we should call vulkan drawing functions!
-        vkCmdDraw(vkCommandBuffer_array[i], 3, 1, 0, 0);
+        if(bMesh1024Chosen == TRUE) {
+            vkCmdDraw(vkCommandBuffer_array[i], 1024 * 1024, 1, 0, 0);
+        }
 
         // End Render Pass
         vkCmdEndRenderPass(vkCommandBuffer_array[i]);
@@ -3506,6 +3621,71 @@ VkResult buildCommandBuffers(void) {
     }
 
     return (vkResult);
+}
+
+VkResult prepareSineWaveForCPU(uint32_t mesh_width, uint32_t mesh_height, float animTime) {
+
+    void fillSineWaveArraysForCPU(uint32_t, uint32_t, float);
+
+    VkResult vkResult = VK_SUCCESS;
+    void *pData = NULL;
+
+    uint32_t totalVertexBufferSize = mesh_width * mesh_height * sizeof(float) * 4; // 3 for x,y,z,w
+
+    // fill sine wave arrays
+    fillSineWaveArraysForCPU(mesh_width, mesh_height, animTime);
+
+    // Map Vertex Buffer Memory
+    if(mesh_width == 1024 && mesh_height == 1024) {
+        vkResult = vkMapMemory(vkDevice, vertex_position_1024x1024_graphics.vkDeviceMemory, 0, totalVertexBufferSize, 0, &pData);
+        if(vkResult != VK_SUCCESS) {
+            fprintf(fptr, "prepareSineWaveForCPU(): vkMapMemory() Failed for Vertex Buffer Memory of 1024 x 1024 Mesh!.\n");
+            return (vkResult);
+        }
+
+        // Copy Data to Mapped Memory
+        memcpy(pData, pos_1024_graphics, totalVertexBufferSize);
+
+        // Unmap the memory
+        vkUnmapMemory(vkDevice, vertex_position_1024x1024_graphics.vkDeviceMemory);
+    }
+}
+
+void fillSineWaveArraysForCPU(uint32_t mesh_width, uint32_t mesh_height, float animTime) {
+for(int i = 0; i < (int)mesh_width; i++) {
+        for(int j = 0; j < (int)mesh_width; j++) {
+            for(int k = 0; k < 4; k++) {
+                float u = (float)i / (float)(mesh_width);
+                float v = (float)j / (float)(mesh_height);
+                u = u * 2.0f - 1.0f;
+                v = v * 2.0f - 1.0f;
+
+                float freq = 4.0f;
+                float w = sinf(u * freq + animTime) * cosf(v * freq + animTime) * 0.5f;
+                
+                if(k == 0) {
+                    if(mesh_width == 1024 && mesh_height == 1024) {
+                        pos_1024_graphics[i][j][k] = u;
+                    }
+                }
+                else if(k == 1) {
+                    if(mesh_width == 1024 && mesh_height == 1024) {
+                        pos_1024_graphics[i][j][k] = w;
+                    }
+                }
+                else if(k == 2) {
+                    if(mesh_width == 1024 && mesh_height == 1024) {
+                        pos_1024_graphics[i][j][k] = v;
+                    }
+                }
+                else if(k == 3) {
+                    if(mesh_width == 1024 && mesh_height == 1024) {
+                        pos_1024_graphics[i][j][k] = 1.0f;
+                    }   
+                }
+            }
+        }
+    }
 }
 
 // Always Keep this function at the end of this file
