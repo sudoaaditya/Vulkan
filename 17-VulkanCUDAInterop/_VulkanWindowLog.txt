@@ -319,12 +319,20 @@ fillDeviceExtensionNames(): Vulkan Device Extension Name = VK_AMD_buffer_marker
 fillDeviceExtensionNames(): Vulkan Device Extension Name = VK_GOOGLE_user_type 
 
 fillDeviceExtensionNames(): VK_KHR_SWAPCHAIN_EXTENSION_NAME Found!.
+fillDeviceExtensionNames(): VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME Found!.
+fillDeviceExtensionNames(): Enabled Vulkan Device Extension Name = VK_KHR_external_memory_win32 
 fillDeviceExtensionNames(): Enabled Vulkan Device Extension Name = VK_KHR_swapchain 
 createVulkanDevice(): fillDeviceExtensionNames() Successful!.
 createVulkanDevice(): vkCreateDevice() Successful!.
 initialize(): createVulkanDevice() Successful!.
 
 getDeviceQueue(): vkGetDeviceQueue() Successful!.
+
+initialize_cuda(): Number of CUDA Capable Devices Found : 1.
+initialize_cuda(): Vulkan Physical Device UUID : f72b76744c00bcc8775ed98eb9b4e48b.
+initialize_cuda(): cudaSetDevice() Successful for device 0!.
+initialize_cuda(): CUDA Selected Device Name:: NVIDIA GeForce RTX 3060 Laptop GPU!.
+initialize(): initialize_cuda() Successful!.
 
 getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() first Call Successful!. [Found 5 Formats]
 getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() Second Call Successful!.
@@ -405,6 +413,16 @@ createVertexBuffer(): vkAllocateMemory() Successful!.
 createVertexBuffer(): vkBindBufferMemory() Successful!.
 createVertexBuffer(): vkMapMemory() Successful!.
 initialize(): createVertexBuffer() Successful for 64X64!.
+
+createExternalVertexBuffer(): vkCreateBuffer() Successful!.
+createExternalVertexBuffer(): vkAllocateMemory() Successful!.
+createExternalVertexBuffer(): vkBindBufferMemory() Successful!.
+createExternalVertexBuffer(): vkGetDeviceProcAddr() Successful to find vkGetMemoryWin32HandleKHR!.
+createExternalVertexBuffer(): pfn_vkGetMemoryWin32HandleKHR() Successful!.
+createExternalVertexBuffer(): cudaImportExternalMemory() Successful!.
+createExternalVertexBuffer(): Closed Win32 Handle after importing in cuda!.
+createExternalVertexBuffer(): cudaExternalMemoryGetMappedBuffer() Successful!.
+initialize(): createExternalVertexBuffer() Successful for 1024X1024!.
 
 createUniformBuffer(): vkCreateBuffer() Successful!.
 createUniformBuffer(): vkAllocateMemory() Successful!.
@@ -518,6 +536,11 @@ uninitialize(): vkDestroyShaderModule() Succeed for Fragment Shader!
 uninitialize(): vkDestroyShaderModule() Succeed for Vertex Shader!
 uninitialize(): vkFreeMemory() Succeed for Uniform Buffer!
 uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!
+uninitialize_cuda(): cudaFree() Succeed for pos_cuda!.
+uninitialize_cuda(): cudaDestroyExternalMemory() Succeed for cuExternalMemory!.
+uninitialize(): uninitialize_cuda() Succeed!.
+uninitialize(): vkFreeMemory() Succeed for External Vertex Buffer!
+uninitialize(): vkDestroyBuffer() Succeed for External Vertex Buffer!
 uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for 1024X1024!
 uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for 1024X1024!
 uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for 512X512!
