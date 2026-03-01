@@ -8,6 +8,14 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #include<vulkan/vulkan.h>
 
+// OpenCL headers
+#define CL_TARGET_OPENCL_VERSION 300
+#include<CL/opencl.h>
+#include<CL/cl_ext.h> // for CL_MEM_DEVICE_HANDLE_KHR and CL_MEM_DEVICE_HANDLE_END_KHR extension
+
+// vulkan related libraries
+#pragma comment(lib, "opencl.lib")
+
 // glm related macros & header files
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE // clip space depth range is [0, 1]
@@ -53,7 +61,7 @@ VkPhysicalDevice *vkPhysicalDevice_array = NULL;
 
 // Device Extension related variables
 uint32_t enabledDeviceExtensionCount = 0;
-const char *enabledDeviceExtensionNames_array[1]; // VK_KHR_SWAPCHAIN_EXTENSION_NAME
+const char *enabledDeviceExtensionNames_array[2]; // VK_KHR_SWAPCHAIN_EXTENSION_NAME & VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME
 
 // Vulkan Device
 VkDevice vkDevice = VK_NULL_HANDLE;
@@ -157,6 +165,7 @@ VkRect2D vkRect2D_scissor;
 VkPipeline vkPipeline = VK_NULL_HANDLE;
 
 // Sine Wave Related
+uint32_t mesh_width = mesh_height = 1024;
 float pos_1024_graphics[1024][1024][4];
 // to do 512, 256, 128, 64 on your own
 VertexData vertex_position_1024x1024_graphics;
@@ -165,6 +174,18 @@ VkCommandBuffer *vkCommandBuffer_for_1024x1024_graphics_array = NULL;
 BOOL bMesh1024Chosen = TRUE;
 char colorFromKey = 'O'; // O - Orange, R - Red, G - Green, B - Blue, W - White
 float animationTime = 0.0f;
+
+// OpenCl Related Variables
+cl_int clResult;
+cl_platform_id oclPlatformID;
+cl_device_id oclDeviceID;
+cl_context oclContext;
+cl_command_queue oclCommandQueue;
+cl_program oclProgram;
+cl_kernel oclKernel_sinewave;
+cl_mem pos_opencl = NULL;
+VkExternalMemoryHandleTypeFlagBits vkExternalMemoryHandleTypeFlagBits = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+BOOL bOnGPU = FALSE;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
@@ -374,6 +395,16 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
                 case 'K':
                 case 'k':
                     colorFromKey = 'K';
+                    break;
+
+                case 'P':
+                case 'p':   
+                    bOnGPU = FALSE;
+                    break;
+                
+                case 'H':
+                case 'h':
+                    bOnGPU = TRUE;
                     break;
                 
                 default:
@@ -1902,10 +1933,16 @@ VkResult fillDeviceExtensionNames (void) {
 
     // step 5
     VkBool32 vulkanSwapchainExtensionFound = VK_FALSE;
+    VkBool32 vulkanExternalMemoryWin32ExtensionFound = VK_FALSE;
     for(uint32_t i = 0; i < devicesExtensionCount; i++) {
         if(strcmp(deviceExtensionNames_array[i], VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
             vulkanSwapchainExtensionFound = VK_TRUE;
             enabledDeviceExtensionNames_array[enabledDeviceExtensionCount++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+        }
+
+        if(strcmp(deviceExtensionNames_array[i], VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME) == 0) {
+            vulkanExternalMemoryWin32ExtensionFound = VK_TRUE;
+            enabledDeviceExtensionNames_array[enabledDeviceExtensionCount++] = VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME;
         }
     }
 
@@ -1922,6 +1959,14 @@ VkResult fillDeviceExtensionNames (void) {
         return (vkResult);
     } else {
         fprintf(fptr, "fillDeviceExtensionNames(): VK_KHR_SWAPCHAIN_EXTENSION_NAME Found!.\n");
+    }
+
+    if(vulkanExternalMemoryWin32ExtensionFound == VK_FALSE) {
+        vkResult = VK_ERROR_INITIALIZATION_FAILED; // return hardcoded failure
+        fprintf(fptr, "fillDeviceExtensionNames(): VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME Not Found!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "fillDeviceExtensionNames(): VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME Found!.\n");
     }
 
     // step 8:
