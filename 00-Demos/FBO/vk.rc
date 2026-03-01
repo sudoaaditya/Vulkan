@@ -1,0 +1,5 @@
+#include <windows.h>
+
+#include "icon.h"
+
+ICON_MORPHED ICON morphed.ico
