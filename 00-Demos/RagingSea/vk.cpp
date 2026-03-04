@@ -1,6 +1,9 @@
 #include<windows.h>
 #include<stdio.h>
 #include<stdlib.h>
+// for srand, rand and time
+#include <cstdlib> 
+#include <ctime> 
 
 #include<vector>
 using namespace std;
@@ -16,6 +19,8 @@ using namespace std;
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE // clip space depth range is [0, 1]
 #include "../../glm/glm.hpp"
 #include "../../glm/gtc/matrix_transform.hpp"
+
+#include "clockUtils/Clock.h"
 
 // vulkan related libraries
 #pragma comment(lib, "vulkan-1.lib")
@@ -34,6 +39,11 @@ HDC ghdc = NULL;
 HGLRC ghrc = NULL;
 FILE *fptr = NULL;
 const CHAR *gpszAppName = "ARTR: Vulkan";
+
+// Vertex Attributes Enum
+enum {
+    AMK_ATTRIBUTE_POSITION = 0,
+};
 
 // instance extension related variables
 uint32_t enabledInstanceExtensionCount = 0; 
@@ -76,10 +86,16 @@ int winWidth = WIN_WIDTH, winHeight = WIN_HEIGHT;
 VkSwapchainKHR vkSwapchainKHR = VK_NULL_HANDLE;
 VkExtent2D vkExtent2D_swapchain;
 
-// Swapchain Images & Image Views
+// Swapchain Images & Image Views [ For color Images ]
 uint32_t swapchainImageCount = UINT32_MAX;
 VkImage *swapchainImage_array = NULL;
 VkImageView *swapchainImageView_array = NULL;
+
+// For Depth Image
+VkFormat vkFormat_depth = VK_FORMAT_UNDEFINED;
+VkImage vkImage_depth = VK_NULL_HANDLE;
+VkDeviceMemory vkDeviceMemory_depth = VK_NULL_HANDLE;
+VkImageView vkImageView_depth = VK_NULL_HANDLE;
 
 // Command Pool
 VkCommandPool vkCommandPool = VK_NULL_HANDLE;
@@ -100,6 +116,7 @@ VkFence *vkFence_array = NULL;
 
 // Build Command Buffers
 VkClearColorValue vkClearColorValue;
+VkClearDepthStencilValue vkClearDepthStencilValue;
 
 // Render Variables
 BOOL bInitialized = FALSE;
@@ -126,6 +143,22 @@ struct MyUniformData {
     glm::mat4 modelMatrix;
     glm::mat4 viewMatrix;
     glm::mat4 projectionMatrix;
+
+    // for sea
+    float time;
+    float bigWavesElevation;
+    glm::vec2 bigWavesFrequency;
+    float bigWavesSpeed;
+
+    float smallWavesElevation;
+    float smallWavesFrequency;
+    float smallWavesSpeed;
+    float smallWavesIteration;
+
+    glm::vec3 depthColor;
+    glm::vec3 surfaceColor;
+    float colorOffset;
+    float colorMultiplier;
 };
 
 typedef struct {
@@ -136,7 +169,8 @@ typedef struct {
 UniformData uniformData;
 
 vector<glm::vec3> vertexData_array;
-int segmentCount = 40; // no of segmenst to divide a plane into
+float halfSize = 3.0f; // bound of rect go from -3 to 3
+int segmentCount = 512; // no of segmenst to divide a plane into
 
 // Shader Variables
 VkShaderModule vkShaderModule_vertex = VK_NULL_HANDLE;
@@ -158,6 +192,10 @@ VkDescriptorSet vkDescriptorSet = VK_NULL_HANDLE;
 VkViewport vkViewport;
 VkRect2D vkRect2D_scissor;
 VkPipeline vkPipeline = VK_NULL_HANDLE;
+
+// For Rotation
+float angle = 0.0f;
+Clock myClock;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
@@ -213,7 +251,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
     hwnd = CreateWindowEx(WS_EX_APPWINDOW,
             szAppName,
-            TEXT("AMK_Vulkan : B&W Rectangle"),
+            TEXT("AMK_Vulkan : Rotating Pyramid"),
             WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE,
             xPos,
             yPos,
@@ -626,6 +664,12 @@ VkResult initialize(void) {
     vkClearColorValue.float32[2] = 0.0f;
     vkClearColorValue.float32[3] = 1.0f; // analogous to glClearColor
 
+    // initialize clear depth stencil values
+    memset((void*)&vkClearDepthStencilValue, 0, sizeof(VkClearDepthStencilValue));
+    vkClearDepthStencilValue.depth = 1.0f; // analogous to glClearDepth [ Float Value]
+    vkClearDepthStencilValue.stencil = 0; // analogous to glClearStencil [ Integer Value ]
+
+
     // Build Command Buffers
     vkResult = buildCommandBuffers();
     if(vkResult != VK_SUCCESS) {
@@ -634,6 +678,8 @@ VkResult initialize(void) {
     } else {
         fprintf(fptr, "initialize(): buildCommandBuffers() Successful!.\n\n");
     }
+
+    myClock.start();
 
     // Initialization is completed!
     bInitialized = TRUE;
@@ -730,6 +776,24 @@ VkResult resize(int width, int height) {
     if(vkRenderPass) {
         vkDestroyRenderPass(vkDevice, vkRenderPass, NULL);
         vkRenderPass = VK_NULL_HANDLE;
+    }
+
+    // destroy depth stencil image view
+    if(vkImageView_depth) {
+        vkDestroyImageView(vkDevice, vkImageView_depth, NULL);
+        vkImageView_depth = VK_NULL_HANDLE;
+    }
+
+    // destroy depth stencil image
+    if(vkImage_depth) {
+        vkDestroyImage(vkDevice, vkImage_depth, NULL);
+        vkImage_depth = VK_NULL_HANDLE;
+    }
+
+    // destroy depth stencil memory
+    if(vkDeviceMemory_depth) {
+        vkFreeMemory(vkDevice, vkDeviceMemory_depth, NULL);
+        vkDeviceMemory_depth = VK_NULL_HANDLE;
     }
 
     if(swapchainImageView_array) {
@@ -1079,16 +1143,16 @@ void uninitialize(void){
         uniformData.vkBuffer = VK_NULL_HANDLE;
     }
 
-    // Destroy Vertex Buffer
+    // Destroy Vertex Buffer Position
     if(vertexData_position.vkDeviceMemory) {
         vkFreeMemory(vkDevice, vertexData_position.vkDeviceMemory, NULL);
-        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer!\n");
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Position!\n");
         vertexData_position.vkDeviceMemory = VK_NULL_HANDLE;
     }
 
     if(vertexData_position.vkBuffer) {
         vkDestroyBuffer(vkDevice, vertexData_position.vkBuffer, NULL);
-        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer!\n");
+        fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Position!\n");
         vertexData_position.vkBuffer = VK_NULL_HANDLE;
     }
 
@@ -1112,6 +1176,27 @@ void uninitialize(void){
         vkDestroyCommandPool(vkDevice, vkCommandPool, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyCommandPool Successful!.\n");
         vkCommandPool = VK_NULL_HANDLE;
+    }
+
+    // destroy depth stencil image view
+    if(vkImageView_depth) {
+        vkDestroyImageView(vkDevice, vkImageView_depth, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyImageView() Succeed for Depth Stencil Image View!\n");
+        vkImageView_depth = VK_NULL_HANDLE;
+    }
+
+    // destroy depth stencil image
+    if(vkImage_depth) {
+        vkDestroyImage(vkDevice, vkImage_depth, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyImage() Succeed for Depth Stencil Image!\n");
+        vkImage_depth = VK_NULL_HANDLE;
+    }
+
+    // destroy depth stencil memory
+    if(vkDeviceMemory_depth) {
+        vkFreeMemory(vkDevice, vkDeviceMemory_depth, NULL);
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Depth Stencil Memory!\n");
+        vkDeviceMemory_depth = VK_NULL_HANDLE;
     }
 
     // Destroy Vulkan Swapchain Image Views
@@ -1199,6 +1284,10 @@ void uninitialize(void){
 
 void update(void) {
 
+    angle += 0.1f;
+    if(angle >= 360.0f) {
+        angle = 0.0f;
+    }
 }
 
 //! //////////////////////////////////////// Definations of vulkan Related Functions ///////////////////////////////////////////////
@@ -2153,6 +2242,9 @@ VkResult createSwapchain (VkBool32 vSync) {
 }
 
 VkResult createSwapchainImagesAndImageViews(void) {
+    // Function Definations
+    VkResult getSupportedDepthFormat(void);
+
     // variables
     VkResult vkResult = VK_SUCCESS;
 
@@ -2216,6 +2308,142 @@ VkResult createSwapchainImagesAndImageViews(void) {
         }
     }
 
+    // For Depth Image
+
+    vkResult = getSupportedDepthFormat();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): getSupportedDepthFormat() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): getSupportedDepthFormat() Successful!.\n");
+    }
+
+    // For depth image initialize VkImageCreateInfo
+    VkImageCreateInfo vkImageCreateInfo;
+    memset((void*)&vkImageCreateInfo, 0, sizeof(VkImageCreateInfo));
+
+    vkImageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    vkImageCreateInfo.pNext = NULL;
+    vkImageCreateInfo.flags = 0;
+    vkImageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    vkImageCreateInfo.format = vkFormat_depth;
+    vkImageCreateInfo.extent.width = winWidth;
+    vkImageCreateInfo.extent.height = winHeight;
+    vkImageCreateInfo.extent.depth = 1;
+    vkImageCreateInfo.mipLevels = 1;
+    vkImageCreateInfo.arrayLayers = 1;
+    vkImageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkImageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    vkImageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    vkResult = vkCreateImage(vkDevice, &vkImageCreateInfo, NULL, &vkImage_depth);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkCreateImage() Failed for Depth Image!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkCreateImage() Successful for Depth Image!.\n");
+    }
+
+    // Memory Requirements for Depth Image
+    VkMemoryRequirements vkMemoryRequirements;
+    memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
+
+    vkGetImageMemoryRequirements(vkDevice, vkImage_depth, &vkMemoryRequirements);
+
+    // Step 6
+    VkMemoryAllocateInfo vkMemoryAllocateInfo;
+    memset((void*)&vkMemoryAllocateInfo, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo.pNext = NULL;
+    vkMemoryAllocateInfo.allocationSize = vkMemoryRequirements.size;
+    vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
+
+    // Step A 
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        // Step B
+        if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
+            // Step C
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+                // Step D
+                vkMemoryAllocateInfo.memoryTypeIndex = i;
+                break;
+            }
+        }
+        // Step E
+        vkMemoryRequirements.memoryTypeBits >>= 1;
+    }
+
+    //Setp 9
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vkDeviceMemory_depth);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkAllocateMemory() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkAllocateMemory() Successful!.\n");
+    }
+
+    // Step 10
+    vkResult = vkBindImageMemory(vkDevice, vkImage_depth, vkDeviceMemory_depth, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkBindDev() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkBindDev() Successful!.\n");
+    }
+
+    // Create Image View for Depth Image
+    memset((void*)&vkImageViewCreateInfo, 0, sizeof(VkImageViewCreateInfo));
+    
+    vkImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    vkImageViewCreateInfo.pNext = NULL;
+    vkImageViewCreateInfo.flags = 0;
+    vkImageViewCreateInfo.format = vkFormat_depth;
+    vkImageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    vkImageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+    vkImageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    vkImageViewCreateInfo.subresourceRange.layerCount = 1;
+    vkImageViewCreateInfo.subresourceRange.levelCount = 1;
+    vkImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    vkImageViewCreateInfo.image = vkImage_depth;
+
+    vkResult = vkCreateImageView(vkDevice, &vkImageViewCreateInfo, NULL, &vkImageView_depth);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkCreateImageView() Failed for Depth Image!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for Depth Image!.\n");
+    }
+
+    return (vkResult);
+}
+
+VkResult getSupportedDepthFormat(void) {
+    //Variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Code 
+    VkFormat vkFormat_depth_array[] = {
+        VK_FORMAT_D32_SFLOAT_S8_UINT, // 32-bit signed float depth + 8-bit unsigned int stencil
+        VK_FORMAT_D32_SFLOAT, // 32-bit signed float depth
+        VK_FORMAT_D24_UNORM_S8_UINT, // 24-bit unsigned normalized depth + 8-bit unsigned int stencil
+        VK_FORMAT_D16_UNORM_S8_UINT, // 16-bit unsigned normalized depth + 8-bit unsigned int stencil
+        VK_FORMAT_D16_UNORM // 16-bit unsigned normalized depth
+    };
+
+    for(uint32_t i = 0; i < sizeof(vkFormat_depth_array) / sizeof(vkFormat_depth_array[0]); i++) {
+        VkFormatProperties vkFormatProperties;
+        memset((void*)&vkFormatProperties, 0, sizeof(VkFormatProperties));
+
+        vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice_selected, vkFormat_depth_array[i], &vkFormatProperties);
+
+        if(vkFormatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+            vkFormat_depth = vkFormat_depth_array[i];
+            fprintf(fptr, "getSupportedDepthFormat(): Supported Depth Format Found: %d\n", vkFormat_depth);
+            vkResult = VK_SUCCESS;
+            break;
+        }
+    }
 
     return (vkResult);
 }
@@ -2280,31 +2508,32 @@ VkResult createVertexBuffer(void) {
     VkResult vkResult = VK_SUCCESS;
 
     // Step 1
-    /* float rectangle_position[] = {
-        // First Triangle
-        1.0f, 1.0f, 0.0f, // Top Right
-        -1.0f, 1.0f, 0.0f, // Top Left
-        -1.0, -1.0, 0.0f, // Bottom Left
-        // Second Triangle
-        -1.0f, -1.0f, 0.0f, // Bottom Left
-        1.0f, -1.0f, 0.0f, // Bottom Right
-        1.0f, 1.0f, 0.0f // Top Right
-    }; */
-
-    // make sure the vector is empty before we start adding grid vertices
     vertexData_array.clear();
 
-    for(int i = 0; i <= segmentCount; ++i) {
+    int seg = segmentCount > 0 ? segmentCount : 1;
+    float step = (2.0f * halfSize) / (float)seg;
 
-        float t = -1.0f + 2.0f * (float)i / (float)segmentCount;
-        // vertical line
-        vertexData_array.emplace_back(t, -1.0f, 0.0f);
-        vertexData_array.emplace_back(t,  1.0f, 0.0f);
-        // horizontal line
-        vertexData_array.emplace_back(-1.0f, t, 0.0f);
-        vertexData_array.emplace_back( 1.0f, t, 0.0f);
+    // Generate non-indexed triangle list: each cell -> two triangles (6 vertices)
+    for (int i = 0; i < seg; ++i) {
+        float y0 = -halfSize + i * step;
+        float y1 = -halfSize + (i + 1) * step;
+        for (int j = 0; j < seg; ++j) {
+            float x0 = -halfSize + j * step;
+            float x1 = -halfSize + (j + 1) * step;
+
+            // Triangle 1: (x0,y0), (x1,y0), (x1,y1)
+            vertexData_array.push_back(glm::vec3(x0, y0, 0.0f));
+            vertexData_array.push_back(glm::vec3(x1, y0, 0.0f));
+            vertexData_array.push_back(glm::vec3(x1, y1, 0.0f));
+
+            // Triangle 2: (x0,y0), (x1,y1), (x0,y1)
+            vertexData_array.push_back(glm::vec3(x0, y0, 0.0f));
+            vertexData_array.push_back(glm::vec3(x1, y1, 0.0f));
+            vertexData_array.push_back(glm::vec3(x0, y1, 0.0f));
+        }
     }
 
+    // VertexData for Triangle Position
     // Step 2
     memset((void*)&vertexData_position, 0, sizeof(VertexData));
 
@@ -2315,16 +2544,16 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-    vkBufferCreateInfo.size = vertexData_array.size() * sizeof(glm::vec3); // 4 is for x,y,z,w components of each vertex
+    vkBufferCreateInfo.size = vertexData_array.size() * sizeof(glm::vec3);
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
     vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_position.vkBuffer);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for Position!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Successful!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Successful for Position!.\n");
     }
 
     // Step 5
@@ -2360,19 +2589,19 @@ VkResult createVertexBuffer(void) {
     //Setp 9
     vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_position.vkDeviceMemory);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for Position!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Successful!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Successful for Position!.\n");
     }
 
     // Step 10
     vkResult = vkBindBufferMemory(vkDevice, vertexData_position.vkBuffer, vertexData_position.vkDeviceMemory, 0);
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for Position!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Successful!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Successful for Position!.\n");
     }
 
     // Step 11
@@ -2388,14 +2617,13 @@ VkResult createVertexBuffer(void) {
     );
 
     if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Failed!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Failed for Position!.\n");
         return (vkResult);
     } else {
-        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Successful!.\n");
+        fprintf(fptr, "createVertexBuffer(): vkMapMemory() Successful for Position!.\n");
     }
 
     // Step 12
-    // copy the entire vector (each element is a vec4)
     memcpy(data, vertexData_array.data(), vertexData_array.size() * sizeof(glm::vec3));
 
     // Step 13
@@ -2501,10 +2729,21 @@ VkResult updateUniformBuffer(void) {
     memset((void*)&myUniformData, 0, sizeof(struct MyUniformData));
 
     myUniformData.modelMatrix = glm::mat4(1.0f);
-    myUniformData.modelMatrix = glm::translate(
+    glm::mat4 translateMat = glm::mat4(1.0f);
+    glm::mat4 rotateMat = glm::mat4(1.0f);
+    
+    translateMat *= glm::translate(
         glm::mat4(1.0f),
-        glm::vec3(0.0f, 0.0f, -3.0f)
+        glm::vec3(0.0f, 0.0f, -8.0f)
     );
+
+    rotateMat *= glm::rotate(
+        glm::mat4(1.0f),
+        glm::radians(0.0f), // Rotate 90 degrees to make it portrait
+        glm::vec3(1.0f, 0.0f, 0.0f)
+    );
+
+    myUniformData.modelMatrix = translateMat * rotateMat;
 
     myUniformData.viewMatrix = glm::mat4(1.0f);
     myUniformData.projectionMatrix = glm::mat4(1.0f);
@@ -2521,6 +2760,24 @@ VkResult updateUniformBuffer(void) {
     perspectiveProjectionMatrix[1][1] *= -1.0f; // Invert Y axis for Vulkan
 
     myUniformData.projectionMatrix = perspectiveProjectionMatrix;
+
+    float elapsedTime = (float) myClock.getElapsedTime();
+
+    // sea uniforms
+    myUniformData.time = elapsedTime;
+    myUniformData.bigWavesElevation = 0.2f;
+    myUniformData.bigWavesFrequency = glm::vec2(4.0f, 1.5f);
+    myUniformData.bigWavesSpeed = 0.75f; 
+    myUniformData.smallWavesElevation = 0.15f;
+    myUniformData.smallWavesFrequency = 3.0f;
+    myUniformData.smallWavesSpeed = 2.0f;
+    myUniformData.smallWavesIteration = 4.0f;
+
+    // depth and surface colors
+    myUniformData.depthColor = glm::vec3(0.094f, 0.4f, 0.569f);
+    myUniformData.surfaceColor = glm::vec3(0.608f, 0.847f, 1.0f);
+    myUniformData.colorOffset = 0.08f;
+    myUniformData.colorMultiplier = 5.0f;
 
     void *data = NULL;
 
@@ -2683,7 +2940,7 @@ VkResult createDescriptorSetLayout(void) {
     vkDescriptorSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     vkDescriptorSetLayoutBinding.binding = 0; // this 0 is  the binding index, we will use this index in shader
     vkDescriptorSetLayoutBinding.descriptorCount = 1; 
-    vkDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // this binding will be used in vertex shader
+    vkDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT; // this binding will be used in vertex and fragment shaders
     vkDescriptorSetLayoutBinding.pImmutableSamplers = NULL; // we don't have any immutable samplers for now
 
     //Create Descriptor Set Layout Create Info
@@ -2833,7 +3090,7 @@ VkResult createRenderPass(void) {
 
     // Code
     //Step 1: Create Attachment Description stcture array
-    VkAttachmentDescription vkAttachmentDescription_array[1];
+    VkAttachmentDescription vkAttachmentDescription_array[2];
     memset((void*)vkAttachmentDescription_array, 0, sizeof(VkAttachmentDescription) * _ARRAYSIZE(vkAttachmentDescription_array));
 
     vkAttachmentDescription_array[0].flags = 0;
@@ -2846,12 +3103,30 @@ VkResult createRenderPass(void) {
     vkAttachmentDescription_array[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     vkAttachmentDescription_array[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-    // Step 2: Create Attachment Reference Structure
-    VkAttachmentReference vkAttachmentReference;
-    memset((void*)&vkAttachmentReference, 0, sizeof(VkAttachmentReference));
+        // For Depth Attachment
+    vkAttachmentDescription_array[1].flags = 0;
+    vkAttachmentDescription_array[1].format =  vkFormat_depth;
+    vkAttachmentDescription_array[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    vkAttachmentDescription_array[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    vkAttachmentDescription_array[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    vkAttachmentDescription_array[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    vkAttachmentDescription_array[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    vkAttachmentDescription_array[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkAttachmentDescription_array[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    vkAttachmentReference.attachment = 0; // From the array of attachment description, refer to 0th index, oth will be color attachment
-    vkAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; 
+    // Step 2: Create Attachment Reference Structure
+    VkAttachmentReference vkAttachmentReference_color;
+    memset((void*)&vkAttachmentReference_color, 0, sizeof(VkAttachmentReference));
+
+    vkAttachmentReference_color.attachment = 0; // From the array of attachment description, refer to 0th index, oth will be color attachment
+    vkAttachmentReference_color.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; 
+
+    // Create Attachment Reference for Depth Attachment
+    VkAttachmentReference vkAttachmentReference_depth;
+    memset((void*)&vkAttachmentReference_depth, 0, sizeof(VkAttachmentReference));
+
+    vkAttachmentReference_depth.attachment = 1; // From the array of attachment description, refer to 1st index, 1st will be depth attachment
+    vkAttachmentReference_depth.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // Depth Attachment Layout
 
     // STep 3: create sub pass description strcture
     VkSubpassDescription vkSubpassDescription;
@@ -2861,10 +3136,10 @@ VkResult createRenderPass(void) {
     vkSubpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     vkSubpassDescription.inputAttachmentCount = 0;
     vkSubpassDescription.pInputAttachments = NULL;
-    vkSubpassDescription.colorAttachmentCount = 1; // we have only one color attachment
-    vkSubpassDescription.pColorAttachments = &vkAttachmentReference;
+    vkSubpassDescription.colorAttachmentCount = 1; // this count should be count of vkAttachmentReference array
+    vkSubpassDescription.pColorAttachments = &vkAttachmentReference_color;
     vkSubpassDescription.pResolveAttachments = NULL;
-    vkSubpassDescription.pDepthStencilAttachment = NULL;
+    vkSubpassDescription.pDepthStencilAttachment = &vkAttachmentReference_depth; // this is the depth attachment reference;
     vkSubpassDescription.preserveAttachmentCount = 0;
     vkSubpassDescription.pPreserveAttachments = NULL;
 
@@ -2909,17 +3184,18 @@ VkResult createPipeline(void) {
     VkVertexInputBindingDescription vkVertexInputBindingDescription_array[1];
     memset((void*)vkVertexInputBindingDescription_array, 0, sizeof(VkVertexInputBindingDescription) * _ARRAYSIZE(vkVertexInputBindingDescription_array));
 
-    vkVertexInputBindingDescription_array[0].binding = 0; // 0th binding index
+    vkVertexInputBindingDescription_array[0].binding = AMK_ATTRIBUTE_POSITION; // 0th binding index for position
     vkVertexInputBindingDescription_array[0].stride = sizeof(float) * 3;
     vkVertexInputBindingDescription_array[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     VkVertexInputAttributeDescription vkVertexInputAttributeDescription_array[1];
     memset((void*)vkVertexInputAttributeDescription_array, 0, sizeof(VkVertexInputAttributeDescription) * _ARRAYSIZE(vkVertexInputAttributeDescription_array));
 
-    vkVertexInputAttributeDescription_array[0].binding = 0;
-    vkVertexInputAttributeDescription_array[0].location = 0;
+    // Position Attribute
+    vkVertexInputAttributeDescription_array[0].binding = AMK_ATTRIBUTE_POSITION;
+    vkVertexInputAttributeDescription_array[0].location = AMK_ATTRIBUTE_POSITION;
     vkVertexInputAttributeDescription_array[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    vkVertexInputAttributeDescription_array[0].offset = 0; 
+    vkVertexInputAttributeDescription_array[0].offset = 0;
     
     VkPipelineVertexInputStateCreateInfo vkPipelineVertexInputStateCreateInfo;
     memset((void*)&vkPipelineVertexInputStateCreateInfo, 0, sizeof(VkPipelineVertexInputStateCreateInfo));
@@ -2939,7 +3215,7 @@ VkResult createPipeline(void) {
     vkPipelineInputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     vkPipelineInputAssemblyStateCreateInfo.pNext = NULL;
     vkPipelineInputAssemblyStateCreateInfo.flags = 0;
-    vkPipelineInputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    vkPipelineInputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
     // Rasterization State
     VkPipelineRasterizationStateCreateInfo vkPipelineRasterizationStateCreateInfo;
@@ -2948,8 +3224,8 @@ VkResult createPipeline(void) {
     vkPipelineRasterizationStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     vkPipelineRasterizationStateCreateInfo.pNext = NULL;
     vkPipelineRasterizationStateCreateInfo.flags = 0;
-    vkPipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-    vkPipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+    vkPipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL; // Wireframe modes
+    vkPipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_NONE; // No culling
     vkPipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     vkPipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
 
@@ -3001,6 +3277,21 @@ VkResult createPipeline(void) {
     vkRect2D_scissor.extent.height = vkExtent2D_swapchain.height;
 
     vkPipelineViewportStateCreateInfo.pScissors = &vkRect2D_scissor;
+
+    // Depth Stencil State
+    VkPipelineDepthStencilStateCreateInfo vkPipelineDepthStencilStateCreateInfo;
+    memset((void*)&vkPipelineDepthStencilStateCreateInfo, 0, sizeof(VkPipelineDepthStencilStateCreateInfo));
+
+    vkPipelineDepthStencilStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    vkPipelineDepthStencilStateCreateInfo.depthTestEnable = VK_TRUE;
+    vkPipelineDepthStencilStateCreateInfo.depthWriteEnable = VK_TRUE;
+    vkPipelineDepthStencilStateCreateInfo.stencilTestEnable = VK_FALSE;
+    vkPipelineDepthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
+    vkPipelineDepthStencilStateCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+    vkPipelineDepthStencilStateCreateInfo.back.failOp = VK_STENCIL_OP_KEEP;
+    vkPipelineDepthStencilStateCreateInfo.back.passOp = VK_STENCIL_OP_KEEP;
+    vkPipelineDepthStencilStateCreateInfo.back.compareOp = VK_COMPARE_OP_ALWAYS;
+    vkPipelineDepthStencilStateCreateInfo.front = vkPipelineDepthStencilStateCreateInfo.back; // front and back are same
 
     // Dynamic State
     // We don't have any dynamic state;
@@ -3072,7 +3363,7 @@ VkResult createPipeline(void) {
     vkGraphicsPipelineCreateInfo.pRasterizationState = &vkPipelineRasterizationStateCreateInfo;
     vkGraphicsPipelineCreateInfo.pColorBlendState = &vkPipelineColorBlendStateCreateInfo;
     vkGraphicsPipelineCreateInfo.pViewportState = &vkPipelineViewportStateCreateInfo;   
-    vkGraphicsPipelineCreateInfo.pDepthStencilState = NULL; // we don't have depth stencil state
+    vkGraphicsPipelineCreateInfo.pDepthStencilState = &vkPipelineDepthStencilStateCreateInfo;
     vkGraphicsPipelineCreateInfo.pDynamicState = NULL; // we don't have dynamic state
     vkGraphicsPipelineCreateInfo.pMultisampleState = &vkPipelineMultisampleStateCreateInfo;
     vkGraphicsPipelineCreateInfo.stageCount = _ARRAYSIZE(vkPipelineShaderStageCreateInfo_array);
@@ -3106,29 +3397,31 @@ VkResult createFramebuffers(void) {
     // Variables
     VkResult vkResult = VK_SUCCESS;
 
-    // Step 1: create VkImageView array same as size of attachments
-    VkImageView vkImageView_attachments_array[1];
-    memset((void*)vkImageView_attachments_array, 0, sizeof(VkImageView) * _ARRAYSIZE(vkImageView_attachments_array));
-
-    // Step 2: Create VkFrameBufferCreateInfo structure
-    VkFramebufferCreateInfo vkFrameBufferCreateInfo;
-    memset((void*)&vkFrameBufferCreateInfo, 0, sizeof(VkFramebufferCreateInfo));
-
-    vkFrameBufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    vkFrameBufferCreateInfo.flags = 0;
-    vkFrameBufferCreateInfo.pNext = NULL;
-    vkFrameBufferCreateInfo.renderPass = vkRenderPass;
-    vkFrameBufferCreateInfo.attachmentCount = _ARRAYSIZE(vkImageView_attachments_array);
-    vkFrameBufferCreateInfo.pAttachments = vkImageView_attachments_array;
-    vkFrameBufferCreateInfo.width = vkExtent2D_swapchain.width;
-    vkFrameBufferCreateInfo.height = vkExtent2D_swapchain.height;
-    vkFrameBufferCreateInfo.layers = 1; // VALIDATION USE CASE 2: Comment this line to see the error
-
     // allocate frame buffers array and creat efream buffers in loop with counts of allocated swapchain images
     vkFramebuffer_array = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * swapchainImageCount);
+
     for(uint32_t i = 0; i < swapchainImageCount; i++) {
 
+        // Step 1: create VkImageView array for color and depth attachments
+        VkImageView vkImageView_attachments_array[2];
+        memset((void*)vkImageView_attachments_array, 0, sizeof(VkImageView) * _ARRAYSIZE(vkImageView_attachments_array));
+
+        // Step 2: Create VkFrameBufferCreateInfo structure
+        VkFramebufferCreateInfo vkFrameBufferCreateInfo;
+        memset((void*)&vkFrameBufferCreateInfo, 0, sizeof(VkFramebufferCreateInfo));
+
+        vkFrameBufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        vkFrameBufferCreateInfo.flags = 0;
+        vkFrameBufferCreateInfo.pNext = NULL;
+        vkFrameBufferCreateInfo.renderPass = vkRenderPass;
+        vkFrameBufferCreateInfo.attachmentCount = _ARRAYSIZE(vkImageView_attachments_array);
+        vkFrameBufferCreateInfo.pAttachments = vkImageView_attachments_array;
+        vkFrameBufferCreateInfo.width = vkExtent2D_swapchain.width;
+        vkFrameBufferCreateInfo.height = vkExtent2D_swapchain.height;
+        vkFrameBufferCreateInfo.layers = 1; // VALIDATION USE CASE 2: Comment this line to see the error
+
         vkImageView_attachments_array[0] = swapchainImageView_array[i];
+        vkImageView_attachments_array[1] = vkImageView_depth; // this is the depth attachment image view
 
         vkResult = vkCreateFramebuffer(vkDevice, &vkFrameBufferCreateInfo, NULL, &vkFramebuffer_array[i]);
         if(vkResult != VK_SUCCESS) {
@@ -3239,10 +3532,11 @@ VkResult buildCommandBuffers(void) {
         }
 
         // Set Clear Values
-        VkClearValue vkClearValue_array[1];
+        VkClearValue vkClearValue_array[2];
         memset((void*)vkClearValue_array, 0, sizeof(VkClearValue) * _ARRAYSIZE(vkClearValue_array));
 
         vkClearValue_array[0].color = vkClearColorValue;
+        vkClearValue_array[1].depthStencil = vkClearDepthStencilValue;
 
         // Render pass begin info
         VkRenderPassBeginInfo vkRenderPassBeginInfo;
@@ -3277,14 +3571,14 @@ VkResult buildCommandBuffers(void) {
         );
 
         // Bind with the vertex buffer
-        VkDeviceSize vkDeviceSize_offset_array[1];
-        memset((void*)vkDeviceSize_offset_array, 0, sizeof(VkDeviceSize) * _ARRAYSIZE(vkDeviceSize_offset_array));
+        VkDeviceSize vkDeviceSize_offset_position_array[1];
+        memset((void*)vkDeviceSize_offset_position_array, 0, sizeof(VkDeviceSize) * _ARRAYSIZE(vkDeviceSize_offset_position_array));
 
         vkCmdBindVertexBuffers(
             vkCommandBuffer_array[i], 
-            0, 1,
+            AMK_ATTRIBUTE_POSITION, 1,
             &vertexData_position.vkBuffer,
-            vkDeviceSize_offset_array
+            vkDeviceSize_offset_position_array
         );
 
         // Here we should call vulkan drawing functions!
