@@ -170,7 +170,7 @@ UniformData uniformData;
 
 vector<glm::vec3> vertexData_array;
 float halfSize = 3.0f; // bound of rect go from -3 to 3
-int segmentCount = 512; // no of segmenst to divide a plane into
+int segmentCount = 64; // no of segmenst to divide a plane into
 
 // Shader Variables
 VkShaderModule vkShaderModule_vertex = VK_NULL_HANDLE;
@@ -2765,7 +2765,7 @@ VkResult updateUniformBuffer(void) {
 
     // sea uniforms
     myUniformData.time = elapsedTime;
-    myUniformData.bigWavesElevation = 0.2f;
+    myUniformData.bigWavesElevation = 0.5f;
     myUniformData.bigWavesFrequency = glm::vec2(4.0f, 1.5f);
     myUniformData.bigWavesSpeed = 0.75f; 
     myUniformData.smallWavesElevation = 0.15f;

@@ -30,6 +30,9 @@ layout(location = 0) out vec4 FragColor;
 void main(void) {
 
     float mixedStrength = (elevationOut + uMVP.colorOffset) * uMVP.colorMultiplier;
+    mixedStrength = clamp(mixedStrength, 0.0, 1.0);
     vec3 mixedColor = mix(uMVP.depthColor, uMVP.surfaceColor, mixedStrength);
+
     FragColor = vec4(mixedColor, 1.0);
+    // FragColor = vec4(vec3(elevationOut * 0.5 + 0.5), 1.0);
 }
