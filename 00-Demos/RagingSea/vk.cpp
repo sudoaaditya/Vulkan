@@ -154,11 +154,13 @@ struct MyUniformData {
     float smallWavesFrequency;
     float smallWavesSpeed;
     float smallWavesIteration;
+    float paddingBeforeColor[3];
 
-    glm::vec3 depthColor;
-    glm::vec3 surfaceColor;
+    float depthColor[4];
+    float surfaceColor[4];
     float colorOffset;
     float colorMultiplier;
+    float paddingAfterColor[2];
 };
 
 typedef struct {
@@ -169,8 +171,8 @@ typedef struct {
 UniformData uniformData;
 
 vector<glm::vec3> vertexData_array;
-float halfSize = 3.0f; // bound of rect go from -3 to 3
-int segmentCount = 64; // no of segmenst to divide a plane into
+float halfSize = 2.0f; // bound of rect go from -3 to 3
+int segmentCount = 512; // no of segmenst to divide a plane into
 
 // Shader Variables
 VkShaderModule vkShaderModule_vertex = VK_NULL_HANDLE;
@@ -251,7 +253,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
     hwnd = CreateWindowEx(WS_EX_APPWINDOW,
             szAppName,
-            TEXT("AMK_Vulkan : Rotating Pyramid"),
+            TEXT("AMK_Vulkan : Raging Sea"),
             WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE,
             xPos,
             yPos,
@@ -2731,19 +2733,25 @@ VkResult updateUniformBuffer(void) {
     myUniformData.modelMatrix = glm::mat4(1.0f);
     glm::mat4 translateMat = glm::mat4(1.0f);
     glm::mat4 rotateMat = glm::mat4(1.0f);
+    glm::mat4 scaleMat = glm::mat4(1.0f);
     
     translateMat *= glm::translate(
         glm::mat4(1.0f),
-        glm::vec3(0.0f, 0.0f, -8.0f)
+        glm::vec3(0.0f, -1.0f, -3.5f)
     );
 
     rotateMat *= glm::rotate(
         glm::mat4(1.0f),
-        glm::radians(0.0f), // Rotate 90 degrees to make it portrait
+        glm::radians(-60.0f), // Rotate 90 degrees to make it portrait
         glm::vec3(1.0f, 0.0f, 0.0f)
     );
 
-    myUniformData.modelMatrix = translateMat * rotateMat;
+    scaleMat *= glm::scale(
+        glm::mat4(1.0f),
+        glm::vec3(2.0f, 2.0f, 2.0f)
+    );
+
+    myUniformData.modelMatrix = translateMat * rotateMat * scaleMat;
 
     myUniformData.viewMatrix = glm::mat4(1.0f);
     myUniformData.projectionMatrix = glm::mat4(1.0f);
@@ -2751,7 +2759,7 @@ VkResult updateUniformBuffer(void) {
     glm::mat4 perspectiveProjectionMatrix = glm::mat4(1.0f);
 
     perspectiveProjectionMatrix = glm::perspective(
-        glm::radians(45.0f),
+        glm::radians(75.0f),
         (float)winWidth / (float)winHeight,
         0.1f,
         100.0f
@@ -2764,20 +2772,33 @@ VkResult updateUniformBuffer(void) {
     float elapsedTime = (float) myClock.getElapsedTime();
 
     // sea uniforms
-    myUniformData.time = elapsedTime;
-    myUniformData.bigWavesElevation = 0.5f;
+    myUniformData.time = elapsedTime; // Slow down time for better visual effect
+    myUniformData.bigWavesElevation = 0.2f;
     myUniformData.bigWavesFrequency = glm::vec2(4.0f, 1.5f);
     myUniformData.bigWavesSpeed = 0.75f; 
     myUniformData.smallWavesElevation = 0.15f;
     myUniformData.smallWavesFrequency = 3.0f;
     myUniformData.smallWavesSpeed = 2.0f;
     myUniformData.smallWavesIteration = 4.0f;
+    myUniformData.paddingBeforeColor[0] = 0.0f;
+    myUniformData.paddingBeforeColor[1] = 0.0f;
+    myUniformData.paddingBeforeColor[2] = 0.0f;
 
     // depth and surface colors
-    myUniformData.depthColor = glm::vec3(0.094f, 0.4f, 0.569f);
-    myUniformData.surfaceColor = glm::vec3(0.608f, 0.847f, 1.0f);
+    myUniformData.depthColor[0] = 0.094f;
+    myUniformData.depthColor[1] = 0.4f;
+    myUniformData.depthColor[2] = 0.569f;
+    myUniformData.depthColor[3] = 0.0f;
+
+    myUniformData.surfaceColor[0] = 0.608f;
+    myUniformData.surfaceColor[1] = 0.847f;
+    myUniformData.surfaceColor[2] = 1.0f;
+    myUniformData.surfaceColor[3] = 0.0f;
+
     myUniformData.colorOffset = 0.08f;
     myUniformData.colorMultiplier = 5.0f;
+    myUniformData.paddingAfterColor[0] = 0.0f;
+    myUniformData.paddingAfterColor[1] = 0.0f;
 
     void *data = NULL;
 

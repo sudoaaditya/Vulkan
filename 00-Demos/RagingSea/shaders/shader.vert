@@ -19,8 +19,8 @@ layout(binding = 0) uniform mvpMatrix {
     float smallWavesSpeed;
     float smallWavesIteration;
 
-    vec3 depthColor;
-    vec3 surfaceColor;
+    vec4 depthColor;
+    vec4 surfaceColor;
     float colorOffset;
     float colorMultiplier;
 } uMVP;
