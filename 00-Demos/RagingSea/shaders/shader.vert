@@ -110,17 +110,26 @@ float cnoise(vec3 P) {
 }
 
 void main (void) {
-    vec4 modelPosition = uMVP.modelMatrix * vec4(vPosition.xyz, 1.0);
+    vec3 localPosition = vPosition.xyz;
 
-    float elevation = sin(modelPosition.x * uMVP.bigWavesFrequency.x + uMVP.time * uMVP.bigWavesSpeed) * 
-                      sin(modelPosition.z * uMVP.bigWavesFrequency.y + uMVP.time * uMVP.bigWavesSpeed) * 
-                    uMVP.bigWavesElevation;
+    vec2 flowDir = normalize(vec2(0.85, 0.35));
+
+    vec2 bigWaveUV = localPosition.xy + flowDir * (uMVP.time * uMVP.bigWavesSpeed);
+    float elevation = sin(bigWaveUV.x * uMVP.bigWavesFrequency.x) *
+                        sin((bigWaveUV.y * uMVP.bigWavesFrequency.y) + (bigWaveUV.x * 0.35)) *
+                        uMVP.bigWavesElevation;
 
     for(float i = 1.0; i <= uMVP.smallWavesIteration; i++) {
-        elevation -= abs(cnoise(vec3(modelPosition.xz * uMVP.smallWavesFrequency * i, uMVP.time * uMVP.bigWavesSpeed)) * uMVP.smallWavesElevation / i);
+        float octaveSpeed = uMVP.smallWavesSpeed * (0.55 + 0.18 * i);
+        vec2 octaveFlow = flowDir * (uMVP.time * octaveSpeed);
+        vec2 octaveOffset = vec2(i * 11.3, i * 7.1);
+        vec2 octaveUV = localPosition.xy * uMVP.smallWavesFrequency * i + octaveFlow + octaveOffset;
+        elevation -= abs(cnoise(vec3(octaveUV, uMVP.time * octaveSpeed * 0.35)) * uMVP.smallWavesElevation / i);
     }
 
-    modelPosition.y += elevation;
+    localPosition.z += elevation;
+
+    vec4 modelPosition = uMVP.modelMatrix * vec4(localPosition, 1.0);
 
     vec4 viewPosition = uMVP.viewMatrix * modelPosition;
     vec4 projectedPosition = uMVP.projectionMatrix * viewPosition;

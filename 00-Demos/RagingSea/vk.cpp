@@ -147,7 +147,7 @@ struct MyUniformData {
     // for sea
     float time;
     float bigWavesElevation;
-    glm::vec2 bigWavesFrequency;
+    float bigWavesFrequency[2];
     float bigWavesSpeed;
 
     float smallWavesElevation;
@@ -171,7 +171,7 @@ typedef struct {
 UniformData uniformData;
 
 vector<glm::vec3> vertexData_array;
-float halfSize = 2.0f; // bound of rect go from -3 to 3
+float halfSize = 2.0f; // bound of rect go from -2 to 2s
 int segmentCount = 512; // no of segmenst to divide a plane into
 
 // Shader Variables
@@ -2737,29 +2737,33 @@ VkResult updateUniformBuffer(void) {
     
     translateMat *= glm::translate(
         glm::mat4(1.0f),
-        glm::vec3(0.0f, -1.0f, -3.5f)
+        glm::vec3(-1.0f, 0.0f, -1.5f)
     );
 
     rotateMat *= glm::rotate(
         glm::mat4(1.0f),
-        glm::radians(-60.0f), // Rotate 90 degrees to make it portrait
+        glm::radians(-90.0f),
         glm::vec3(1.0f, 0.0f, 0.0f)
     );
 
     scaleMat *= glm::scale(
         glm::mat4(1.0f),
-        glm::vec3(2.0f, 2.0f, 2.0f)
+        glm::vec3(1.5f, 1.5f, 1.5f)
     );
 
     myUniformData.modelMatrix = translateMat * rotateMat * scaleMat;
 
-    myUniformData.viewMatrix = glm::mat4(1.0f);
+    myUniformData.viewMatrix = glm::lookAt(
+        glm::vec3(1.0f, 1.0f, 1.0f),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
     myUniformData.projectionMatrix = glm::mat4(1.0f);
 
     glm::mat4 perspectiveProjectionMatrix = glm::mat4(1.0f);
 
     perspectiveProjectionMatrix = glm::perspective(
-        glm::radians(75.0f),
+        glm::radians(60.0f),
         (float)winWidth / (float)winHeight,
         0.1f,
         100.0f
@@ -2770,12 +2774,13 @@ VkResult updateUniformBuffer(void) {
     myUniformData.projectionMatrix = perspectiveProjectionMatrix;
 
     float elapsedTime = (float) myClock.getElapsedTime();
+    myUniformData.time = elapsedTime * 0.4f; // Keep motion gradual but visible for advection-based waves
 
     // sea uniforms
-    myUniformData.time = elapsedTime; // Slow down time for better visual effect
     myUniformData.bigWavesElevation = 0.2f;
-    myUniformData.bigWavesFrequency = glm::vec2(4.0f, 1.5f);
-    myUniformData.bigWavesSpeed = 0.75f; 
+    myUniformData.bigWavesFrequency[0] = 4.0f;
+    myUniformData.bigWavesFrequency[1] = 1.5f;
+    myUniformData.bigWavesSpeed = 0.3f; 
     myUniformData.smallWavesElevation = 0.15f;
     myUniformData.smallWavesFrequency = 3.0f;
     myUniformData.smallWavesSpeed = 2.0f;
