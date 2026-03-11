@@ -2781,10 +2781,10 @@ VkResult updateUniformBuffer(void) {
     myUniformData.bigWavesFrequency[0] = 4.0f;
     myUniformData.bigWavesFrequency[1] = 1.5f;
     myUniformData.bigWavesSpeed = 0.3f; 
-    myUniformData.smallWavesElevation = 0.15f;
-    myUniformData.smallWavesFrequency = 3.0f;
+    myUniformData.smallWavesElevation = 0.12f;
+    myUniformData.smallWavesFrequency = 2.0f;
     myUniformData.smallWavesSpeed = 2.0f;
-    myUniformData.smallWavesIteration = 4.0f;
+    myUniformData.smallWavesIteration = 3.0f;
     myUniformData.paddingBeforeColor[0] = 0.0f;
     myUniformData.paddingBeforeColor[1] = 0.0f;
     myUniformData.paddingBeforeColor[2] = 0.0f;
