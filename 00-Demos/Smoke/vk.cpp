@@ -18,6 +18,8 @@
 #include "../../glm/glm.hpp"
 #include "../../glm/gtc/matrix_transform.hpp"
 
+#include "clockUtils/Clock.h"
+
 // vulkan related libraries
 #pragma comment(lib, "vulkan-1.lib")
 
@@ -136,6 +138,9 @@ struct MyUniformData {
     glm::mat4 modelMatrix;
     glm::mat4 viewMatrix;
     glm::mat4 projectionMatrix;
+
+    // time
+    float time;
 };
 
 typedef struct {
@@ -172,6 +177,9 @@ VkDeviceMemory vkDeviceMemory_texture = VK_NULL_HANDLE;
 VkImageView vkImageView_texture = VK_NULL_HANDLE;
 // Texture Sampler
 VkSampler vkSampler_texture = VK_NULL_HANDLE;
+
+// clock
+Clock myClock;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 
@@ -658,6 +666,8 @@ VkResult initialize(void) {
     } else {
         fprintf(fptr, "initialize(): buildCommandBuffers() Successful!.\n\n");
     }
+
+    myClock.start();
 
     // Initialization is completed!
     bInitialized = TRUE;
@@ -3255,6 +3265,9 @@ VkResult updateUniformBuffer(void) {
     struct MyUniformData myUniformData;
     memset((void*)&myUniformData, 0, sizeof(struct MyUniformData));
 
+    float elapsedTime = (float) myClock.getElapsedTime();
+    myUniformData.time = elapsedTime * 0.4f; // Slow down the time for smoother animationq9841;ugf
+
     myUniformData.modelMatrix = glm::mat4(1.0f);
     myUniformData.modelMatrix = glm::translate(
         glm::mat4(1.0f),
@@ -3439,14 +3452,14 @@ VkResult createDescriptorSetLayout(void) {
     vkDescriptorSetLayoutBinding_array[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     vkDescriptorSetLayoutBinding_array[0].binding = 0; // this 0 is  the binding index, we will use this index in shader
     vkDescriptorSetLayoutBinding_array[0].descriptorCount = 1; 
-    vkDescriptorSetLayoutBinding_array[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // this binding will be used in vertex shader
+    vkDescriptorSetLayoutBinding_array[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT; // this binding will be used in vertex shader
     vkDescriptorSetLayoutBinding_array[0].pImmutableSamplers = NULL; // we don't have any immutable samplers for now
 
     // 2nd element is for texture image & sampler
     vkDescriptorSetLayoutBinding_array[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     vkDescriptorSetLayoutBinding_array[1].binding = 1; // this 0 is  the binding index, we will use this index in shader
     vkDescriptorSetLayoutBinding_array[1].descriptorCount = 1; 
-    vkDescriptorSetLayoutBinding_array[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT; // this binding will be used in fragment shader
+    vkDescriptorSetLayoutBinding_array[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT; // this binding will be used in fragment shader
     vkDescriptorSetLayoutBinding_array[1].pImmutableSamplers = NULL; // we don't have any immutable samplers for now
 
     //Create Descriptor Set Layout Create Info
