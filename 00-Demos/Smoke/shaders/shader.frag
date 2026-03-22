@@ -33,5 +33,7 @@ void main(void) {
     smoke *= smoothstep(1.0, 0.4, outTexCoord.y);
 
     // gl_FragColor = vec4(vUv, 1.0, 1.0);
-    FragColor = vec4(0.6, 0.3, 0.2, smoke);
+    // FragColor = vec4(0.6, 0.3, 0.2, smoke);
+    // white smoke
+    FragColor = vec4(1.0, 1.0, 1.0, smoke);
 }

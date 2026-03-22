@@ -2,6 +2,8 @@
 #include<stdio.h>
 #include<stdlib.h>
 
+#include<vector>
+
 #include "vk.h"
 
 // header & macros for texture
@@ -149,6 +151,11 @@ typedef struct {
 } UniformData;
 
 UniformData uniformData;
+
+std::vector<glm::vec3> vertexData_position_array;
+std::vector<glm::vec2> vertexData_texcoord_array;
+float halfSize = 2.0f;
+int segmentCount = 512;
 
 // Shader Variables
 VkShaderModule vkShaderModule_vertex = VK_NULL_HANDLE;
@@ -656,7 +663,7 @@ VkResult initialize(void) {
     vkClearColorValue.float32[0] = 0.0f;
     vkClearColorValue.float32[1] = 0.0f;
     vkClearColorValue.float32[2] = 0.0f;
-    vkClearColorValue.float32[3] = 1.0f; // analogous to glClearColor
+    vkClearColorValue.float32[3] = 0.0f; // analogous to glClearColor
 
     // Build Command Buffers
     vkResult = buildCommandBuffers();
@@ -2355,27 +2362,44 @@ VkResult createVertexBuffer(void) {
     VkResult vkResult = VK_SUCCESS;
 
     // Step 1
-    float rectangle_position[] = {
-        // First Triangle
-        1.0f, 1.0f, 0.0f, // Top Right
-        -1.0f, 1.0f, 0.0f, // Top Left
-        -1.0f, -1.0f, 0.0f, // Bottom Left
-        // Second Triangle
-        -1.0f, -1.0f, 0.0f, // Bottom Left
-        1.0f, -1.0f, 0.0f, // Bottom Right
-        1.0f, 1.0f, 0.0f // Top Right
-    };
+    vertexData_position_array.clear();
+    vertexData_texcoord_array.clear();
 
-    float rectangle_texCoords[] = {
-        // First Triangle
-        1.0f, 1.0f, // Top Right
-        0.0f, 1.0f, // Top Left
-        0.0f, 0.0f, // Bottom Left
-        // Second Triangle
-        0.0f, 0.0f, // Bottom Left
-        1.0f, 0.0f, // Bottom Right
-        1.0f, 1.0f // Top Right
-    };
+    int seg = segmentCount > 0 ? segmentCount : 1;
+    float step = (2.0f * halfSize) / (float)seg;
+
+    // Generate non-indexed triangle list: each cell contributes two triangles.
+    for (int i = 0; i < seg; ++i) {
+        float y0 = -halfSize + i * step;
+        float y1 = -halfSize + (i + 1) * step;
+        float v0 = (float)i / (float)seg;
+        float v1 = (float)(i + 1) / (float)seg;
+
+        for (int j = 0; j < seg; ++j) {
+            float x0 = -halfSize + j * step;
+            float x1 = -halfSize + (j + 1) * step;
+            float u0 = (float)j / (float)seg;
+            float u1 = (float)(j + 1) / (float)seg;
+
+            // Triangle 1
+            vertexData_position_array.push_back(glm::vec3(x1, y1, 0.0f));
+            vertexData_position_array.push_back(glm::vec3(x0, y1, 0.0f));
+            vertexData_position_array.push_back(glm::vec3(x0, y0, 0.0f));
+
+            vertexData_texcoord_array.push_back(glm::vec2(u1, v1));
+            vertexData_texcoord_array.push_back(glm::vec2(u0, v1));
+            vertexData_texcoord_array.push_back(glm::vec2(u0, v0));
+
+            // Triangle 2
+            vertexData_position_array.push_back(glm::vec3(x0, y0, 0.0f));
+            vertexData_position_array.push_back(glm::vec3(x1, y0, 0.0f));
+            vertexData_position_array.push_back(glm::vec3(x1, y1, 0.0f));
+
+            vertexData_texcoord_array.push_back(glm::vec2(u0, v0));
+            vertexData_texcoord_array.push_back(glm::vec2(u1, v0));
+            vertexData_texcoord_array.push_back(glm::vec2(u1, v1));
+        }
+    }
 
     // VertexData for Triangle Position
     // Step 2
@@ -2388,7 +2412,7 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-    vkBufferCreateInfo.size = sizeof(rectangle_position);
+    vkBufferCreateInfo.size = vertexData_position_array.size() * sizeof(glm::vec3);
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
@@ -2468,7 +2492,7 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 12
-    memcpy(data, rectangle_position, sizeof(rectangle_position));
+    memcpy(data, vertexData_position_array.data(), vertexData_position_array.size() * sizeof(glm::vec3));
 
     // Step 13
     vkUnmapMemory(vkDevice, vertexData_position.vkDeviceMemory);
@@ -2484,7 +2508,7 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-    vkBufferCreateInfo.size = sizeof(rectangle_texCoords);
+    vkBufferCreateInfo.size = vertexData_texcoord_array.size() * sizeof(glm::vec2);
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
@@ -2562,7 +2586,7 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 12
-    memcpy(data, rectangle_texCoords, sizeof(rectangle_texCoords));
+    memcpy(data, vertexData_texcoord_array.data(), vertexData_texcoord_array.size() * sizeof(glm::vec2));
 
     // Step 13
     vkUnmapMemory(vkDevice, vertexData_texcoord.vkDeviceMemory);
@@ -3266,12 +3290,12 @@ VkResult updateUniformBuffer(void) {
     memset((void*)&myUniformData, 0, sizeof(struct MyUniformData));
 
     float elapsedTime = (float) myClock.getElapsedTime();
-    myUniformData.time = elapsedTime * 0.4f; // Slow down the time for smoother animationq9841;ugf
+    myUniformData.time = elapsedTime * 10.0; // Slow down the time for smoother animation
 
     myUniformData.modelMatrix = glm::mat4(1.0f);
     myUniformData.modelMatrix = glm::translate(
         glm::mat4(1.0f),
-        glm::vec3(0.0f, 0.0f, -3.0f)
+        glm::vec3(0.0f, 0.0f, -10.0f)
     );
 
     myUniformData.viewMatrix = glm::mat4(1.0f);
@@ -3771,7 +3795,13 @@ VkResult createPipeline(void) {
     VkPipelineColorBlendAttachmentState vkPipelineColorBlendAttachmentState_array[1];
     memset((void*)vkPipelineColorBlendAttachmentState_array, 0, sizeof(VkPipelineColorBlendAttachmentState) * _ARRAYSIZE(vkPipelineColorBlendAttachmentState_array));
 
-    vkPipelineColorBlendAttachmentState_array[0].blendEnable = VK_FALSE;
+    vkPipelineColorBlendAttachmentState_array[0].blendEnable = VK_TRUE;
+    vkPipelineColorBlendAttachmentState_array[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    vkPipelineColorBlendAttachmentState_array[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    vkPipelineColorBlendAttachmentState_array[0].colorBlendOp = VK_BLEND_OP_ADD;
+    vkPipelineColorBlendAttachmentState_array[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    vkPipelineColorBlendAttachmentState_array[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    vkPipelineColorBlendAttachmentState_array[0].alphaBlendOp = VK_BLEND_OP_ADD;
     vkPipelineColorBlendAttachmentState_array[0].colorWriteMask = 0xF;
 
     VkPipelineColorBlendStateCreateInfo vkPipelineColorBlendStateCreateInfo;
@@ -4113,7 +4143,7 @@ VkResult buildCommandBuffers(void) {
         );
 
         // Here we should call vulkan drawing functions!
-        vkCmdDraw(vkCommandBuffer_array[i], 6, 1, 0, 0);
+        vkCmdDraw(vkCommandBuffer_array[i], (uint32_t)vertexData_position_array.size(), 1, 0, 0);
 
         // End Render Pass
         vkCmdEndRenderPass(vkCommandBuffer_array[i]);
