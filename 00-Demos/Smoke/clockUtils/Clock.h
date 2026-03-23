@@ -2,13 +2,14 @@
 #ifndef CLOCK_H
 #define CLOCK_H
 
-#include<ctime>
+#include <chrono>
 
 class Clock {
 
     private:
-        std::clock_t startTime;
-        std::clock_t lastTime;
+        using ClockType = std::chrono::steady_clock;
+        ClockType::time_point startTime;
+        ClockType::time_point lastTime;
         bool running;
 
     public:
@@ -18,4 +19,4 @@ class Clock {
         double getDeltaTime();
 };
 
-#endif CLOCK_H
+#endif // CLOCK_H

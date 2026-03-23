@@ -660,10 +660,10 @@ VkResult initialize(void) {
 
     // initialize clear color values
     memset((void*)&vkClearColorValue, 0, sizeof(VkClearColorValue));
-    vkClearColorValue.float32[0] = 0.0f;
-    vkClearColorValue.float32[1] = 0.0f;
-    vkClearColorValue.float32[2] = 0.0f;
-    vkClearColorValue.float32[3] = 0.0f; // analogous to glClearColor
+    vkClearColorValue.float32[0] = 0.03f;
+    vkClearColorValue.float32[1] = 0.03f;
+    vkClearColorValue.float32[2] = 0.05f;
+    vkClearColorValue.float32[3] = 1.0f; // analogous to glClearColor
 
     // Build Command Buffers
     vkResult = buildCommandBuffers();
@@ -3290,7 +3290,7 @@ VkResult updateUniformBuffer(void) {
     memset((void*)&myUniformData, 0, sizeof(struct MyUniformData));
 
     float elapsedTime = (float) myClock.getElapsedTime();
-    myUniformData.time = elapsedTime * 10.0; // Slow down the time for smoother animation
+    myUniformData.time = elapsedTime * 1.6f;
 
     myUniformData.modelMatrix = glm::mat4(1.0f);
     myUniformData.modelMatrix = glm::translate(
@@ -3787,7 +3787,7 @@ VkResult createPipeline(void) {
     vkPipelineRasterizationStateCreateInfo.pNext = NULL;
     vkPipelineRasterizationStateCreateInfo.flags = 0;
     vkPipelineRasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-    vkPipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+    vkPipelineRasterizationStateCreateInfo.cullMode = VK_CULL_MODE_NONE;
     vkPipelineRasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     vkPipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
 
@@ -3796,7 +3796,7 @@ VkResult createPipeline(void) {
     memset((void*)vkPipelineColorBlendAttachmentState_array, 0, sizeof(VkPipelineColorBlendAttachmentState) * _ARRAYSIZE(vkPipelineColorBlendAttachmentState_array));
 
     vkPipelineColorBlendAttachmentState_array[0].blendEnable = VK_TRUE;
-    vkPipelineColorBlendAttachmentState_array[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    vkPipelineColorBlendAttachmentState_array[0].srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
     vkPipelineColorBlendAttachmentState_array[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     vkPipelineColorBlendAttachmentState_array[0].colorBlendOp = VK_BLEND_OP_ADD;
     vkPipelineColorBlendAttachmentState_array[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
