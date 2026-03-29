@@ -414,12 +414,8 @@ createFences(): vkCreateFence() Successful for {0}!.
 createFences(): vkCreateFence() Successful for {1}!.
 initialize(): createFences() Successful!.
 
-buildCommandBuffers(): vkResetCommandBuffer() Successful for {0}!.
-buildCommandBuffers(): vkBeginCommandBuffer() Successful for {0}!.
-buildCommandBuffers(): vkEndCommandBuffer() Successful for {0}!.
-buildCommandBuffers(): vkResetCommandBuffer() Successful for {1}!.
-buildCommandBuffers(): vkBeginCommandBuffer() Successful for {1}!.
-buildCommandBuffers(): vkEndCommandBuffer() Successful for {1}!.
+initialize(): initializeImGui() Successful!.
+
 initialize(): buildCommandBuffers() Successful!.
 
 initialize(): Initialization Successful!.
@@ -455,16 +451,12 @@ createFramebuffers(): vkCreateFramebuffer() Successful for {0}!.
 createFramebuffers(): vkCreateFramebuffer() Successful for {1}!.
 createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
 createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
-buildCommandBuffers(): vkResetCommandBuffer() Successful for {0}!.
-buildCommandBuffers(): vkBeginCommandBuffer() Successful for {0}!.
-buildCommandBuffers(): vkEndCommandBuffer() Successful for {0}!.
-buildCommandBuffers(): vkResetCommandBuffer() Successful for {1}!.
-buildCommandBuffers(): vkBeginCommandBuffer() Successful for {1}!.
-buildCommandBuffers(): vkEndCommandBuffer() Successful for {1}!.
 
 
 
 uninitialize(): vkDeviceWaitIdle is done!
+uninitializeImGui(): ImGui backend shutdown successful!.
+uninitializeImGui(): vkDestroyDescriptorPool() for ImGui successful!.
 uninitialize(): vkDestroyFence() Succeed for {0}!.
 uninitialize(): vkDestroyFence() Succeed for {1}!.
 uninitialize(): freed vkFence_array!.

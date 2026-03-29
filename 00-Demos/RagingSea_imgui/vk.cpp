@@ -22,6 +22,10 @@ using namespace std;
 
 #include "clockUtils/Clock.h"
 
+#include "imgui/imgui.h"
+#include "imgui/backends/imgui_impl_win32.h"
+#include "imgui/backends/imgui_impl_vulkan.h"
+
 // vulkan related libraries
 #pragma comment(lib, "vulkan-1.lib")
 
@@ -200,6 +204,46 @@ float angle = 0.0f;
 Clock myClock;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+VkResult buildCommandBufferForImage(uint32_t imageIndex);
+
+VkDescriptorPool vkDescriptorPool_imgui = VK_NULL_HANDLE;
+
+struct SeaUiState {
+    float timeScale;
+    float bigWavesElevation;
+    float bigWavesFrequencyX;
+    float bigWavesFrequencyY;
+    float bigWavesSpeed;
+    float smallWavesElevation;
+    float smallWavesFrequency;
+    float smallWavesSpeed;
+    float smallWavesIteration;
+    float depthColor[4];
+    float surfaceColor[4];
+    float colorOffset;
+    float colorMultiplier;
+};
+
+SeaUiState gSeaUiState = {
+    0.4f,
+    0.2f,
+    4.0f,
+    1.5f,
+    0.3f,
+    0.12f,
+    2.0f,
+    2.0f,
+    3.0f,
+    {0.094f, 0.4f, 0.569f, 0.0f},
+    {0.608f, 0.847f, 1.0f, 0.0f},
+    0.08f,
+    5.0f
+};
+
+bool gShowSeaControls = true;
+bool gShowImGuiDemoWindow = false;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
     // Func
@@ -320,6 +364,10 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
     //var
     BOOL bIsMax = FALSE;
 
+    if (ImGui_ImplWin32_WndProcHandler(hwnd, iMsg, wParam, lParam)) {
+        return TRUE;
+    }
+
     switch(iMsg) {
 
         case WM_CREATE:
@@ -416,7 +464,7 @@ void ToggleFullScreen(void){
 					SWP_FRAMECHANGED | SWP_NOZORDER);
 			}
 		}
-		ShowCursor(FALSE);
+		// ShowCursor(FALSE);
 		gbFullScreen = TRUE;
 	}
 	else {
@@ -430,7 +478,7 @@ void ToggleFullScreen(void){
 			0, 0, 0, 0,
 			SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOOWNERZORDER);
 
-		ShowCursor(TRUE);
+		// ShowCursor(TRUE);
 		gbFullScreen = FALSE;
 	}
 }
@@ -461,6 +509,7 @@ VkResult initialize(void) {
     VkResult createFramebuffers(void);
     VkResult createSemaphores(void);
     VkResult createFences(void);
+    VkResult initializeImGui(void);
     VkResult buildCommandBuffers(void);
 
 
@@ -657,6 +706,15 @@ VkResult initialize(void) {
         return (vkResult);
     } else {
         fprintf(fptr, "initialize(): createFences() Successful!.\n\n");
+    }
+
+    // Initialize Dear ImGui for Win32 + Vulkan
+    vkResult = initializeImGui();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): initializeImGui() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): initializeImGui() Successful!.\n\n");
     }
 
     // initialize clear color values
@@ -856,6 +914,17 @@ VkResult resize(int width, int height) {
         return (vkResult);
     }
 
+    if(ImGui::GetCurrentContext() != NULL) {
+        uint32_t minImageCount = (swapchainImageCount < 2) ? 2 : swapchainImageCount;
+        ImGui_ImplVulkan_SetMinImageCount(minImageCount);
+
+        ImGui_ImplVulkan_PipelineInfo pipelineInfoMain = {};
+        pipelineInfoMain.RenderPass = vkRenderPass;
+        pipelineInfoMain.Subpass = 0;
+        pipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+        ImGui_ImplVulkan_CreateMainPipeline(&pipelineInfoMain);
+    }
+
     // Create Pipeline Layout
     vkResult = createPipelineLayout();
     if(vkResult != VK_SUCCESS) {
@@ -904,6 +973,8 @@ VkResult display(void) {
     // Function declarations
     VkResult resize(int, int);
     VkResult updateUniformBuffer(void);
+    VkResult buildCommandBufferForImage(uint32_t imageIndex);
+    void buildImGuiUI(void);
 
     // Variables
     VkResult vkResult = VK_SUCCESS;
@@ -952,6 +1023,24 @@ VkResult display(void) {
     vkResult = vkResetFences(vkDevice, 1, &vkFence_array[currentImageIndex]);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "display(): vkResetFences() Failed!.\n");
+        return (vkResult);
+    }
+
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+    buildImGuiUI();
+    ImGui::Render();
+
+    vkResult = updateUniformBuffer();
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "display(): updateUniformBuffer() Failed!.\n");
+        return (vkResult);
+    }
+
+    vkResult = buildCommandBufferForImage(currentImageIndex);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "display(): buildCommandBufferForImage() Failed!.\n");
         return (vkResult);
     }
 
@@ -1011,19 +1100,15 @@ VkResult display(void) {
         }
     }
 
-    // Update Uniform Buffer
-    vkResult = updateUniformBuffer();
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "display(): updateUniformBuffer() Failed!.\n");
-        return (vkResult);
-    }
-
     vkDeviceWaitIdle(vkDevice); // VALIDATION USE CASE 1: Comment this line to see the error
 
     return (vkResult);
 }
 
 void uninitialize(void){
+    
+    // Function declarations
+    void uninitializeImGui(void);
 
     // to do toggle window full screen!
 
@@ -1037,6 +1122,8 @@ void uninitialize(void){
         vkDeviceWaitIdle(vkDevice); // this basically waits on til all the operations are done using the device and then this function call returns
         fprintf(fptr, "\nuninitialize(): vkDeviceWaitIdle is done!\n");
     }
+
+    uninitializeImGui();
 
     // Destroy Fence
     // VALIDATION USE CASE 3: Comment this line to see the error
@@ -2774,34 +2861,34 @@ VkResult updateUniformBuffer(void) {
     myUniformData.projectionMatrix = perspectiveProjectionMatrix;
 
     float elapsedTime = (float) myClock.getElapsedTime();
-    myUniformData.time = elapsedTime * 0.4f; // Keep motion gradual but visible for advection-based waves
+    myUniformData.time = elapsedTime * gSeaUiState.timeScale;
 
     // sea uniforms
-    myUniformData.bigWavesElevation = 0.2f;
-    myUniformData.bigWavesFrequency[0] = 4.0f;
-    myUniformData.bigWavesFrequency[1] = 1.5f;
-    myUniformData.bigWavesSpeed = 0.3f; 
-    myUniformData.smallWavesElevation = 0.12f;
-    myUniformData.smallWavesFrequency = 2.0f;
-    myUniformData.smallWavesSpeed = 2.0f;
-    myUniformData.smallWavesIteration = 3.0f;
+    myUniformData.bigWavesElevation = gSeaUiState.bigWavesElevation;
+    myUniformData.bigWavesFrequency[0] = gSeaUiState.bigWavesFrequencyX;
+    myUniformData.bigWavesFrequency[1] = gSeaUiState.bigWavesFrequencyY;
+    myUniformData.bigWavesSpeed = gSeaUiState.bigWavesSpeed;
+    myUniformData.smallWavesElevation = gSeaUiState.smallWavesElevation;
+    myUniformData.smallWavesFrequency = gSeaUiState.smallWavesFrequency;
+    myUniformData.smallWavesSpeed = gSeaUiState.smallWavesSpeed;
+    myUniformData.smallWavesIteration = gSeaUiState.smallWavesIteration;
     myUniformData.paddingBeforeColor[0] = 0.0f;
     myUniformData.paddingBeforeColor[1] = 0.0f;
     myUniformData.paddingBeforeColor[2] = 0.0f;
 
     // depth and surface colors
-    myUniformData.depthColor[0] = 0.094f;
-    myUniformData.depthColor[1] = 0.4f;
-    myUniformData.depthColor[2] = 0.569f;
+    myUniformData.depthColor[0] = gSeaUiState.depthColor[0];
+    myUniformData.depthColor[1] = gSeaUiState.depthColor[1];
+    myUniformData.depthColor[2] = gSeaUiState.depthColor[2];
     myUniformData.depthColor[3] = 0.0f;
 
-    myUniformData.surfaceColor[0] = 0.608f;
-    myUniformData.surfaceColor[1] = 0.847f;
-    myUniformData.surfaceColor[2] = 1.0f;
+    myUniformData.surfaceColor[0] = gSeaUiState.surfaceColor[0];
+    myUniformData.surfaceColor[1] = gSeaUiState.surfaceColor[1];
+    myUniformData.surfaceColor[2] = gSeaUiState.surfaceColor[2];
     myUniformData.surfaceColor[3] = 0.0f;
 
-    myUniformData.colorOffset = 0.08f;
-    myUniformData.colorMultiplier = 5.0f;
+    myUniformData.colorOffset = gSeaUiState.colorOffset;
+    myUniformData.colorMultiplier = gSeaUiState.colorMultiplier;
     myUniformData.paddingAfterColor[0] = 0.0f;
     myUniformData.paddingAfterColor[1] = 0.0f;
 
@@ -3108,6 +3195,108 @@ VkResult createDescriptorSet(void) {
     fprintf(fptr, "createDescriptorSet(): vkUpdateDescriptorSets() Successful!.\n");
 
     return (vkResult);
+}
+
+VkResult initializeImGui(void) {
+    VkResult vkResult = VK_SUCCESS;
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    ImGui::StyleColorsDark();
+
+    if(!ImGui_ImplWin32_Init((void*)ghwnd)) {
+        fprintf(fptr, "initializeImGui(): ImGui_ImplWin32_Init() Failed!.\n");
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
+    VkDescriptorPoolSize pool_sizes[] = {
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 256 },
+    };
+
+    VkDescriptorPoolCreateInfo pool_info;
+    memset((void*)&pool_info, 0, sizeof(VkDescriptorPoolCreateInfo));
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.maxSets = 256;
+    pool_info.poolSizeCount = _ARRAYSIZE(pool_sizes);
+    pool_info.pPoolSizes = pool_sizes;
+
+    vkResult = vkCreateDescriptorPool(vkDevice, &pool_info, NULL, &vkDescriptorPool_imgui);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initializeImGui(): vkCreateDescriptorPool() Failed!.\n");
+        return vkResult;
+    }
+
+    ImGui_ImplVulkan_InitInfo init_info;
+    memset((void*)&init_info, 0, sizeof(ImGui_ImplVulkan_InitInfo));
+    init_info.ApiVersion = VK_API_VERSION_1_3;
+    init_info.Instance = vkInstance;
+    init_info.PhysicalDevice = vkPhysicalDevice_selected;
+    init_info.Device = vkDevice;
+    init_info.QueueFamily = graphicsQueueFamilyIndex_selected;
+    init_info.Queue = vkQueue;
+    init_info.DescriptorPool = vkDescriptorPool_imgui;
+    init_info.MinImageCount = (swapchainImageCount < 2) ? 2 : swapchainImageCount;
+    init_info.ImageCount = swapchainImageCount;
+    init_info.PipelineInfoMain.RenderPass = vkRenderPass;
+    init_info.PipelineInfoMain.Subpass = 0;
+    init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    init_info.UseDynamicRendering = false;
+    init_info.Allocator = NULL;
+
+    if(!ImGui_ImplVulkan_Init(&init_info)) {
+        fprintf(fptr, "initializeImGui(): ImGui_ImplVulkan_Init() Failed!.\n");
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
+    return vkResult;
+}
+
+void buildImGuiUI(void) {
+    if(gShowSeaControls) {
+        ImGui::Begin("Raging Sea Controls", &gShowSeaControls);
+        ImGui::Text("Wave Controls");
+        ImGui::SliderFloat("Time Scale", &gSeaUiState.timeScale, 0.05f, 2.0f);
+        ImGui::SliderFloat("Big Elevation", &gSeaUiState.bigWavesElevation, 0.01f, 1.0f);
+        ImGui::SliderFloat2("Big Frequency", &gSeaUiState.bigWavesFrequencyX, 0.1f, 10.0f);
+        ImGui::SliderFloat("Big Speed", &gSeaUiState.bigWavesSpeed, 0.01f, 3.0f);
+        ImGui::SliderFloat("Small Elevation", &gSeaUiState.smallWavesElevation, 0.01f, 0.5f);
+        ImGui::SliderFloat("Small Frequency", &gSeaUiState.smallWavesFrequency, 0.1f, 30.0f);
+        ImGui::SliderFloat("Small Speed", &gSeaUiState.smallWavesSpeed, 0.1f, 10.0f);
+        ImGui::SliderFloat("Small Iteration", &gSeaUiState.smallWavesIteration, 1.0f, 8.0f);
+
+        ImGui::Separator();
+        ImGui::Text("Color Controls");
+        ImGui::ColorEdit3("Depth Color", gSeaUiState.depthColor);
+        ImGui::ColorEdit3("Surface Color", gSeaUiState.surfaceColor);
+        ImGui::SliderFloat("Color Offset", &gSeaUiState.colorOffset, 0.0f, 0.5f);
+        ImGui::SliderFloat("Color Multiplier", &gSeaUiState.colorMultiplier, 0.1f, 12.0f);
+        ImGui::Checkbox("Show ImGui Demo", &gShowImGuiDemoWindow);
+        ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+        ImGui::End();
+    }
+
+    if(gShowImGuiDemoWindow) {
+        ImGui::ShowDemoWindow(&gShowImGuiDemoWindow);
+    }
+}
+
+void uninitializeImGui(void) {
+    if(ImGui::GetCurrentContext() != NULL) {
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplWin32_Shutdown();
+        ImGui::DestroyContext();
+        fprintf(fptr, "uninitializeImGui(): ImGui backend shutdown successful!.\n");
+    }
+
+    if(vkDescriptorPool_imgui) {
+        vkDestroyDescriptorPool(vkDevice, vkDescriptorPool_imgui, NULL);
+        vkDescriptorPool_imgui = VK_NULL_HANDLE;
+        fprintf(fptr, "uninitializeImGui(): vkDestroyDescriptorPool() for ImGui successful!.\n");
+    }
 }
 
 VkResult createRenderPass(void) {
@@ -3524,102 +3713,111 @@ VkResult createFences(void) {
     return (vkResult);
 }
 
+VkResult buildCommandBufferForImage(uint32_t imageIndex) {
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Reset Command Buffer
+    vkResult = vkResetCommandBuffer(vkCommandBuffer_array[imageIndex], 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "buildCommandBufferForImage(): vkResetCommandBuffer() Failed for {%d}!.\n", imageIndex);
+        return (vkResult);
+    }
+
+    // set VkCommandBufferBeginInfo
+    VkCommandBufferBeginInfo vkCommandBufferBeginInfo;
+    memset((void*)&vkCommandBufferBeginInfo, 0, sizeof(VkCommandBufferBeginInfo));
+
+    vkCommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    vkCommandBufferBeginInfo.pNext = NULL;
+    vkCommandBufferBeginInfo.flags = 0;
+
+    vkResult = vkBeginCommandBuffer(vkCommandBuffer_array[imageIndex], &vkCommandBufferBeginInfo);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "buildCommandBufferForImage(): vkBeginCommandBuffer() Failed for {%d}!.\n", imageIndex);
+        return (vkResult);
+    }
+
+    // Set Clear Values
+    VkClearValue vkClearValue_array[2];
+    memset((void*)vkClearValue_array, 0, sizeof(VkClearValue) * _ARRAYSIZE(vkClearValue_array));
+
+    vkClearValue_array[0].color = vkClearColorValue;
+    vkClearValue_array[1].depthStencil = vkClearDepthStencilValue;
+
+    // Render pass begin info
+    VkRenderPassBeginInfo vkRenderPassBeginInfo;
+    memset((void*)&vkRenderPassBeginInfo, 0, sizeof(VkRenderPassBeginInfo));
+
+    vkRenderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    vkRenderPassBeginInfo.pNext = NULL;
+    vkRenderPassBeginInfo.renderPass = vkRenderPass;
+    vkRenderPassBeginInfo.renderArea.offset.x = 0;
+    vkRenderPassBeginInfo.renderArea.offset.y = 0;
+    vkRenderPassBeginInfo.renderArea.extent.width = vkExtent2D_swapchain.width;
+    vkRenderPassBeginInfo.renderArea.extent.height = vkExtent2D_swapchain.height;
+    vkRenderPassBeginInfo.clearValueCount = _ARRAYSIZE(vkClearValue_array);
+    vkRenderPassBeginInfo.pClearValues = vkClearValue_array;
+    vkRenderPassBeginInfo.framebuffer = vkFramebuffer_array[imageIndex];
+
+    // begin render pass
+    vkCmdBeginRenderPass(vkCommandBuffer_array[imageIndex], &vkRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    // Bind with the pipeline
+    vkCmdBindPipeline(vkCommandBuffer_array[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline);
+
+    // Bind Descriptor Set
+    vkCmdBindDescriptorSets(
+        vkCommandBuffer_array[imageIndex],
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        vkPipelineLayout,
+        0, 1,
+        &vkDescriptorSet,
+        0, NULL
+    );
+
+    // Bind with the vertex buffer
+    VkDeviceSize vkDeviceSize_offset_position_array[1];
+    memset((void*)vkDeviceSize_offset_position_array, 0, sizeof(VkDeviceSize) * _ARRAYSIZE(vkDeviceSize_offset_position_array));
+
+    vkCmdBindVertexBuffers(
+        vkCommandBuffer_array[imageIndex],
+        AMK_ATTRIBUTE_POSITION, 1,
+        &vertexData_position.vkBuffer,
+        vkDeviceSize_offset_position_array
+    );
+
+    // Draw sea mesh
+    vkCmdDraw(vkCommandBuffer_array[imageIndex], (uint32_t)vertexData_array.size(), 1, 0, 0);
+
+    // Draw ImGui overlay
+    ImDrawData* drawData = ImGui::GetDrawData();
+    if(drawData != NULL) {
+        ImGui_ImplVulkan_RenderDrawData(drawData, vkCommandBuffer_array[imageIndex]);
+    }
+
+    // End Render Pass
+    vkCmdEndRenderPass(vkCommandBuffer_array[imageIndex]);
+
+    // End command buffer recording
+    vkResult = vkEndCommandBuffer(vkCommandBuffer_array[imageIndex]);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "buildCommandBufferForImage(): vkEndCommandBuffer() Failed for {%d}!.\n", imageIndex);
+        return (vkResult);
+    }
+
+    return (vkResult);
+}
+
 VkResult buildCommandBuffers(void) {
     // variables
     VkResult vkResult = VK_SUCCESS;
 
     for(uint32_t i = 0; i < swapchainImageCount; i++) {
-        // Reset Command Buffers
-        vkResult = vkResetCommandBuffer(vkCommandBuffer_array[i], 0); 
-        // adding 0 here means sdon't release resources allocated by command pool
+        vkResult = buildCommandBufferForImage(i);
         if(vkResult != VK_SUCCESS) {
-            fprintf(fptr, "buildCommandBuffers(): vkResetCommandBuffer() Failed for {%d}!.\n", i);
+            fprintf(fptr, "buildCommandBuffers(): buildCommandBufferForImage() Failed for {%d}!.\n", i);
             return (vkResult);
-        } else {
-            fprintf(fptr, "buildCommandBuffers(): vkResetCommandBuffer() Successful for {%d}!.\n", i);
-        }
-
-        // set VkCommandBufferBeginInfo
-        VkCommandBufferBeginInfo vkCommandBufferBeginInfo;
-        memset((void*)&vkCommandBufferBeginInfo, 0, sizeof(VkCommandBufferBeginInfo));
-
-        vkCommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        vkCommandBufferBeginInfo.pNext = NULL;
-        vkCommandBufferBeginInfo.flags = 0; 
-        // Zero indicates that we'll use primary command buffer and also specifying that we are not
-        // using this buffer simultaniously between multiple threads
-
-        vkResult = vkBeginCommandBuffer(vkCommandBuffer_array[i], &vkCommandBufferBeginInfo);
-        if(vkResult != VK_SUCCESS) {
-            fprintf(fptr, "buildCommandBuffers(): vkBeginCommandBuffer() Failed for {%d}!.\n", i);
-            return (vkResult);
-        } else {
-            fprintf(fptr, "buildCommandBuffers(): vkBeginCommandBuffer() Successful for {%d}!.\n", i);
-        }
-
-        // Set Clear Values
-        VkClearValue vkClearValue_array[2];
-        memset((void*)vkClearValue_array, 0, sizeof(VkClearValue) * _ARRAYSIZE(vkClearValue_array));
-
-        vkClearValue_array[0].color = vkClearColorValue;
-        vkClearValue_array[1].depthStencil = vkClearDepthStencilValue;
-
-        // Render pass begin info
-        VkRenderPassBeginInfo vkRenderPassBeginInfo;
-        memset((void*)&vkRenderPassBeginInfo, 0, sizeof(VkRenderPassBeginInfo));
-
-        vkRenderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        vkRenderPassBeginInfo.pNext = NULL;
-        vkRenderPassBeginInfo.renderPass = vkRenderPass;
-        vkRenderPassBeginInfo.renderArea.offset.x = 0;
-        vkRenderPassBeginInfo.renderArea.offset.y = 0;
-        vkRenderPassBeginInfo.renderArea.extent.width = vkExtent2D_swapchain.width;
-        vkRenderPassBeginInfo.renderArea.extent.height = vkExtent2D_swapchain.height;
-        vkRenderPassBeginInfo.clearValueCount = _ARRAYSIZE(vkClearValue_array);
-        vkRenderPassBeginInfo.pClearValues = vkClearValue_array;
-        vkRenderPassBeginInfo.framebuffer = vkFramebuffer_array[i];
-
-        // begin render pass
-        vkCmdBeginRenderPass(vkCommandBuffer_array[i], &vkRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-        // content of this pass are subpass and part of primary command buffers so inline
-
-        // Bind with the pipeline
-        vkCmdBindPipeline(vkCommandBuffer_array[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline);
-
-        // Bind Descriptor Set
-        vkCmdBindDescriptorSets(
-            vkCommandBuffer_array[i],
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            vkPipelineLayout,
-            0, 1,
-            &vkDescriptorSet, // this is the descriptor set we want to bind
-            0, NULL
-        );
-
-        // Bind with the vertex buffer
-        VkDeviceSize vkDeviceSize_offset_position_array[1];
-        memset((void*)vkDeviceSize_offset_position_array, 0, sizeof(VkDeviceSize) * _ARRAYSIZE(vkDeviceSize_offset_position_array));
-
-        vkCmdBindVertexBuffers(
-            vkCommandBuffer_array[i], 
-            AMK_ATTRIBUTE_POSITION, 1,
-            &vertexData_position.vkBuffer,
-            vkDeviceSize_offset_position_array
-        );
-
-        // Here we should call vulkan drawing functions!
-        vkCmdDraw(vkCommandBuffer_array[i], (uint32_t)vertexData_array.size(), 1, 0, 0);
-
-        // End Render Pass
-        vkCmdEndRenderPass(vkCommandBuffer_array[i]);
-
-        // End command buffer recording
-        vkResult = vkEndCommandBuffer(vkCommandBuffer_array[i]);
-        if(vkResult != VK_SUCCESS) {
-            fprintf(fptr, "buildCommandBuffers(): vkEndCommandBuffer() Failed for {%d}!.\n", i);
-            return (vkResult);
-        } else {
-            fprintf(fptr, "buildCommandBuffers(): vkEndCommandBuffer() Successful for {%d}!.\n", i);
         }
     }
 
