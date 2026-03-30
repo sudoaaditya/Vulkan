@@ -200,13 +200,10 @@ VkRect2D vkRect2D_scissor;
 VkPipeline vkPipeline = VK_NULL_HANDLE;
 
 // For Rotation
-float angle = 0.0f;
 Clock myClock;
 
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-VkResult buildCommandBufferForImage(uint32_t imageIndex);
 
 VkDescriptorPool vkDescriptorPool_imgui = VK_NULL_HANDLE;
 
@@ -244,6 +241,7 @@ SeaUiState gSeaUiState = {
 
 bool gShowSeaControls = true;
 bool gShowImGuiDemoWindow = false;
+bool gCommandBuffersDirty = true;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int iCmdShow) {
     // Func
@@ -363,6 +361,13 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
 
     //var
     BOOL bIsMax = FALSE;
+
+    if((iMsg >= WM_MOUSEFIRST && iMsg <= WM_MOUSELAST)
+        || iMsg == WM_KEYDOWN || iMsg == WM_KEYUP
+        || iMsg == WM_SYSKEYDOWN || iMsg == WM_SYSKEYUP
+        || iMsg == WM_CHAR || iMsg == WM_SETFOCUS || iMsg == WM_KILLFOCUS) {
+        gCommandBuffersDirty = true;
+    }
 
     if (ImGui_ImplWin32_WndProcHandler(hwnd, iMsg, wParam, lParam)) {
         return TRUE;
@@ -739,6 +744,8 @@ VkResult initialize(void) {
         fprintf(fptr, "initialize(): buildCommandBuffers() Successful!.\n\n");
     }
 
+    gCommandBuffersDirty = false;
+
     myClock.start();
 
     // Initialization is completed!
@@ -964,6 +971,7 @@ VkResult resize(int width, int height) {
     fprintf(fptr, "\n\n");
 
     bInitialized = TRUE;
+    gCommandBuffersDirty = false;
 
     return (vkResult);
 }
@@ -973,8 +981,8 @@ VkResult display(void) {
     // Function declarations
     VkResult resize(int, int);
     VkResult updateUniformBuffer(void);
-    VkResult buildCommandBufferForImage(uint32_t imageIndex);
-    void buildImGuiUI(void);
+    VkResult buildCommandBuffers(void);
+    bool buildImGuiUI(void);
 
     // Variables
     VkResult vkResult = VK_SUCCESS;
@@ -1029,18 +1037,26 @@ VkResult display(void) {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
-    buildImGuiUI();
+    bool uiChanged = buildImGuiUI();
     ImGui::Render();
+
+    if(uiChanged) {
+        gCommandBuffersDirty = true;
+    }
+
+    if(gCommandBuffersDirty) {
+        vkResult = buildCommandBuffers();
+        if(vkResult != VK_SUCCESS) {
+            fprintf(fptr, "display(): buildCommandBuffers() Failed!.\n");
+            return (vkResult);
+        }
+
+        gCommandBuffersDirty = false;
+    }
 
     vkResult = updateUniformBuffer();
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "display(): updateUniformBuffer() Failed!.\n");
-        return (vkResult);
-    }
-
-    vkResult = buildCommandBufferForImage(currentImageIndex);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "display(): buildCommandBufferForImage() Failed!.\n");
         return (vkResult);
     }
 
@@ -1372,11 +1388,7 @@ void uninitialize(void){
 }
 
 void update(void) {
-
-    angle += 0.1f;
-    if(angle >= 360.0f) {
-        angle = 0.0f;
-    }
+    // update logic for animation will go here
 }
 
 //! //////////////////////////////////////// Definations of vulkan Related Functions ///////////////////////////////////////////////
@@ -3255,33 +3267,39 @@ VkResult initializeImGui(void) {
     return vkResult;
 }
 
-void buildImGuiUI(void) {
+bool buildImGuiUI(void) {
+    bool changed = false;
+
     if(gShowSeaControls) {
         ImGui::Begin("Raging Sea Controls", &gShowSeaControls);
         ImGui::Text("Wave Controls");
-        ImGui::SliderFloat("Time Scale", &gSeaUiState.timeScale, 0.05f, 2.0f);
-        ImGui::SliderFloat("Big Elevation", &gSeaUiState.bigWavesElevation, 0.01f, 1.0f);
-        ImGui::SliderFloat2("Big Frequency", &gSeaUiState.bigWavesFrequencyX, 0.1f, 10.0f);
-        ImGui::SliderFloat("Big Speed", &gSeaUiState.bigWavesSpeed, 0.01f, 3.0f);
-        ImGui::SliderFloat("Small Elevation", &gSeaUiState.smallWavesElevation, 0.01f, 0.5f);
-        ImGui::SliderFloat("Small Frequency", &gSeaUiState.smallWavesFrequency, 0.1f, 30.0f);
-        ImGui::SliderFloat("Small Speed", &gSeaUiState.smallWavesSpeed, 0.1f, 10.0f);
-        ImGui::SliderFloat("Small Iteration", &gSeaUiState.smallWavesIteration, 1.0f, 8.0f);
+        changed |= ImGui::SliderFloat("Time Scale", &gSeaUiState.timeScale, 0.05f, 2.0f);
+        changed |= ImGui::SliderFloat("Big Elevation", &gSeaUiState.bigWavesElevation, 0.01f, 1.0f);
+        changed |= ImGui::SliderFloat2("Big Frequency", &gSeaUiState.bigWavesFrequencyX, 0.1f, 10.0f);
+        changed |= ImGui::SliderFloat("Big Speed", &gSeaUiState.bigWavesSpeed, 0.01f, 3.0f);
+        changed |= ImGui::SliderFloat("Small Elevation", &gSeaUiState.smallWavesElevation, 0.01f, 0.5f);
+        changed |= ImGui::SliderFloat("Small Frequency", &gSeaUiState.smallWavesFrequency, 0.1f, 30.0f);
+        changed |= ImGui::SliderFloat("Small Speed", &gSeaUiState.smallWavesSpeed, 0.1f, 10.0f);
+        changed |= ImGui::SliderFloat("Small Iteration", &gSeaUiState.smallWavesIteration, 1.0f, 8.0f);
 
         ImGui::Separator();
         ImGui::Text("Color Controls");
-        ImGui::ColorEdit3("Depth Color", gSeaUiState.depthColor);
-        ImGui::ColorEdit3("Surface Color", gSeaUiState.surfaceColor);
-        ImGui::SliderFloat("Color Offset", &gSeaUiState.colorOffset, 0.0f, 0.5f);
-        ImGui::SliderFloat("Color Multiplier", &gSeaUiState.colorMultiplier, 0.1f, 12.0f);
-        ImGui::Checkbox("Show ImGui Demo", &gShowImGuiDemoWindow);
+        changed |= ImGui::ColorEdit3("Depth Color", gSeaUiState.depthColor);
+        changed |= ImGui::ColorEdit3("Surface Color", gSeaUiState.surfaceColor);
+        changed |= ImGui::SliderFloat("Color Offset", &gSeaUiState.colorOffset, 0.0f, 0.5f);
+        changed |= ImGui::SliderFloat("Color Multiplier", &gSeaUiState.colorMultiplier, 0.1f, 12.0f);
+        changed |= ImGui::Checkbox("Show ImGui Demo", &gShowImGuiDemoWindow);
+        ImGui::Separator();
         ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+        ImGui::Text("Command buffers are reused until UI/input invalidates them.");
         ImGui::End();
     }
 
     if(gShowImGuiDemoWindow) {
         ImGui::ShowDemoWindow(&gShowImGuiDemoWindow);
     }
+
+    return changed;
 }
 
 void uninitializeImGui(void) {
@@ -3713,110 +3731,85 @@ VkResult createFences(void) {
     return (vkResult);
 }
 
-VkResult buildCommandBufferForImage(uint32_t imageIndex) {
-    // variables
-    VkResult vkResult = VK_SUCCESS;
-
-    // Reset Command Buffer
-    vkResult = vkResetCommandBuffer(vkCommandBuffer_array[imageIndex], 0);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "buildCommandBufferForImage(): vkResetCommandBuffer() Failed for {%d}!.\n", imageIndex);
-        return (vkResult);
-    }
-
-    // set VkCommandBufferBeginInfo
-    VkCommandBufferBeginInfo vkCommandBufferBeginInfo;
-    memset((void*)&vkCommandBufferBeginInfo, 0, sizeof(VkCommandBufferBeginInfo));
-
-    vkCommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    vkCommandBufferBeginInfo.pNext = NULL;
-    vkCommandBufferBeginInfo.flags = 0;
-
-    vkResult = vkBeginCommandBuffer(vkCommandBuffer_array[imageIndex], &vkCommandBufferBeginInfo);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "buildCommandBufferForImage(): vkBeginCommandBuffer() Failed for {%d}!.\n", imageIndex);
-        return (vkResult);
-    }
-
-    // Set Clear Values
-    VkClearValue vkClearValue_array[2];
-    memset((void*)vkClearValue_array, 0, sizeof(VkClearValue) * _ARRAYSIZE(vkClearValue_array));
-
-    vkClearValue_array[0].color = vkClearColorValue;
-    vkClearValue_array[1].depthStencil = vkClearDepthStencilValue;
-
-    // Render pass begin info
-    VkRenderPassBeginInfo vkRenderPassBeginInfo;
-    memset((void*)&vkRenderPassBeginInfo, 0, sizeof(VkRenderPassBeginInfo));
-
-    vkRenderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    vkRenderPassBeginInfo.pNext = NULL;
-    vkRenderPassBeginInfo.renderPass = vkRenderPass;
-    vkRenderPassBeginInfo.renderArea.offset.x = 0;
-    vkRenderPassBeginInfo.renderArea.offset.y = 0;
-    vkRenderPassBeginInfo.renderArea.extent.width = vkExtent2D_swapchain.width;
-    vkRenderPassBeginInfo.renderArea.extent.height = vkExtent2D_swapchain.height;
-    vkRenderPassBeginInfo.clearValueCount = _ARRAYSIZE(vkClearValue_array);
-    vkRenderPassBeginInfo.pClearValues = vkClearValue_array;
-    vkRenderPassBeginInfo.framebuffer = vkFramebuffer_array[imageIndex];
-
-    // begin render pass
-    vkCmdBeginRenderPass(vkCommandBuffer_array[imageIndex], &vkRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    // Bind with the pipeline
-    vkCmdBindPipeline(vkCommandBuffer_array[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline);
-
-    // Bind Descriptor Set
-    vkCmdBindDescriptorSets(
-        vkCommandBuffer_array[imageIndex],
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        vkPipelineLayout,
-        0, 1,
-        &vkDescriptorSet,
-        0, NULL
-    );
-
-    // Bind with the vertex buffer
-    VkDeviceSize vkDeviceSize_offset_position_array[1];
-    memset((void*)vkDeviceSize_offset_position_array, 0, sizeof(VkDeviceSize) * _ARRAYSIZE(vkDeviceSize_offset_position_array));
-
-    vkCmdBindVertexBuffers(
-        vkCommandBuffer_array[imageIndex],
-        AMK_ATTRIBUTE_POSITION, 1,
-        &vertexData_position.vkBuffer,
-        vkDeviceSize_offset_position_array
-    );
-
-    // Draw sea mesh
-    vkCmdDraw(vkCommandBuffer_array[imageIndex], (uint32_t)vertexData_array.size(), 1, 0, 0);
-
-    // Draw ImGui overlay
-    ImDrawData* drawData = ImGui::GetDrawData();
-    if(drawData != NULL) {
-        ImGui_ImplVulkan_RenderDrawData(drawData, vkCommandBuffer_array[imageIndex]);
-    }
-
-    // End Render Pass
-    vkCmdEndRenderPass(vkCommandBuffer_array[imageIndex]);
-
-    // End command buffer recording
-    vkResult = vkEndCommandBuffer(vkCommandBuffer_array[imageIndex]);
-    if(vkResult != VK_SUCCESS) {
-        fprintf(fptr, "buildCommandBufferForImage(): vkEndCommandBuffer() Failed for {%d}!.\n", imageIndex);
-        return (vkResult);
-    }
-
-    return (vkResult);
-}
-
 VkResult buildCommandBuffers(void) {
     // variables
     VkResult vkResult = VK_SUCCESS;
 
     for(uint32_t i = 0; i < swapchainImageCount; i++) {
-        vkResult = buildCommandBufferForImage(i);
+        vkResult = vkResetCommandBuffer(vkCommandBuffer_array[i], 0);
         if(vkResult != VK_SUCCESS) {
-            fprintf(fptr, "buildCommandBuffers(): buildCommandBufferForImage() Failed for {%d}!.\n", i);
+            fprintf(fptr, "buildCommandBuffers(): vkResetCommandBuffer() Failed for {%d}!.\n", i);
+            return (vkResult);
+        }
+
+        VkCommandBufferBeginInfo vkCommandBufferBeginInfo;
+        memset((void*)&vkCommandBufferBeginInfo, 0, sizeof(VkCommandBufferBeginInfo));
+
+        vkCommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        vkCommandBufferBeginInfo.pNext = NULL;
+        vkCommandBufferBeginInfo.flags = 0;
+
+        vkResult = vkBeginCommandBuffer(vkCommandBuffer_array[i], &vkCommandBufferBeginInfo);
+        if(vkResult != VK_SUCCESS) {
+            fprintf(fptr, "buildCommandBuffers(): vkBeginCommandBuffer() Failed for {%d}!.\n", i);
+            return (vkResult);
+        }
+
+        VkClearValue vkClearValue_array[2];
+        memset((void*)vkClearValue_array, 0, sizeof(VkClearValue) * _ARRAYSIZE(vkClearValue_array));
+
+        vkClearValue_array[0].color = vkClearColorValue;
+        vkClearValue_array[1].depthStencil = vkClearDepthStencilValue;
+
+        VkRenderPassBeginInfo vkRenderPassBeginInfo;
+        memset((void*)&vkRenderPassBeginInfo, 0, sizeof(VkRenderPassBeginInfo));
+
+        vkRenderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        vkRenderPassBeginInfo.pNext = NULL;
+        vkRenderPassBeginInfo.renderPass = vkRenderPass;
+        vkRenderPassBeginInfo.renderArea.offset.x = 0;
+        vkRenderPassBeginInfo.renderArea.offset.y = 0;
+        vkRenderPassBeginInfo.renderArea.extent.width = vkExtent2D_swapchain.width;
+        vkRenderPassBeginInfo.renderArea.extent.height = vkExtent2D_swapchain.height;
+        vkRenderPassBeginInfo.clearValueCount = _ARRAYSIZE(vkClearValue_array);
+        vkRenderPassBeginInfo.pClearValues = vkClearValue_array;
+        vkRenderPassBeginInfo.framebuffer = vkFramebuffer_array[i];
+
+        vkCmdBeginRenderPass(vkCommandBuffer_array[i], &vkRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(vkCommandBuffer_array[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline);
+
+        vkCmdBindDescriptorSets(
+            vkCommandBuffer_array[i],
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            vkPipelineLayout,
+            0, 1,
+            &vkDescriptorSet,
+            0, NULL
+        );
+
+        VkDeviceSize vkDeviceSize_offset_position_array[1];
+        memset((void*)vkDeviceSize_offset_position_array, 0, sizeof(VkDeviceSize) * _ARRAYSIZE(vkDeviceSize_offset_position_array));
+
+        vkCmdBindVertexBuffers(
+            vkCommandBuffer_array[i],
+            AMK_ATTRIBUTE_POSITION, 1,
+            &vertexData_position.vkBuffer,
+            vkDeviceSize_offset_position_array
+        );
+
+        vkCmdDraw(vkCommandBuffer_array[i], (uint32_t)vertexData_array.size(), 1, 0, 0);
+
+        ImDrawData* drawData = ImGui::GetDrawData();
+        if(drawData != NULL) {
+            ImGui_ImplVulkan_RenderDrawData(drawData, vkCommandBuffer_array[i]);
+        }
+
+        vkCmdEndRenderPass(vkCommandBuffer_array[i]);
+
+        vkResult = vkEndCommandBuffer(vkCommandBuffer_array[i]);
+        if(vkResult != VK_SUCCESS) {
+            fprintf(fptr, "buildCommandBuffers(): vkEndCommandBuffer() Failed for {%d}!.\n", i);
             return (vkResult);
         }
     }
