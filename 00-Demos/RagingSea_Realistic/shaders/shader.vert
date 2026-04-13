@@ -146,8 +146,11 @@ vec3 sampleOceanSurface(vec2 surfacePoint) {
 void main (void) {
     vec2 surfacePoint = vPosition.xy;
     vec3 localPosition = sampleOceanSurface(surfacePoint);
-    vec3 localPositionDx = sampleOceanSurface(surfacePoint + vec2(0.08, 0.0));
-    vec3 localPositionDy = sampleOceanSurface(surfacePoint + vec2(0.0, 0.08));
+
+    // Adaptive epsilon: smaller step for tighter normals
+    float eps = 0.05;
+    vec3 localPositionDx = sampleOceanSurface(surfacePoint + vec2(eps, 0.0));
+    vec3 localPositionDy = sampleOceanSurface(surfacePoint + vec2(0.0, eps));
     vec3 localNormal = normalize(cross(localPositionDx - localPosition, localPositionDy - localPosition));
     mat3 normalMatrix = transpose(inverse(mat3(uMVP.modelMatrix)));
     vec4 worldPosition = uMVP.modelMatrix * vec4(localPosition, 1.0);
