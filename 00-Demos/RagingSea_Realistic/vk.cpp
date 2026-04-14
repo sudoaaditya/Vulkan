@@ -23,9 +23,9 @@ using namespace std;
 
 #include "clockUtils/Clock.h"
 
-#include "imgui/imgui.h"
-#include "imgui/backends/imgui_impl_win32.h"
-#include "imgui/backends/imgui_impl_vulkan.h"
+#include "./imgui/imgui.h"
+#include "./imgui/backends/imgui_impl_win32.h"
+#include "./imgui/backends/imgui_impl_vulkan.h"
 
 // vulkan related libraries
 #pragma comment(lib, "vulkan-1.lib")
@@ -198,6 +198,12 @@ VkPipeline vkPipeline = VK_NULL_HANDLE;
 // For Rotation
 Clock myClock;
 
+// Camera movement
+float gCameraOffsetX = 0.0f;
+float gCameraOffsetY = 0.0f;
+float gCameraOffsetZ = 0.0f;
+const float gCameraMoveSpeed = 0.3f;
+
 LRESULT CALLBACK MyCallBack(HWND, UINT, WPARAM, LPARAM);
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -255,8 +261,8 @@ SeaUiState gSeaUiState = {
     5.0f,
     0.88f,
     128.0f,
-    0.18f,
-    0.38f,
+    0.32f,
+    0.22f,
 };
 
 bool gShowSeaControls = true;
@@ -422,6 +428,22 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
 
                 case VK_ESCAPE:
                     DestroyWindow(hwnd);
+                    break;
+
+                case VK_LEFT:
+                    gCameraOffsetX -= gCameraMoveSpeed;
+                    break;
+
+                case VK_RIGHT:
+                    gCameraOffsetX += gCameraMoveSpeed;
+                    break;
+
+                case VK_UP:
+                    gCameraOffsetZ -= gCameraMoveSpeed;
+                    break;
+
+                case VK_DOWN:
+                    gCameraOffsetZ += gCameraMoveSpeed;
                     break;
 
                 default:
@@ -2858,8 +2880,8 @@ VkResult updateUniformBuffer(void) {
     glm::mat4 translateMat = glm::mat4(1.0f);
     glm::mat4 rotateMat = glm::mat4(1.0f);
     glm::mat4 scaleMat = glm::mat4(1.0f);
-    glm::vec3 cameraPosition = glm::vec3(0.0f, 2.35f, 8.5f);
-    glm::vec3 cameraTarget = glm::vec3(0.0f, 0.35f, -10.0f);
+    glm::vec3 cameraPosition = glm::vec3(0.0f + gCameraOffsetX, 2.35f + gCameraOffsetY, 8.5f + gCameraOffsetZ);
+    glm::vec3 cameraTarget = glm::vec3(0.0f + gCameraOffsetX, 0.35f + gCameraOffsetY, -10.0f + gCameraOffsetZ);
     glm::vec2 baseWind = glm::vec2(gSeaUiState.windDirectionX, gSeaUiState.windDirectionY);
 
     if(glm::length(baseWind) < 0.001f) {

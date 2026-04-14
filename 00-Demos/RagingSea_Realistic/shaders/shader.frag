@@ -178,10 +178,10 @@ void main(void) {
     float normalTilt = 1.0 - clamp(normal.y, 0.0, 1.0);
     // Organic foam with noise turbulence
     float foamNoise = gradientNoise(worldPositionOut * 5.0 + vec3(time * 0.3)) * 0.15;
-    float foamBase = waveHeightOut + normalTilt * 0.5 + foamNoise;
+    float foamBase = waveHeightOut + normalTilt * 0.2 + foamNoise;
     float foam = smoothstep(
         uMVP.lightingParams.y,
-        uMVP.lightingParams.y + 0.18,
+        uMVP.lightingParams.y + 0.12,
         foamBase
     ) * uMVP.lightingParams.z;
     // Foam color slightly warm, not pure white
@@ -190,7 +190,7 @@ void main(void) {
     // ---- Assemble final color ----
     vec3 finalColor = surfaceColor + ambient + sss;
     finalColor += specColor;
-    finalColor = mix(finalColor, foamColor, clamp(foam, 0.0, 0.75));
+    finalColor = mix(finalColor, foamColor, clamp(foam, 0.0, 0.45));
 
     // ---- Distance fog / atmospheric haze ----
     float fog = 1.0 - exp(-viewDist * viewDist * 0.0008);
