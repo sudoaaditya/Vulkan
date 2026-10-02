@@ -157,10 +157,10 @@ struct MyUniformData {
     float surfaceColor[4];
     float skyBottomColor[4];
     float skyTopColor[4];
-    float sunDirection[4];
-    float sunColor[4];
-    float moonParams[4];
-    float nightSkyParams[4];
+    float sunDirection[4];  // xyz: direction towards the sun
+    float sunColor[4];      // rgb: sun color, a: sun glow
+    float sunParams[4];     // x: glitter strength, y: sky ambient, z: subsurface strength
+    float skyParams[4];     // x: horizon haze, y: fog density, w: sky exposure
     float shadingParams[4];
     float lightingParams[4];
 };
@@ -227,14 +227,15 @@ struct SeaUiState {
     float surfaceColor[4];
     float skyBottomColor[4];
     float skyTopColor[4];
-    float moonDirection[3];
-    float moonSize;
-    float moonColor[4];
-    float moonIntensity;
-    float moonGlow;
-    float starDensity;
-    float starIntensity;
-    float starTwinkle;
+    float sunDirection[3];
+    float sunColor[4];
+    float sunIntensity;
+    float sunGlow;
+    float glitterStrength;
+    float skyAmbient;
+    float sssStrength;
+    float horizonHaze;
+    float fogDensity;
     float skyExposure;
     float colorOffset;
     float colorMultiplier;
@@ -246,35 +247,36 @@ struct SeaUiState {
 };
 
 SeaUiState gSeaUiState = {
-    0.32f,
-    1.0f,
-    0.35f,
-    5.2f,
-    0.18f,
-    0.65f,
-    0.58f,
-    0.06f,
-    4.0f,
-    1.4f,
-    3.0f,
-    {0.004f, 0.05f, 0.10f, 0.0f},
-    {0.02f, 0.16f, 0.25f, 0.0f},
-    {0.03f, 0.06f, 0.16f, 0.0f},
-    {0.005f, 0.015f, 0.05f, 0.0f},
-    {-0.25f, 0.88f, -0.40f},
-    0.992f,
-    {0.90f, 0.94f, 1.00f, 0.0f},
-    1.35f,
-    0.20f,
-    0.42f,
-    1.10f,
-    0.45f,
-    1.00f,
+    0.919f,                         // time scale
+    1.0f,                           // wind direction x
+    0.35f,                          // wind direction y
+    1.786f,                         // primary wavelength
+    0.035f,                         // primary amplitude
+    2.5f,                           // wave speed
+    0.188f,                         // choppiness
+    0.015f,                         // detail height
+    6.384f,                         // detail frequency
+    4.392f,                         // detail speed
+    4.0f,                           // detail layers
+    {0.00f, 0.055f, 0.11f, 0.0f},   // depth color (deep daytime blue)
+    {0.02f, 0.28f, 0.36f, 0.0f},    // surface color (sunlit teal)
+    {0.40f, 0.57f, 0.78f, 0.0f},    // sky horizon
+    {0.14f, 0.34f, 0.68f, 0.0f},    // sky zenith
+    {-0.15f, 0.22f, -1.0f},         // sun direction (low, ahead of the camera)
+    {1.00f, 0.92f, 0.78f, 0.0f},    // sun color (warm)
+    3.5f,                           // sun intensity
+    0.25f,                          // sun glow
+    0.6f,                           // glitter strength
+    1.0f,                           // sky ambient
+    0.18f,                          // subsurface strength
+    0.35f,                          // horizon haze
+    0.5f,                           // fog density
+    0.85f,                          // sky exposure
     0.10f,
     1.05f,
     5.6f,
-    0.95f,
-    110.0f,
+    0.75f,                          // reflection strength (fresnel scale)
+    160.0f,
     0.32f,
     0.22f,
 };
@@ -2992,35 +2994,36 @@ VkResult updateUniformBuffer(void) {
     myUniformData.skyTopColor[2] = gSeaUiState.skyTopColor[2];
     myUniformData.skyTopColor[3] = 0.0f;
 
-    glm::vec3 moonDirection = glm::vec3(
-        gSeaUiState.moonDirection[0],
-        gSeaUiState.moonDirection[1],
-        gSeaUiState.moonDirection[2]
+    // Must match the sun direction used by the sky / god-ray pass
+    glm::vec3 sunDirection = glm::vec3(
+        gSeaUiState.sunDirection[0],
+        gSeaUiState.sunDirection[1],
+        gSeaUiState.sunDirection[2]
     );
-    if(glm::length(moonDirection) < 0.001f) {
-        moonDirection = glm::vec3(-0.4f, 0.78f, -0.48f);
+    if(glm::length(sunDirection) < 0.001f) {
+        sunDirection = glm::vec3(-0.15f, 0.22f, -1.0f);
     }
-    moonDirection = glm::normalize(moonDirection);
+    sunDirection = glm::normalize(sunDirection);
 
-    myUniformData.sunDirection[0] = moonDirection.x;
-    myUniformData.sunDirection[1] = moonDirection.y;
-    myUniformData.sunDirection[2] = moonDirection.z;
+    myUniformData.sunDirection[0] = sunDirection.x;
+    myUniformData.sunDirection[1] = sunDirection.y;
+    myUniformData.sunDirection[2] = sunDirection.z;
     myUniformData.sunDirection[3] = 0.0f;
 
-    myUniformData.sunColor[0] = gSeaUiState.moonColor[0];
-    myUniformData.sunColor[1] = gSeaUiState.moonColor[1];
-    myUniformData.sunColor[2] = gSeaUiState.moonColor[2];
-    myUniformData.sunColor[3] = glm::clamp(gSeaUiState.moonGlow, 0.0f, 1.0f);
+    myUniformData.sunColor[0] = gSeaUiState.sunColor[0];
+    myUniformData.sunColor[1] = gSeaUiState.sunColor[1];
+    myUniformData.sunColor[2] = gSeaUiState.sunColor[2];
+    myUniformData.sunColor[3] = glm::clamp(gSeaUiState.sunGlow, 0.0f, 1.0f);
 
-    myUniformData.moonParams[0] = moonDirection.x;
-    myUniformData.moonParams[1] = moonDirection.y;
-    myUniformData.moonParams[2] = moonDirection.z;
-    myUniformData.moonParams[3] = glm::clamp(gSeaUiState.moonSize, 0.96f, 0.9995f);
+    myUniformData.sunParams[0] = gSeaUiState.glitterStrength;
+    myUniformData.sunParams[1] = gSeaUiState.skyAmbient;
+    myUniformData.sunParams[2] = gSeaUiState.sssStrength;
+    myUniformData.sunParams[3] = 0.0f;
 
-    myUniformData.nightSkyParams[0] = gSeaUiState.starDensity;
-    myUniformData.nightSkyParams[1] = gSeaUiState.starIntensity;
-    myUniformData.nightSkyParams[2] = gSeaUiState.starTwinkle;
-    myUniformData.nightSkyParams[3] = gSeaUiState.skyExposure;
+    myUniformData.skyParams[0] = gSeaUiState.horizonHaze;
+    myUniformData.skyParams[1] = gSeaUiState.fogDensity;
+    myUniformData.skyParams[2] = 0.0f;
+    myUniformData.skyParams[3] = gSeaUiState.skyExposure;
 
     myUniformData.shadingParams[0] = gSeaUiState.colorOffset;
     myUniformData.shadingParams[1] = gSeaUiState.colorMultiplier;
@@ -3030,7 +3033,7 @@ VkResult updateUniformBuffer(void) {
     myUniformData.lightingParams[0] = gSeaUiState.specularPower;
     myUniformData.lightingParams[1] = gSeaUiState.foamHeight;
     myUniformData.lightingParams[2] = gSeaUiState.foamIntensity;
-    myUniformData.lightingParams[3] = gSeaUiState.moonIntensity;
+    myUniformData.lightingParams[3] = gSeaUiState.sunIntensity;
 
     void *data = NULL;
 
@@ -3418,15 +3421,16 @@ bool buildImGuiUI(void) {
         changed |= ImGui::ColorEdit3("Surface Color", gSeaUiState.surfaceColor);
         changed |= ImGui::ColorEdit3("Sky Horizon", gSeaUiState.skyBottomColor);
         changed |= ImGui::ColorEdit3("Sky Zenith", gSeaUiState.skyTopColor);
-        changed |= ImGui::ColorEdit3("Moon Color", gSeaUiState.moonColor);
-        changed |= ImGui::SliderFloat3("Moon Direction", gSeaUiState.moonDirection, -1.0f, 1.0f);
-        changed |= ImGui::SliderFloat("Moon Disk Size", &gSeaUiState.moonSize, 0.96f, 0.9995f);
-        changed |= ImGui::SliderFloat("Moon Intensity", &gSeaUiState.moonIntensity, 0.1f, 3.0f);
-        changed |= ImGui::SliderFloat("Moon Glow", &gSeaUiState.moonGlow, 0.0f, 0.8f);
-        changed |= ImGui::SliderFloat("Star Density", &gSeaUiState.starDensity, 0.05f, 1.2f);
-        changed |= ImGui::SliderFloat("Star Intensity", &gSeaUiState.starIntensity, 0.0f, 2.0f);
-        changed |= ImGui::SliderFloat("Star Twinkle", &gSeaUiState.starTwinkle, 0.0f, 2.0f);
-        changed |= ImGui::SliderFloat("Night Exposure", &gSeaUiState.skyExposure, 0.35f, 1.6f);
+        changed |= ImGui::ColorEdit3("Sun Color", gSeaUiState.sunColor);
+        changed |= ImGui::SliderFloat3("Sun Direction", gSeaUiState.sunDirection, -1.0f, 1.0f);
+        changed |= ImGui::SliderFloat("Sun Intensity", &gSeaUiState.sunIntensity, 0.5f, 20.0f);
+        changed |= ImGui::SliderFloat("Sun Glow", &gSeaUiState.sunGlow, 0.0f, 1.0f);
+        changed |= ImGui::SliderFloat("Sun Glitter", &gSeaUiState.glitterStrength, 0.0f, 2.0f);
+        changed |= ImGui::SliderFloat("Sky Ambient", &gSeaUiState.skyAmbient, 0.0f, 2.0f);
+        changed |= ImGui::SliderFloat("Subsurface", &gSeaUiState.sssStrength, 0.0f, 0.5f);
+        changed |= ImGui::SliderFloat("Horizon Haze", &gSeaUiState.horizonHaze, 0.0f, 1.0f);
+        changed |= ImGui::SliderFloat("Fog Density", &gSeaUiState.fogDensity, 0.0f, 3.0f);
+        changed |= ImGui::SliderFloat("Sky Exposure", &gSeaUiState.skyExposure, 0.35f, 1.6f);
         changed |= ImGui::SliderFloat("Color Offset", &gSeaUiState.colorOffset, -0.2f, 0.6f);
         changed |= ImGui::SliderFloat("Color Multiplier", &gSeaUiState.colorMultiplier, 0.1f, 3.0f);
         changed |= ImGui::SliderFloat("Fresnel Power", &gSeaUiState.fresnelPower, 1.0f, 8.0f);
@@ -3441,9 +3445,10 @@ bool buildImGuiUI(void) {
         ImGui::End();
     }
 
-    vkClearColorValue.float32[0] = gSeaUiState.skyTopColor[0];
-    vkClearColorValue.float32[1] = gSeaUiState.skyTopColor[1];
-    vkClearColorValue.float32[2] = gSeaUiState.skyTopColor[2];
+    // Placeholder daytime sky for standalone preview; the sky/god-ray pass replaces this in the demo
+    vkClearColorValue.float32[0] = glm::mix(gSeaUiState.skyBottomColor[0], gSeaUiState.skyTopColor[0], 0.35f);
+    vkClearColorValue.float32[1] = glm::mix(gSeaUiState.skyBottomColor[1], gSeaUiState.skyTopColor[1], 0.35f);
+    vkClearColorValue.float32[2] = glm::mix(gSeaUiState.skyBottomColor[2], gSeaUiState.skyTopColor[2], 0.35f);
     vkClearColorValue.float32[3] = 1.0f;
 
     if(gShowImGuiDemoWindow) {

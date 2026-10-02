@@ -17,12 +17,12 @@ layout(binding = 0) uniform mvpMatrix {
     vec4 surfaceColor;
     vec4 skyBottomColor;
     vec4 skyTopColor;
-    vec4 sunDirection;
-    vec4 sunColor;
-    vec4 moonParams;
-    vec4 nightSkyParams;
+    vec4 sunDirection;   // xyz: direction TOWARDS the sun (normalized)
+    vec4 sunColor;       // rgb: sun color, a: glow/halo strength around the sun
+    vec4 sunParams;      // x: glitter strength, y: sky ambient strength, z: subsurface strength
+    vec4 skyParams;      // x: horizon haze, y: fog density, w: sky exposure
     vec4 shadingParams;
-    vec4 lightingParams;
+    vec4 lightingParams; // x: specular power, y: foam height, z: foam intensity, w: sun intensity
 } uMVP;
 
 layout(location = 0) in vec3 worldPositionOut;
@@ -37,12 +37,6 @@ vec3 hash33(vec3 p) {
              dot(p, vec3(269.5, 183.3, 246.1)),
              dot(p, vec3(113.5, 271.9, 124.6)));
     return fract(sin(p) * 43758.5453123) * 2.0 - 1.0;
-}
-
-float hash12(vec2 p) {
-    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
-    p3 += dot(p3, p3.yzx + 33.33);
-    return fract((p3.x + p3.y) * p3.z);
 }
 
 float gradientNoise(vec3 p) {
@@ -113,56 +107,40 @@ vec3 acesTonemap(vec3 x) {
     return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
 }
 
-float starField(vec3 direction, float time) {
+// Daytime sky, used only for reflections and aerial fog (the visible sky is drawn by the sky/god-ray pass).
+// Keep skyBottomColor / skyTopColor / sunDirection in sync with that pass so reflections match.
+vec3 sampleDaySky(vec3 direction) {
     vec3 dir = normalize(direction);
-    float u = atan(dir.z, dir.x) / (2.0 * PI) + 0.5;
-    float v = acos(clamp(dir.y, -1.0, 1.0)) / PI;
+    // Rays reflected below the horizon (steep wave faces) pick up horizon color instead of going dark
+    float elevation = max(dir.y, 0.0);
 
-    vec2 starUV = vec2(u, v) * vec2(620.0, 310.0);
-    vec2 cell = floor(starUV);
-    vec2 local = fract(starUV) - 0.5;
-
-    float starSeed = hash12(cell);
-    float density = clamp(uMVP.nightSkyParams.x, 0.0, 1.5);
-    float threshold = mix(0.9992, 0.9855, density * 0.9);
-    float starMask = step(threshold, starSeed);
-
-    float starCore = exp(-dot(local, local) * 95.0);
-    float twinkleAmount = clamp(uMVP.nightSkyParams.z, 0.0, 2.5);
-    float twinkle = 0.7 + 0.3 * sin(time * (1.8 + twinkleAmount * 3.7) + starSeed * 61.0);
-
-    return starMask * starCore * twinkle * clamp(uMVP.nightSkyParams.y, 0.0, 3.0);
-}
-
-vec3 sampleNightSky(vec3 direction, float time) {
-    vec3 dir = normalize(direction);
-    vec3 baseSky = mix(
+    vec3 sky = mix(
         uMVP.skyBottomColor.rgb,
         uMVP.skyTopColor.rgb,
-        smoothstep(-0.25, 0.9, dir.y)
+        smoothstep(0.0, 1.0, pow(elevation, 0.45))
     );
 
-    vec3 moonDir = normalize(uMVP.moonParams.xyz);
-    float moonDot = max(dot(dir, moonDir), 0.0);
-    float moonDiskThreshold = clamp(uMVP.moonParams.w, 0.96, 0.9995);
-    float moonDisk = smoothstep(moonDiskThreshold, moonDiskThreshold + 0.0028, moonDot);
-    float moonGlow = pow(moonDot, 22.0) * (0.25 + clamp(uMVP.sunColor.a, 0.0, 1.0) * 4.5);
+    // Bright, slightly desaturated haze band hugging the horizon
+    float haze = exp(-elevation * 9.0) * clamp(uMVP.skyParams.x, 0.0, 1.0);
+    sky = mix(sky, uMVP.skyBottomColor.rgb, haze);
 
-    float stars = starField(dir, time) * smoothstep(-0.2, 0.5, dir.y + 0.1);
-    vec3 sky = baseSky + vec3(stars);
-    sky += uMVP.sunColor.rgb * moonDisk * uMVP.lightingParams.w * 2.0;
-    sky += uMVP.sunColor.rgb * moonGlow;
+    // Forward scattering: sky warms and brightens around the sun
+    vec3 sunDir = normalize(uMVP.sunDirection.xyz);
+    float sunDot = max(dot(dir, sunDir), 0.0);
+    vec3 sunLight = uMVP.sunColor.rgb * uMVP.lightingParams.w;
+    float glow = clamp(uMVP.sunColor.a, 0.0, 1.0);
+    sky += sunLight * glow * (pow(sunDot, 6.0) * 0.04 + pow(sunDot, 48.0) * 0.15);
 
-    sky *= clamp(uMVP.nightSkyParams.w, 0.2, 2.0);
-    return sky;
+    return sky * clamp(uMVP.skyParams.w, 0.2, 2.0);
 }
 
 void main(void) {
     float time = uMVP.cameraPosition.w;
     vec3 normal = normalize(worldNormalOut);
     vec3 viewDirection = normalize(uMVP.cameraPosition.xyz - worldPositionOut);
-    vec3 lightDirection = normalize(uMVP.moonParams.xyz);
+    vec3 lightDirection = normalize(uMVP.sunDirection.xyz);
     float viewDist = length(uMVP.cameraPosition.xyz - worldPositionOut);
+    vec3 sunLight = uMVP.sunColor.rgb * uMVP.lightingParams.w;
 
     // ---- Detail normal perturbation ----
     // Fade out detail normals at distance to avoid shimmer
@@ -173,6 +151,8 @@ void main(void) {
 
     vec3 halfVec = normalize(lightDirection + viewDirection);
     vec3 reflectionDirection = reflect(-viewDirection, normal);
+    float NdotL = max(dot(normal, lightDirection), 0.0);
+    float NdotV = max(dot(normal, viewDirection), 0.0);
 
     // ---- Water color with depth-based absorption ----
     float baseMix = clamp((waveHeightOut + uMVP.shadingParams.x) * uMVP.shadingParams.y, 0.0, 1.0);
@@ -180,37 +160,38 @@ void main(void) {
     vec3 shallowColor = uMVP.surfaceColor.rgb;
     vec3 waterColor = mix(deepColor, shallowColor, baseMix);
 
+    // ---- Water body lit by sky + sun (light scattered back up out of the water) ----
+    float ambientOcclusion = clamp(0.5 + 0.5 * normal.y, 0.0, 1.0); // troughs get darker
+    vec3 skyAmbient = mix(uMVP.skyBottomColor.rgb, uMVP.skyTopColor.rgb, 0.5) * uMVP.sunParams.y;
+    vec3 refractedColor = waterColor * (skyAmbient * ambientOcclusion + sunLight * (0.06 + 0.10 * NdotL));
+
     // ---- Subsurface scattering ----
-    // Light transmitting through thin wave crests
+    // Sunlight transmitting through thin wave crests when looking towards the sun
     float sssWrap = max(dot(normal, -lightDirection) * 0.5 + 0.5, 0.0);
     float sssThin = clamp(1.0 - abs(waveHeightOut) * 3.0, 0.0, 1.0); // stronger on thin crests
-    float sssViewAlign = pow(max(dot(viewDirection, -lightDirection), 0.0), 3.0);
-    vec3 sssColor = shallowColor * 1.6 + vec3(0.0, 0.05, 0.02);
-    vec3 sss = sssColor * sssWrap * sssThin * sssViewAlign * uMVP.lightingParams.w * 0.4;
+    float sssViewAlign = pow(max(dot(viewDirection, -lightDirection), 0.0), 4.0);
+    float sssCrest = clamp(waveHeightOut * 4.0 + 0.5, 0.0, 1.0); // crests, not troughs
+    vec3 sssColor = shallowColor * 1.6 + vec3(0.0, 0.08, 0.04);
+    vec3 sss = sssColor * sunLight * sssWrap * sssThin * sssViewAlign * sssCrest * uMVP.sunParams.z;
 
     // ---- Fresnel ----
-    float NdotV = max(dot(normal, viewDirection), 0.0);
     float fresnel = schlickFresnel(NdotV);
     // Boost fresnel using user param but keep it physically grounded
     fresnel = clamp(fresnel * uMVP.shadingParams.w, 0.0, 1.0);
 
-    // ---- Night sky reflection (moon + stars) ----
-    vec3 skyColor = sampleNightSky(reflectionDirection, time);
+    // ---- Daytime sky reflection ----
+    vec3 reflectedColor = sampleDaySky(reflectionDirection);
 
     // ---- Combine reflection and refraction ----
-    vec3 reflectedColor = skyColor;
-    vec3 refractedColor = waterColor;
     vec3 surfaceColor = mix(refractedColor, reflectedColor, fresnel);
 
-    // ---- Diffuse ambient ocean light ----
-    float diffuse = max(dot(normal, lightDirection), 0.0);
-    float ambientOcclusion = clamp(0.5 + 0.5 * normal.y, 0.0, 1.0); // troughs get darker
-    vec3 ambient = waterColor * (0.06 * ambientOcclusion);
-
-    // ---- GGX Specular ----
+    // ---- Sun specular: sharp glitter + broad "sun road" ----
+    float specFresnel = schlickFresnel(max(dot(halfVec, viewDirection), 0.0));
+    float specNorm = NdotL / (4.0 * max(NdotV, 0.15));
     float roughness = max(1.0 / sqrt(max(uMVP.lightingParams.x, 1.0)), 0.02);
-    float spec = ggxSpecular(normal, halfVec, roughness) * diffuse;
-    vec3 specColor = uMVP.sunColor.rgb * uMVP.lightingParams.w * spec * fresnel;
+    float glitter = min(ggxSpecular(normal, halfVec, roughness) * specFresnel * specNorm, 25.0);
+    float sunRoad = ggxSpecular(normal, halfVec, 0.38) * specFresnel * specNorm;
+    vec3 specColor = sunLight * (glitter * uMVP.sunParams.x + sunRoad * 0.025);
 
     // ---- Foam ----
     float normalTilt = 1.0 - clamp(normal.y, 0.0, 1.0);
@@ -222,21 +203,25 @@ void main(void) {
         uMVP.lightingParams.y + 0.12,
         foamBase
     ) * uMVP.lightingParams.z;
-    // Foam color slightly warm, not pure white
-    vec3 foamColor = vec3(0.92, 0.95, 0.98);
+    float foamMask = clamp(foam, 0.0, 0.45);
+    // Sunlit foam: white, picks up sky ambient and direct sun
+    vec3 foamColor = vec3(0.92, 0.95, 0.98) * (skyAmbient * 0.6 + sunLight * 0.07 * (0.35 + 0.65 * NdotL));
 
     // ---- Assemble final color ----
-    vec3 finalColor = surfaceColor + ambient + sss;
-    finalColor += specColor;
-    finalColor = mix(finalColor, foamColor, clamp(foam, 0.0, 0.45));
+    vec3 finalColor = surfaceColor + sss;
+    finalColor = mix(finalColor, foamColor, foamMask);
+    finalColor += specColor * (1.0 - foamMask);
 
-    // ---- Distance fog / atmospheric haze ----
-    float fog = 1.0 - exp(-viewDist * viewDist * 0.0008);
-    vec3 fogColor = mix(uMVP.skyBottomColor.rgb, sampleNightSky(vec3(0.0, 1.0, 0.0), time), 0.35);
-    finalColor = mix(finalColor, fogColor, clamp(fog, 0.0, 0.6));
+    // ---- Distance fog / aerial perspective ----
+    // Fade into the horizon sky color along the view ray so the mesh edge melts into the sky
+    vec3 viewRay = -viewDirection;
+    vec3 horizonDir = normalize(vec3(viewRay.x, 0.02, viewRay.z));
+    vec3 fogColor = sampleDaySky(horizonDir);
+    float fog = 1.0 - exp(-viewDist * viewDist * uMVP.skyParams.y * 0.001);
+    finalColor = mix(finalColor, fogColor, clamp(fog, 0.0, 0.95));
 
     // ---- Tone mapping ----
-    finalColor = acesTonemap(finalColor * 1.1);
+    finalColor = acesTonemap(finalColor * 0.9);
 
     FragColor = vec4(finalColor, 1.0);
 }

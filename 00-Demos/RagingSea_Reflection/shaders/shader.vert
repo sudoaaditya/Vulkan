@@ -21,8 +21,8 @@ layout(binding = 0) uniform mvpMatrix {
     vec4 skyTopColor;
     vec4 sunDirection;
     vec4 sunColor;
-    vec4 moonParams;
-    vec4 nightSkyParams;
+    vec4 sunParams;
+    vec4 skyParams;
     vec4 shadingParams;
     vec4 lightingParams;
 } uMVP;
