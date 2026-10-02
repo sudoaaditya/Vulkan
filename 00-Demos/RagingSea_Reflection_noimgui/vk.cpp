@@ -50,88 +50,88 @@ enum {
 };
 
 // instance extension related variables
-uint32_t enabledInstanceExtensionCount = 0; 
+uint32_t enabledInstanceExtensionCount_sea = 0; 
 // VK_KHR_SURFACE_EXTENSION_NAME & VK_KHR_WIN32_SURFACE_EXTENSION_NAME & VK_EXT_DEBUG_REPORT_EXTENSION_NAME
-const char *enabledInstanceExtensionNames_array[3]; 
+const char *enabledInstanceExtensionNames_array_sea[3]; 
 // vulkan instance
-VkInstance vkInstance = VK_NULL_HANDLE;
+VkInstance vkInstance_sea = VK_NULL_HANDLE;
 
 //vulkan presentation surface object
-VkSurfaceKHR vkSurfaceKHR = VK_NULL_HANDLE;
+VkSurfaceKHR vkSurfaceKHR_sea = VK_NULL_HANDLE;
 
 // vulkan physical device related variables
-VkPhysicalDevice vkPhysicalDevice_selected = VK_NULL_HANDLE;
-uint32_t graphicsQueueFamilyIndex_selected = UINT32_MAX;
-VkPhysicalDeviceMemoryProperties vkPhysicalDeviceMemoryProperties;
+VkPhysicalDevice vkPhysicalDevice_selected_sea = VK_NULL_HANDLE;
+uint32_t graphicsQueueFamilyIndex_selected_sea = UINT32_MAX;
+VkPhysicalDeviceMemoryProperties vkPhysicalDeviceMemoryProperties_sea;
 
 //
-uint32_t physicalDeviceCount = 0;
-VkPhysicalDevice *vkPhysicalDevice_array = NULL;
+uint32_t physicalDeviceCount_sea = 0;
+VkPhysicalDevice *vkPhysicalDevice_array_sea = NULL;
 
 // Device Extension related variables
-uint32_t enabledDeviceExtensionCount = 0;
-const char *enabledDeviceExtensionNames_array[1]; // VK_KHR_SWAPCHAIN_EXTENSION_NAME
+uint32_t enabledDeviceExtensionCount_sea = 0;
+const char *enabledDeviceExtensionNames_array_sea[1]; // VK_KHR_SWAPCHAIN_EXTENSION_NAME
 
 // Vulkan Device
-VkDevice vkDevice = VK_NULL_HANDLE;
+VkDevice vkDevice_sea = VK_NULL_HANDLE;
 
 // Device Queue
-VkQueue vkQueue = VK_NULL_HANDLE;
+VkQueue vkQueue_sea = VK_NULL_HANDLE;
 
 // Surface Format & Surcae ColorSpace
-VkFormat vkFormat_color = VK_FORMAT_UNDEFINED;
-VkColorSpaceKHR vkColorSpaceKHR = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+VkFormat vkFormat_color_sea = VK_FORMAT_UNDEFINED;
+VkColorSpaceKHR vkColorSpaceKHR_sea = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 
 // Presentation Mode
-VkPresentModeKHR vkPresentModeKHR = VK_PRESENT_MODE_FIFO_KHR;
+VkPresentModeKHR vkPresentModeKHR_sea = VK_PRESENT_MODE_FIFO_KHR;
 
 // Swapchain
-int winWidth = WIN_WIDTH, winHeight = WIN_HEIGHT;
-VkSwapchainKHR vkSwapchainKHR = VK_NULL_HANDLE;
-VkExtent2D vkExtent2D_swapchain;
+int winWidth_sea = WIN_WIDTH, winHeight_sea = WIN_HEIGHT;
+VkSwapchainKHR vkSwapchainKHR_sea = VK_NULL_HANDLE;
+VkExtent2D vkExtent2D_swapchain_sea;
 
 // Swapchain Images & Image Views [ For color Images ]
-uint32_t swapchainImageCount = UINT32_MAX;
-VkImage *swapchainImage_array = NULL;
-VkImageView *swapchainImageView_array = NULL;
+uint32_t swapchainImageCount_sea = UINT32_MAX;
+VkImage *swapchainImage_array_sea = NULL;
+VkImageView *swapchainImageView_array_sea = NULL;
 
 // For Depth Image
-VkFormat vkFormat_depth = VK_FORMAT_UNDEFINED;
-VkImage vkImage_depth = VK_NULL_HANDLE;
-VkDeviceMemory vkDeviceMemory_depth = VK_NULL_HANDLE;
-VkImageView vkImageView_depth = VK_NULL_HANDLE;
+VkFormat vkFormat_depth_sea = VK_FORMAT_UNDEFINED;
+VkImage vkImage_depth_sea = VK_NULL_HANDLE;
+VkDeviceMemory vkDeviceMemory_depth_sea = VK_NULL_HANDLE;
+VkImageView vkImageView_depth_sea = VK_NULL_HANDLE;
 
 // Command Pool
-VkCommandPool vkCommandPool = VK_NULL_HANDLE;
+VkCommandPool vkCommandPool_sea = VK_NULL_HANDLE;
 
 // Command Buffer
-VkCommandBuffer *vkCommandBuffer_array;
+VkCommandBuffer *vkCommandBuffer_array_sea;
 
 // Render Pass
-VkRenderPass vkRenderPass = VK_NULL_HANDLE;
+VkRenderPass vkRenderPass_sea = VK_NULL_HANDLE;
 
 // Frame Buffer
-VkFramebuffer *vkFramebuffer_array = NULL;
+VkFramebuffer *vkFramebuffer_array_sea = NULL;
 
 // Fences & Semaphore
-VkSemaphore vkSemaphore_backbuffer = VK_NULL_HANDLE;
-VkSemaphore vkSemaphore_rendercomplete = VK_NULL_HANDLE;
-VkFence *vkFence_array = NULL;
+VkSemaphore vkSemaphore_backbuffer_sea = VK_NULL_HANDLE;
+VkSemaphore vkSemaphore_rendercomplete_sea = VK_NULL_HANDLE;
+VkFence *vkFence_array_sea = NULL;
 
 // Build Command Buffers
-VkClearColorValue vkClearColorValue;
-VkClearDepthStencilValue vkClearDepthStencilValue;
+VkClearColorValue vkClearColorValue_sea;
+VkClearDepthStencilValue vkClearDepthStencilValue_sea;
 
 // Render Variables
-BOOL bInitialized = FALSE;
-uint32_t currentImageIndex = UINT32_MAX;
+BOOL bInitialized_sea = FALSE;
+uint32_t currentImageIndex_sea = UINT32_MAX;
 
 // Validation Layer
-BOOL bValidation = TRUE;
-uint32_t enabledValidationLayerCount = 0;
-const char *enabledValidationLayerNames_array[1]; //VK_LAYER_KHRONOS_validation
-VkDebugReportCallbackEXT vkDebugReportCallbackEXT;
-PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT_fnptr = NULL;
+BOOL bValidation_sea = TRUE;
+uint32_t enabledValidationLayerCount_sea = 0;
+const char *enabledValidationLayerNames_array_sea[1]; //VK_LAYER_KHRONOS_validation
+VkDebugReportCallbackEXT vkDebugReportCallbackEXT_sea;
+PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT_fnptr_sea = NULL;
 
 // Vertex Buffer
 typedef struct {
@@ -140,7 +140,7 @@ typedef struct {
 } VertexData;
 
 // Position
-VertexData vertexData_position;
+VertexData vertexData_position_sea;
 
 // Uniform Related Declarations
 struct MyUniformData {
@@ -172,7 +172,7 @@ typedef struct {
     VkDeviceMemory vkDeviceMemory;
 } UniformData;
 
-UniformData uniformData;
+UniformData uniformData_sea;
 
 // Ocean Mask Texture (globe UVs, white = ocean)
 VkImage vkImage_oceanMask = VK_NULL_HANDLE;
@@ -180,33 +180,33 @@ VkDeviceMemory vkDeviceMemory_oceanMask = VK_NULL_HANDLE;
 VkImageView vkImageView_oceanMask = VK_NULL_HANDLE;
 VkSampler vkSampler_oceanMask = VK_NULL_HANDLE;
 
-vector<glm::vec3> vertexData_array;
-float halfSize = 5.0f; // bound of rect go from -5 to 5
-int segmentCount = 512; // no of segments to divide the plane into
+vector<glm::vec3> vertexData_array_sea;
+float halfSize_sea = 5.0f; // bound of rect go from -5 to 5
+int segmentCount_sea = 512; // no of segments to divide the plane into
 
 // Shader Variables
-VkShaderModule vkShaderModule_vertex = VK_NULL_HANDLE;
-VkShaderModule vkShaderModule_fragment = VK_NULL_HANDLE;
+VkShaderModule vkShaderModule_vertex_sea = VK_NULL_HANDLE;
+VkShaderModule vkShaderModule_fragment_sea = VK_NULL_HANDLE;
 
 // Descriptor Set Layout
-VkDescriptorSetLayout vkDescriptorSetLayout = VK_NULL_HANDLE;
+VkDescriptorSetLayout vkDescriptorSetLayout_sea = VK_NULL_HANDLE;
 
 // Pipeline Layout
-VkPipelineLayout vkPipelineLayout = VK_NULL_HANDLE;
+VkPipelineLayout vkPipelineLayout_sea = VK_NULL_HANDLE;
 
 // Descriptor Pool
-VkDescriptorPool vkDescriptorPool = VK_NULL_HANDLE;
+VkDescriptorPool vkDescriptorPool_sea = VK_NULL_HANDLE;
 
 // Descriptor Set
-VkDescriptorSet vkDescriptorSet = VK_NULL_HANDLE;
+VkDescriptorSet vkDescriptorSet_sea = VK_NULL_HANDLE;
 
 // Pipeline
-VkViewport vkViewport;
-VkRect2D vkRect2D_scissor;
-VkPipeline vkPipeline = VK_NULL_HANDLE;
+VkViewport vkViewport_sea;
+VkRect2D vkRect2D_scissor_sea;
+VkPipeline vkPipeline_sea = VK_NULL_HANDLE;
 
 // For Rotation
-Clock myClock;
+Clock myClock_sea;
 
 // Camera movement
 float gCameraOffsetX = 0.0f;
@@ -804,16 +804,16 @@ VkResult initialize(void) {
 
     // initialize clear color values
     // Placeholder sky colour (sky pass replaces it)
-    memset((void*)&vkClearColorValue, 0, sizeof(VkClearColorValue));
-    vkClearColorValue.float32[0] = glm::mix(gSeaParams.skyBottomColor[0], gSeaParams.skyTopColor[0], 0.35f);
-    vkClearColorValue.float32[1] = glm::mix(gSeaParams.skyBottomColor[1], gSeaParams.skyTopColor[1], 0.35f);
-    vkClearColorValue.float32[2] = glm::mix(gSeaParams.skyBottomColor[2], gSeaParams.skyTopColor[2], 0.35f);
-    vkClearColorValue.float32[3] = 1.0f; // analogous to glClearColor
+    memset((void*)&vkClearColorValue_sea, 0, sizeof(VkClearColorValue));
+    vkClearColorValue_sea.float32[0] = glm::mix(gSeaParams.skyBottomColor[0], gSeaParams.skyTopColor[0], 0.35f);
+    vkClearColorValue_sea.float32[1] = glm::mix(gSeaParams.skyBottomColor[1], gSeaParams.skyTopColor[1], 0.35f);
+    vkClearColorValue_sea.float32[2] = glm::mix(gSeaParams.skyBottomColor[2], gSeaParams.skyTopColor[2], 0.35f);
+    vkClearColorValue_sea.float32[3] = 1.0f; // analogous to glClearColor
 
     // initialize clear depth stencil values
-    memset((void*)&vkClearDepthStencilValue, 0, sizeof(VkClearDepthStencilValue));
-    vkClearDepthStencilValue.depth = 1.0f; // analogous to glClearDepth [ Float Value]
-    vkClearDepthStencilValue.stencil = 0; // analogous to glClearStencil [ Integer Value ]
+    memset((void*)&vkClearDepthStencilValue_sea, 0, sizeof(VkClearDepthStencilValue));
+    vkClearDepthStencilValue_sea.depth = 1.0f; // analogous to glClearDepth [ Float Value]
+    vkClearDepthStencilValue_sea.stencil = 0; // analogous to glClearStencil [ Integer Value ]
 
 
     // Build Command Buffers
@@ -825,10 +825,10 @@ VkResult initialize(void) {
         fprintf(fptr, "initialize(): buildCommandBuffers() Successful!.\n\n");
     }
 
-    myClock.start();
+    myClock_sea.start();
 
     // Initialization is completed!
-    bInitialized = TRUE;
+    bInitialized_sea = TRUE;
     fprintf(fptr, "initialize(): Initialization Successful!.\n");
 
     return (vkResult);
@@ -854,128 +854,128 @@ VkResult resize(int width, int height) {
         height = 1;
 
     // If control comes here before initialization is done, then return false
-    if(bInitialized == FALSE) {
+    if(bInitialized_sea == FALSE) {
         fprintf(fptr, "resize(): initialization is not completed or failed\n");
         vkResult = VK_ERROR_INITIALIZATION_FAILED;
         return (vkResult);
     }
 
     // As recreation of swapchain is required, we are going to repeat many steps of initialization again
-    // hence set bInitialized to FALSE
-    bInitialized = FALSE; // this will prevent display() function to execute before resize() is done
+    // hence set bInitialized_sea to FALSE
+    bInitialized_sea = FALSE; // this will prevent display() function to execute before resize() is done
 
     // Set Global Width & Height
-    winWidth = width;
-    winHeight = height;
+    winWidth_sea = width;
+    winHeight_sea = height;
 
-    // Wait til vkDevice is idle
-    if(vkDevice) {
-        vkDeviceWaitIdle(vkDevice); // this basically waits on til all the operations are done using the device and then this function call returns
+    // Wait til vkDevice_sea is idle
+    if(vkDevice_sea) {
+        vkDeviceWaitIdle(vkDevice_sea); // this basically waits on til all the operations are done using the device and then this function call returns
     }
 
-    // Check if vkSwapchainKHR is NULL, if it is NULL then we cannot proceed
-    if(vkSwapchainKHR == VK_NULL_HANDLE) {
+    // Check if vkSwapchainKHR_sea is NULL, if it is NULL then we cannot proceed
+    if(vkSwapchainKHR_sea == VK_NULL_HANDLE) {
         fprintf(fptr, "resize(): vkSwapchainKHR is NULL cannot proceed!.\n");
         vkResult = VK_ERROR_INITIALIZATION_FAILED;
         return (vkResult);
     }
 
     // Destroy Frame Buffers
-    if(vkFramebuffer_array) {
-        for(uint32_t i = 0; i < swapchainImageCount; i++) {
-            vkDestroyFramebuffer(vkDevice, vkFramebuffer_array[i], NULL);
-            vkFramebuffer_array[i] = VK_NULL_HANDLE;
+    if(vkFramebuffer_array_sea) {
+        for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
+            vkDestroyFramebuffer(vkDevice_sea, vkFramebuffer_array_sea[i], NULL);
+            vkFramebuffer_array_sea[i] = VK_NULL_HANDLE;
         }
     }
 
-    if(vkFramebuffer_array) {
-        free(vkFramebuffer_array);
-        vkFramebuffer_array = NULL;
+    if(vkFramebuffer_array_sea) {
+        free(vkFramebuffer_array_sea);
+        vkFramebuffer_array_sea = NULL;
     }
 
     // Destroy  Command Buffers
-    if(vkCommandBuffer_array) {
-        for(uint32_t i = 0; i < swapchainImageCount; i++) {
-            vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_array[i]);
-            vkCommandBuffer_array[i] = VK_NULL_HANDLE;
+    if(vkCommandBuffer_array_sea) {
+        for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
+            vkFreeCommandBuffers(vkDevice_sea, vkCommandPool_sea, 1, &vkCommandBuffer_array_sea[i]);
+            vkCommandBuffer_array_sea[i] = VK_NULL_HANDLE;
         }
     }
 
-    if(vkCommandBuffer_array) {
-        free(vkCommandBuffer_array);
-        vkCommandBuffer_array = NULL;
+    if(vkCommandBuffer_array_sea) {
+        free(vkCommandBuffer_array_sea);
+        vkCommandBuffer_array_sea = NULL;
     }
 
     // Destroy Pipeline
-    if(vkPipeline) {
-        vkDestroyPipeline(vkDevice, vkPipeline, NULL);
-        vkPipeline = VK_NULL_HANDLE;
+    if(vkPipeline_sea) {
+        vkDestroyPipeline(vkDevice_sea, vkPipeline_sea, NULL);
+        vkPipeline_sea = VK_NULL_HANDLE;
     }
 
     // Destroy Pipeline Layout
-    if(vkPipelineLayout) {
-        vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, NULL);
-        vkPipelineLayout = VK_NULL_HANDLE;
+    if(vkPipelineLayout_sea) {
+        vkDestroyPipelineLayout(vkDevice_sea, vkPipelineLayout_sea, NULL);
+        vkPipelineLayout_sea = VK_NULL_HANDLE;
     }
 
     // Destroy Render Pass
-    if(vkRenderPass) {
-        vkDestroyRenderPass(vkDevice, vkRenderPass, NULL);
-        vkRenderPass = VK_NULL_HANDLE;
+    if(vkRenderPass_sea) {
+        vkDestroyRenderPass(vkDevice_sea, vkRenderPass_sea, NULL);
+        vkRenderPass_sea = VK_NULL_HANDLE;
     }
 
     // destroy depth stencil image view
-    if(vkImageView_depth) {
-        vkDestroyImageView(vkDevice, vkImageView_depth, NULL);
-        vkImageView_depth = VK_NULL_HANDLE;
+    if(vkImageView_depth_sea) {
+        vkDestroyImageView(vkDevice_sea, vkImageView_depth_sea, NULL);
+        vkImageView_depth_sea = VK_NULL_HANDLE;
     }
 
     // destroy depth stencil image
-    if(vkImage_depth) {
-        vkDestroyImage(vkDevice, vkImage_depth, NULL);
-        vkImage_depth = VK_NULL_HANDLE;
+    if(vkImage_depth_sea) {
+        vkDestroyImage(vkDevice_sea, vkImage_depth_sea, NULL);
+        vkImage_depth_sea = VK_NULL_HANDLE;
     }
 
     // destroy depth stencil memory
-    if(vkDeviceMemory_depth) {
-        vkFreeMemory(vkDevice, vkDeviceMemory_depth, NULL);
-        vkDeviceMemory_depth = VK_NULL_HANDLE;
+    if(vkDeviceMemory_depth_sea) {
+        vkFreeMemory(vkDevice_sea, vkDeviceMemory_depth_sea, NULL);
+        vkDeviceMemory_depth_sea = VK_NULL_HANDLE;
     }
 
-    if(swapchainImageView_array) {
-        for(uint32_t i = 0; i < swapchainImageCount; i++) {
-            if(swapchainImageView_array[i]) {
-                vkDestroyImageView(vkDevice, swapchainImageView_array[i], NULL);
-                swapchainImageView_array[i] = VK_NULL_HANDLE;
+    if(swapchainImageView_array_sea) {
+        for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
+            if(swapchainImageView_array_sea[i]) {
+                vkDestroyImageView(vkDevice_sea, swapchainImageView_array_sea[i], NULL);
+                swapchainImageView_array_sea[i] = VK_NULL_HANDLE;
             }
         }
     }
 
-    if(swapchainImageView_array) {
-        free(swapchainImageView_array);
-        swapchainImageView_array = NULL;
+    if(swapchainImageView_array_sea) {
+        free(swapchainImageView_array_sea);
+        swapchainImageView_array_sea = NULL;
     }
 
     // Destroy vulkan Images
     // VALIDATION USE CASE 4: uncomment the given block to see the error
-    /* if(swapchainImage_array) {
-        for(uint32_t i = 0; i < swapchainImageCount; i++) {
-            if(swapchainImage_array[i]) {
-                vkDestroyImage(vkDevice, swapchainImage_array[i], NULL);
-                swapchainImage_array[i] = VK_NULL_HANDLE;
+    /* if(swapchainImage_array_sea) {
+        for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
+            if(swapchainImage_array_sea[i]) {
+                vkDestroyImage(vkDevice_sea, swapchainImage_array_sea[i], NULL);
+                swapchainImage_array_sea[i] = VK_NULL_HANDLE;
             }
         }
     } */
 
-    if(swapchainImage_array) {
-        free(swapchainImage_array);
-        swapchainImage_array = NULL;
+    if(swapchainImage_array_sea) {
+        free(swapchainImage_array_sea);
+        swapchainImage_array_sea = NULL;
     }
 
     // Destroy Swapchain
-    if(vkSwapchainKHR) {
-        vkDestroySwapchainKHR(vkDevice, vkSwapchainKHR, NULL);
-        vkSwapchainKHR = VK_NULL_HANDLE;
+    if(vkSwapchainKHR_sea) {
+        vkDestroySwapchainKHR(vkDevice_sea, vkSwapchainKHR_sea, NULL);
+        vkSwapchainKHR_sea = VK_NULL_HANDLE;
     }
 
     // RECREATE FOR RESIZE
@@ -1038,7 +1038,7 @@ VkResult resize(int width, int height) {
     // add extra new line for better readability
     fprintf(fptr, "\n\n");
 
-    bInitialized = TRUE;
+    bInitialized_sea = TRUE;
 
     return (vkResult);
 }
@@ -1054,7 +1054,7 @@ VkResult display(void) {
 
     // Code
     //if control comes here before initialization is done, then return false
-    if(bInitialized == FALSE) {
+    if(bInitialized_sea == FALSE) {
         vkResult = (VkResult)VK_FALSE;
         fprintf(fptr, "display(): bInitialized is FALSE!.\n");
         return (vkResult);
@@ -1062,19 +1062,19 @@ VkResult display(void) {
 
     // Acquire index of next swapchain image
     vkResult = vkAcquireNextImageKHR(
-        vkDevice, 
-        vkSwapchainKHR,
+        vkDevice_sea, 
+        vkSwapchainKHR_sea,
         UINT64_MAX, // timeout in nanoseconds
-        vkSemaphore_backbuffer,
+        vkSemaphore_backbuffer_sea,
         VK_NULL_HANDLE,
-        &currentImageIndex
+        &currentImageIndex_sea
     );
 
     if(vkResult != VK_SUCCESS) {
         if(vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR) {
             fprintf(fptr, "display(): vkAcquireNextImageKHR() Failed! Swapchain is out of date.\n");
             // Resize the swapchain
-            vkResult = resize(winWidth, winHeight);
+            vkResult = resize(winWidth_sea, winHeight_sea);
             if(vkResult != VK_SUCCESS) {
                 fprintf(fptr, "display(): resize() Failed!.\n");
                 return (vkResult);
@@ -1086,14 +1086,14 @@ VkResult display(void) {
     }
 
     // Use Fence to allow host to wait for complition of execution of prev command buffer
-    vkResult = vkWaitForFences(vkDevice, 1, &vkFence_array[currentImageIndex], VK_TRUE, UINT64_MAX);
+    vkResult = vkWaitForFences(vkDevice_sea, 1, &vkFence_array_sea[currentImageIndex_sea], VK_TRUE, UINT64_MAX);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "display(): vkWaitForFences() Failed!.\n");
         return (vkResult);
     }
 
     // Now ready the facnces for execution of next command buffer
-    vkResult = vkResetFences(vkDevice, 1, &vkFence_array[currentImageIndex]);
+    vkResult = vkResetFences(vkDevice_sea, 1, &vkFence_array_sea[currentImageIndex_sea]);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "display(): vkResetFences() Failed!.\n");
         return (vkResult);
@@ -1117,14 +1117,14 @@ VkResult display(void) {
     vkSubmitInfo.pNext = NULL;
     vkSubmitInfo.pWaitDstStageMask = &waitDstStageMask;
     vkSubmitInfo.waitSemaphoreCount = 1;
-    vkSubmitInfo.pWaitSemaphores = &vkSemaphore_backbuffer;
+    vkSubmitInfo.pWaitSemaphores = &vkSemaphore_backbuffer_sea;
     vkSubmitInfo.commandBufferCount = 1;
-    vkSubmitInfo.pCommandBuffers = &vkCommandBuffer_array[currentImageIndex];
+    vkSubmitInfo.pCommandBuffers = &vkCommandBuffer_array_sea[currentImageIndex_sea];
     vkSubmitInfo.signalSemaphoreCount = 1;
-    vkSubmitInfo.pSignalSemaphores = &vkSemaphore_rendercomplete;
+    vkSubmitInfo.pSignalSemaphores = &vkSemaphore_rendercomplete_sea;
 
     // Now submit command buffer to queue for execution
-    vkResult = vkQueueSubmit(vkQueue, 1, &vkSubmitInfo, vkFence_array[currentImageIndex]);
+    vkResult = vkQueueSubmit(vkQueue_sea, 1, &vkSubmitInfo, vkFence_array_sea[currentImageIndex_sea]);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "display(): vkQueueSubmit() Failed!.\n");
         return (vkResult);
@@ -1137,19 +1137,19 @@ VkResult display(void) {
     vkPresentInfoKHR.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     vkPresentInfoKHR.pNext = NULL;
     vkPresentInfoKHR.waitSemaphoreCount = 1;
-    vkPresentInfoKHR.pWaitSemaphores = &vkSemaphore_rendercomplete;
+    vkPresentInfoKHR.pWaitSemaphores = &vkSemaphore_rendercomplete_sea;
     vkPresentInfoKHR.swapchainCount = 1;
-    vkPresentInfoKHR.pSwapchains = &vkSwapchainKHR;
-    vkPresentInfoKHR.pImageIndices = &currentImageIndex;
+    vkPresentInfoKHR.pSwapchains = &vkSwapchainKHR_sea;
+    vkPresentInfoKHR.pImageIndices = &currentImageIndex_sea;
     vkPresentInfoKHR.pResults = NULL; // this is optional, so we are not using it
 
     // Present the queue!
-    vkResult = vkQueuePresentKHR(vkQueue, &vkPresentInfoKHR);
+    vkResult = vkQueuePresentKHR(vkQueue_sea, &vkPresentInfoKHR);
     if(vkResult != VK_SUCCESS) {
         if(vkResult == VK_ERROR_OUT_OF_DATE_KHR || vkResult == VK_SUBOPTIMAL_KHR) {
             fprintf(fptr, "display(): vkQueuePresentKHR() Failed! Swapchain is out of date.\n");
             // Resize the swapchain
-            vkResult = resize(winWidth, winHeight);
+            vkResult = resize(winWidth_sea, winHeight_sea);
             if(vkResult != VK_SUCCESS) {
                 fprintf(fptr, "display(): resize() Failed!.\n");
                 return (vkResult);
@@ -1161,7 +1161,7 @@ VkResult display(void) {
         }
     }
 
-    vkDeviceWaitIdle(vkDevice); // VALIDATION USE CASE 1: Comment this line to see the error
+    vkDeviceWaitIdle(vkDevice_sea); // VALIDATION USE CASE 1: Comment this line to see the error
 
     return (vkResult);
 }
@@ -1175,276 +1175,276 @@ void uninitialize(void){
         ghwnd = NULL;
     }
 
-    // wait til vkDevice is idle
-    if(vkDevice) {
-        vkDeviceWaitIdle(vkDevice); // this basically waits on til all the operations are done using the device and then this function call returns
+    // wait til vkDevice_sea is idle
+    if(vkDevice_sea) {
+        vkDeviceWaitIdle(vkDevice_sea); // this basically waits on til all the operations are done using the device and then this function call returns
         fprintf(fptr, "\nuninitialize(): vkDeviceWaitIdle is done!\n");
     }
 
     // Destroy Fence
     // VALIDATION USE CASE 3: Comment this line to see the error
-    if(vkFence_array) {
-        for(uint32_t i = 0; i < swapchainImageCount; i++) {
-            vkDestroyFence(vkDevice, vkFence_array[i], NULL);
+    if(vkFence_array_sea) {
+        for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
+            vkDestroyFence(vkDevice_sea, vkFence_array_sea[i], NULL);
             fprintf(fptr, "uninitialize(): vkDestroyFence() Succeed for {%d}!.\n", i);
-            vkFence_array[i] = VK_NULL_HANDLE;
+            vkFence_array_sea[i] = VK_NULL_HANDLE;
         }
     }
 
-    if(vkFence_array) {
-        free(vkFence_array);
+    if(vkFence_array_sea) {
+        free(vkFence_array_sea);
         fprintf(fptr, "uninitialize(): freed vkFence_array!.\n");
-        vkFence_array = NULL;
+        vkFence_array_sea = NULL;
     }
 
     // Destroy Semaphore
-    if(vkSemaphore_rendercomplete) {
-        vkDestroySemaphore(vkDevice, vkSemaphore_rendercomplete, NULL);
+    if(vkSemaphore_rendercomplete_sea) {
+        vkDestroySemaphore(vkDevice_sea, vkSemaphore_rendercomplete_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDestroySemaphore() for Render Complete Succeed!\n");
-        vkSemaphore_rendercomplete = VK_NULL_HANDLE;
+        vkSemaphore_rendercomplete_sea = VK_NULL_HANDLE;
     }
 
-    if(vkSemaphore_backbuffer) {
-        vkDestroySemaphore(vkDevice, vkSemaphore_backbuffer, NULL);
+    if(vkSemaphore_backbuffer_sea) {
+        vkDestroySemaphore(vkDevice_sea, vkSemaphore_backbuffer_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDestroySemaphore() for Back Buffer Succeed!\n");
-        vkSemaphore_backbuffer = VK_NULL_HANDLE;
+        vkSemaphore_backbuffer_sea = VK_NULL_HANDLE;
     }
 
     // Destroy Frame Buffers
-    if(vkFramebuffer_array) {
-        for(uint32_t i = 0; i < swapchainImageCount; i++) {
-            vkDestroyFramebuffer(vkDevice, vkFramebuffer_array[i], NULL);
+    if(vkFramebuffer_array_sea) {
+        for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
+            vkDestroyFramebuffer(vkDevice_sea, vkFramebuffer_array_sea[i], NULL);
             fprintf(fptr, "uninitialize(): vkDestroyFramebuffer() Succeed for {%d}!.\n", i);
-            vkFramebuffer_array[i] = VK_NULL_HANDLE;
+            vkFramebuffer_array_sea[i] = VK_NULL_HANDLE;
         }
     }
 
-    if(vkFramebuffer_array) {
-        free(vkFramebuffer_array);
+    if(vkFramebuffer_array_sea) {
+        free(vkFramebuffer_array_sea);
         fprintf(fptr, "uninitialize(): freed vkFramebuffer_array!.\n");
-        vkFramebuffer_array = NULL;
+        vkFramebuffer_array_sea = NULL;
     }
 
     // Destroy Pipeline
-    if(vkPipeline) {
-        vkDestroyPipeline(vkDevice, vkPipeline, NULL);
+    if(vkPipeline_sea) {
+        vkDestroyPipeline(vkDevice_sea, vkPipeline_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyPipeline() Succeed!\n");
-        vkPipeline = VK_NULL_HANDLE;
+        vkPipeline_sea = VK_NULL_HANDLE;
     }
 
     // Destroy Render Pass
-    if(vkRenderPass) {
-        vkDestroyRenderPass(vkDevice, vkRenderPass, NULL);
+    if(vkRenderPass_sea) {
+        vkDestroyRenderPass(vkDevice_sea, vkRenderPass_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyRenderPass() Succeed!\n");
-        vkRenderPass = VK_NULL_HANDLE;
+        vkRenderPass_sea = VK_NULL_HANDLE;
     }
 
     // Destroy Descriptor Pool
     // When descriptor pool is destroyed, all the descriptor sets created from it are destroyed internally
     // so we  don't need to destroy descriptor set explicitly 
-    if(vkDescriptorPool) {
-        vkDestroyDescriptorPool(vkDevice, vkDescriptorPool, NULL);
+    if(vkDescriptorPool_sea) {
+        vkDestroyDescriptorPool(vkDevice_sea, vkDescriptorPool_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDescriptorPool & vkDescriptorSet Destroy Succeed!\n");
-        vkDescriptorPool = VK_NULL_HANDLE;
+        vkDescriptorPool_sea = VK_NULL_HANDLE;
     }
 
     // Destroy Pipeline Layout
-    if(vkPipelineLayout) {
-        vkDestroyPipelineLayout(vkDevice, vkPipelineLayout, NULL);
+    if(vkPipelineLayout_sea) {
+        vkDestroyPipelineLayout(vkDevice_sea, vkPipelineLayout_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyPipelineLayout() Succeed!\n");
-        vkPipelineLayout = VK_NULL_HANDLE;
+        vkPipelineLayout_sea = VK_NULL_HANDLE;
     }
 
     // Destroy Descriptor Set Layout
-    if(vkDescriptorSetLayout) {
-        vkDestroyDescriptorSetLayout(vkDevice, vkDescriptorSetLayout, NULL);
+    if(vkDescriptorSetLayout_sea) {
+        vkDestroyDescriptorSetLayout(vkDevice_sea, vkDescriptorSetLayout_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyDescriptorSetLayout() Succeed!\n");
-        vkDescriptorSetLayout = VK_NULL_HANDLE;
+        vkDescriptorSetLayout_sea = VK_NULL_HANDLE;
     }
 
     // Destroy Shader
-    if(vkShaderModule_fragment) {
-        vkDestroyShaderModule(vkDevice, vkShaderModule_fragment, NULL);
+    if(vkShaderModule_fragment_sea) {
+        vkDestroyShaderModule(vkDevice_sea, vkShaderModule_fragment_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyShaderModule() Succeed for Fragment Shader!\n");
-        vkShaderModule_fragment = VK_NULL_HANDLE;
+        vkShaderModule_fragment_sea = VK_NULL_HANDLE;
     }
 
-    if(vkShaderModule_vertex) {
-        vkDestroyShaderModule(vkDevice, vkShaderModule_vertex, NULL);
+    if(vkShaderModule_vertex_sea) {
+        vkDestroyShaderModule(vkDevice_sea, vkShaderModule_vertex_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyShaderModule() Succeed for Vertex Shader!\n");
-        vkShaderModule_vertex = VK_NULL_HANDLE;
+        vkShaderModule_vertex_sea = VK_NULL_HANDLE;
     }
 
     // Destroy Ocean Mask Sampler
     if(vkSampler_oceanMask) {
-        vkDestroySampler(vkDevice, vkSampler_oceanMask, NULL);
+        vkDestroySampler(vkDevice_sea, vkSampler_oceanMask, NULL);
         fprintf(fptr, "uninitialize(): vkDestroySampler() Succeed for Ocean Mask Sampler!\n");
         vkSampler_oceanMask = VK_NULL_HANDLE;
     }
 
     // Destroy Ocean Mask Image View
     if(vkImageView_oceanMask) {
-        vkDestroyImageView(vkDevice, vkImageView_oceanMask, NULL);
+        vkDestroyImageView(vkDevice_sea, vkImageView_oceanMask, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyImageView() Succeed for Ocean Mask Image View!\n");
         vkImageView_oceanMask = VK_NULL_HANDLE;
     }
 
     // Destroy Ocean Mask Image Memory
     if(vkDeviceMemory_oceanMask) {
-        vkFreeMemory(vkDevice, vkDeviceMemory_oceanMask, NULL);
+        vkFreeMemory(vkDevice_sea, vkDeviceMemory_oceanMask, NULL);
         fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Ocean Mask Image Memory!\n");
         vkDeviceMemory_oceanMask = VK_NULL_HANDLE;
     }
 
     // Destroy Ocean Mask Image
     if(vkImage_oceanMask) {
-        vkDestroyImage(vkDevice, vkImage_oceanMask, NULL);
+        vkDestroyImage(vkDevice_sea, vkImage_oceanMask, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyImage() Succeed for Ocean Mask Image!\n");
         vkImage_oceanMask = VK_NULL_HANDLE;
     }
 
     // Destroy Uniform Buffer
-    if(uniformData.vkDeviceMemory) {
-        vkFreeMemory(vkDevice, uniformData.vkDeviceMemory, NULL);
+    if(uniformData_sea.vkDeviceMemory) {
+        vkFreeMemory(vkDevice_sea, uniformData_sea.vkDeviceMemory, NULL);
         fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Uniform Buffer!\n");
-        uniformData.vkDeviceMemory = VK_NULL_HANDLE;
+        uniformData_sea.vkDeviceMemory = VK_NULL_HANDLE;
     }
 
-    if(uniformData.vkBuffer) {
-        vkDestroyBuffer(vkDevice, uniformData.vkBuffer, NULL);
+    if(uniformData_sea.vkBuffer) {
+        vkDestroyBuffer(vkDevice_sea, uniformData_sea.vkBuffer, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!\n");
-        uniformData.vkBuffer = VK_NULL_HANDLE;
+        uniformData_sea.vkBuffer = VK_NULL_HANDLE;
     }
 
     // Destroy Vertex Buffer Position
-    if(vertexData_position.vkDeviceMemory) {
-        vkFreeMemory(vkDevice, vertexData_position.vkDeviceMemory, NULL);
+    if(vertexData_position_sea.vkDeviceMemory) {
+        vkFreeMemory(vkDevice_sea, vertexData_position_sea.vkDeviceMemory, NULL);
         fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Position!\n");
-        vertexData_position.vkDeviceMemory = VK_NULL_HANDLE;
+        vertexData_position_sea.vkDeviceMemory = VK_NULL_HANDLE;
     }
 
-    if(vertexData_position.vkBuffer) {
-        vkDestroyBuffer(vkDevice, vertexData_position.vkBuffer, NULL);
+    if(vertexData_position_sea.vkBuffer) {
+        vkDestroyBuffer(vkDevice_sea, vertexData_position_sea.vkBuffer, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyBuffer() Succeed for Vertex Buffer for Position!\n");
-        vertexData_position.vkBuffer = VK_NULL_HANDLE;
+        vertexData_position_sea.vkBuffer = VK_NULL_HANDLE;
     }
 
     // Destroy  Command Buffers
-    if(vkCommandBuffer_array) {
-        for(uint32_t i = 0; i < swapchainImageCount; i++) {
-            vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_array[i]);
+    if(vkCommandBuffer_array_sea) {
+        for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
+            vkFreeCommandBuffers(vkDevice_sea, vkCommandPool_sea, 1, &vkCommandBuffer_array_sea[i]);
             fprintf(fptr, "uninitialize(): vkFreeCommandBuffers() Succeed for {%d}\n", i);
-            vkCommandBuffer_array[i] = VK_NULL_HANDLE;
+            vkCommandBuffer_array_sea[i] = VK_NULL_HANDLE;
         }
     }
 
-    if(vkCommandBuffer_array) {
-        free(vkCommandBuffer_array);
+    if(vkCommandBuffer_array_sea) {
+        free(vkCommandBuffer_array_sea);
         fprintf(fptr, "uninitialize(): freed vkCommandBuffer_array!.\n");
-        vkCommandBuffer_array = NULL;
+        vkCommandBuffer_array_sea = NULL;
     }
 
     // Destroy the command pool
-    if(vkCommandPool) {
-        vkDestroyCommandPool(vkDevice, vkCommandPool, NULL);
+    if(vkCommandPool_sea) {
+        vkDestroyCommandPool(vkDevice_sea, vkCommandPool_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyCommandPool Successful!.\n");
-        vkCommandPool = VK_NULL_HANDLE;
+        vkCommandPool_sea = VK_NULL_HANDLE;
     }
 
     // destroy depth stencil image view
-    if(vkImageView_depth) {
-        vkDestroyImageView(vkDevice, vkImageView_depth, NULL);
+    if(vkImageView_depth_sea) {
+        vkDestroyImageView(vkDevice_sea, vkImageView_depth_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyImageView() Succeed for Depth Stencil Image View!\n");
-        vkImageView_depth = VK_NULL_HANDLE;
+        vkImageView_depth_sea = VK_NULL_HANDLE;
     }
 
     // destroy depth stencil image
-    if(vkImage_depth) {
-        vkDestroyImage(vkDevice, vkImage_depth, NULL);
+    if(vkImage_depth_sea) {
+        vkDestroyImage(vkDevice_sea, vkImage_depth_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyImage() Succeed for Depth Stencil Image!\n");
-        vkImage_depth = VK_NULL_HANDLE;
+        vkImage_depth_sea = VK_NULL_HANDLE;
     }
 
     // destroy depth stencil memory
-    if(vkDeviceMemory_depth) {
-        vkFreeMemory(vkDevice, vkDeviceMemory_depth, NULL);
+    if(vkDeviceMemory_depth_sea) {
+        vkFreeMemory(vkDevice_sea, vkDeviceMemory_depth_sea, NULL);
         fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Depth Stencil Memory!\n");
-        vkDeviceMemory_depth = VK_NULL_HANDLE;
+        vkDeviceMemory_depth_sea = VK_NULL_HANDLE;
     }
 
     // Destroy Vulkan Swapchain Image Views
-    if(swapchainImageView_array) {
-        for(uint32_t i = 0; i < swapchainImageCount; i++) {
-            if(swapchainImageView_array[i]) {
-                vkDestroyImageView(vkDevice, swapchainImageView_array[i], NULL);
+    if(swapchainImageView_array_sea) {
+        for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
+            if(swapchainImageView_array_sea[i]) {
+                vkDestroyImageView(vkDevice_sea, swapchainImageView_array_sea[i], NULL);
                 fprintf(fptr, "uninitialize(): vkDestroyImageView() Succeed for {%d}\n", i);
-                swapchainImageView_array[i] = VK_NULL_HANDLE;
+                swapchainImageView_array_sea[i] = VK_NULL_HANDLE;
             }
         }
     }
 
-    if(swapchainImageView_array) {
-        free(swapchainImageView_array);
+    if(swapchainImageView_array_sea) {
+        free(swapchainImageView_array_sea);
         fprintf(fptr, "uninitialize(): freed swapchainImageView_array!.\n");
-        swapchainImageView_array = NULL;
+        swapchainImageView_array_sea = NULL;
     }
 
     // Destroy vulkan Images
     // VALIDATION USE CASE 4: uncomment the given block to see the error
-    /* if(swapchainImage_array) {
-        for(uint32_t i = 0; i < swapchainImageCount; i++) {
-            if(swapchainImage_array[i]) {
-                vkDestroyImage(vkDevice, swapchainImage_array[i], NULL);
+    /* if(swapchainImage_array_sea) {
+        for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
+            if(swapchainImage_array_sea[i]) {
+                vkDestroyImage(vkDevice_sea, swapchainImage_array_sea[i], NULL);
                 fprintf(fptr, "uninitialize(): vkDestroyImage() Succeed for {%d}\n", i);
                 fflush(fptr);
-                swapchainImage_array[i] = VK_NULL_HANDLE;
+                swapchainImage_array_sea[i] = VK_NULL_HANDLE;
             }
         }
     } */
 
-    if(swapchainImage_array) {
-        free(swapchainImage_array);
+    if(swapchainImage_array_sea) {
+        free(swapchainImage_array_sea);
         fprintf(fptr, "uninitialize(): freed swapchainImage_array!.\n");
-        swapchainImage_array = NULL;
+        swapchainImage_array_sea = NULL;
     }
 
 
     // Destroy Vulkan Swapchain
-    if(vkSwapchainKHR) {
-        vkDestroySwapchainKHR(vkDevice, vkSwapchainKHR, NULL);
+    if(vkSwapchainKHR_sea) {
+        vkDestroySwapchainKHR(vkDevice_sea, vkSwapchainKHR_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDestroySwapchainKHR() Succeed!\n");
-        vkSwapchainKHR = VK_NULL_HANDLE;
+        vkSwapchainKHR_sea = VK_NULL_HANDLE;
     }
     
     // No need to destroy device queue
 
     // Destroy Vulkan Device
-    if(vkDevice) {
-        vkDestroyDevice(vkDevice, NULL);
+    if(vkDevice_sea) {
+        vkDestroyDevice(vkDevice_sea, NULL);
         fprintf(fptr, "uninitialize(): vkDestroyDevice() Succeed!\n");
-        vkDevice = VK_NULL_HANDLE;
+        vkDevice_sea = VK_NULL_HANDLE;
     }
     
     //No need to destroy selected physical device!
 
     // destroy surface
-    if(vkSurfaceKHR) {
-        vkDestroySurfaceKHR(vkInstance, vkSurfaceKHR, NULL);
-        vkSurfaceKHR = VK_NULL_HANDLE;
+    if(vkSurfaceKHR_sea) {
+        vkDestroySurfaceKHR(vkInstance_sea, vkSurfaceKHR_sea, NULL);
+        vkSurfaceKHR_sea = VK_NULL_HANDLE;
 		fprintf(fptr,"uninitialize(): vkDestroySurfaceKHR() Succeed\n");
     }
 
-    if(vkDebugReportCallbackEXT && vkDestroyDebugReportCallbackEXT_fnptr) {
-        vkDestroyDebugReportCallbackEXT_fnptr(vkInstance, vkDebugReportCallbackEXT, NULL);
-        vkDebugReportCallbackEXT = VK_NULL_HANDLE;
-        vkDestroyDebugReportCallbackEXT_fnptr = NULL;
+    if(vkDebugReportCallbackEXT_sea && vkDestroyDebugReportCallbackEXT_fnptr_sea) {
+        vkDestroyDebugReportCallbackEXT_fnptr_sea(vkInstance_sea, vkDebugReportCallbackEXT_sea, NULL);
+        vkDebugReportCallbackEXT_sea = VK_NULL_HANDLE;
+        vkDestroyDebugReportCallbackEXT_fnptr_sea = NULL;
         fprintf(fptr,"uninitialize(): vkDestroyDebugReportCallbackEXT_fnptr() Succeed\n");
     }
 
-    // destroy vkInstance
-    if(vkInstance) {
-        vkDestroyInstance(vkInstance, NULL);
-        vkInstance = VK_NULL_HANDLE;
+    // destroy vkInstance_sea
+    if(vkInstance_sea) {
+        vkDestroyInstance(vkInstance_sea, NULL);
+        vkInstance_sea = VK_NULL_HANDLE;
 		fprintf(fptr,"uninitialize(): vkDestroyInstance() Succeed\n");
     }
 
@@ -1457,8 +1457,8 @@ void uninitialize(void){
 
 void update(void) {
     // frame time, so transitions are frame-rate independent
-    static double lastTime = myClock.getElapsedTime();
-    double currentTime = myClock.getElapsedTime();
+    static double lastTime = myClock_sea.getElapsedTime();
+    double currentTime = myClock_sea.getElapsedTime();
     float deltaTime = (float)glm::clamp(currentTime - lastTime, 0.0, 0.1);
     lastTime = currentTime;
 
@@ -1497,7 +1497,7 @@ VkResult createVulkanInstance (void) {
         fprintf(fptr, "createVulkanInstance(): fillInstanceExtensionNames() Successful!.\n\n");
     }
 
-    if(bValidation == TRUE) {
+    if(bValidation_sea == TRUE) {
         //fill validation layers names
         vkResult = fillValidationLayerNames();
         if(vkResult != VK_SUCCESS) {
@@ -1527,20 +1527,20 @@ VkResult createVulkanInstance (void) {
     vkInstanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     vkInstanceCreateInfo.pNext = NULL;
     vkInstanceCreateInfo.pApplicationInfo = &vkApplicationInfo;
-    vkInstanceCreateInfo.enabledExtensionCount = enabledInstanceExtensionCount;
-    vkInstanceCreateInfo.ppEnabledExtensionNames = enabledInstanceExtensionNames_array;
+    vkInstanceCreateInfo.enabledExtensionCount = enabledInstanceExtensionCount_sea;
+    vkInstanceCreateInfo.ppEnabledExtensionNames = enabledInstanceExtensionNames_array_sea;
 
     // if validation layer is enabled/valid then fill data else keep it null
-    if(bValidation == TRUE) {
-        vkInstanceCreateInfo.enabledLayerCount = enabledValidationLayerCount;
-        vkInstanceCreateInfo.ppEnabledLayerNames = enabledValidationLayerNames_array;
+    if(bValidation_sea == TRUE) {
+        vkInstanceCreateInfo.enabledLayerCount = enabledValidationLayerCount_sea;
+        vkInstanceCreateInfo.ppEnabledLayerNames = enabledValidationLayerNames_array_sea;
     } else {
         vkInstanceCreateInfo.enabledLayerCount = 0;
         vkInstanceCreateInfo.ppEnabledLayerNames = NULL;
     }
 
     // Step 4: Create instance using vkCreateInstance
-    vkResult = vkCreateInstance(&vkInstanceCreateInfo, NULL, &vkInstance);
+    vkResult = vkCreateInstance(&vkInstanceCreateInfo, NULL, &vkInstance_sea);
     if(vkResult == VK_ERROR_INCOMPATIBLE_DRIVER) {
         fprintf(fptr, "createVulkanInstance(): vkCreateInstance() Failed Due to Incompatible Driver (%d)!.\n", vkResult);
         return (vkResult);
@@ -1555,7 +1555,7 @@ VkResult createVulkanInstance (void) {
     }
 
     // Step 5: Create Validation Layer Callback Function [ Do this for validation callbaaks ]
-    if(bValidation == TRUE) {
+    if(bValidation_sea == TRUE) {
         vkResult = createValidationCallbackFunction();
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "createVulkanInstance(): createValidationCallbackFunction() Failed!.\n");
@@ -1618,16 +1618,16 @@ VkResult fillInstanceExtensionNames (void) {
     for(uint32_t i = 0; i < instanceExtensionCount; i++) {
         if(strcmp(instanceExtensionNames_array[i], VK_KHR_SURFACE_EXTENSION_NAME) == 0) {
             surfaceExtensionFound = VK_TRUE;
-            enabledInstanceExtensionNames_array[enabledInstanceExtensionCount++] = VK_KHR_SURFACE_EXTENSION_NAME;
+            enabledInstanceExtensionNames_array_sea[enabledInstanceExtensionCount_sea++] = VK_KHR_SURFACE_EXTENSION_NAME;
         }
         if(strcmp(instanceExtensionNames_array[i], VK_KHR_WIN32_SURFACE_EXTENSION_NAME) ==  0) {
             win32vulkanSurfaceExtensionFound = VK_TRUE;
-            enabledInstanceExtensionNames_array[enabledInstanceExtensionCount++] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+            enabledInstanceExtensionNames_array_sea[enabledInstanceExtensionCount_sea++] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
         }
         if(strcmp(instanceExtensionNames_array[i], VK_EXT_DEBUG_REPORT_EXTENSION_NAME) ==  0) {
             debugReportExtensionFound = VK_TRUE;
-            if(bValidation == TRUE) {
-                enabledInstanceExtensionNames_array[enabledInstanceExtensionCount++] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+            if(bValidation_sea == TRUE) {
+                enabledInstanceExtensionNames_array_sea[enabledInstanceExtensionCount_sea++] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
             } else {
                 // array will not have entry of VK_EXT_DEBUG_REPORT_EXTENSION_NAME
             }
@@ -1658,7 +1658,7 @@ VkResult fillInstanceExtensionNames (void) {
     }
 
     if(debugReportExtensionFound == VK_FALSE) {
-        if(bValidation == TRUE) {
+        if(bValidation_sea == TRUE) {
             vkResult = VK_ERROR_INITIALIZATION_FAILED; // return hardcoded failure
             fprintf(fptr, "fillInstanceExtensionNames(): Validation is ON but VK_EXT_DEBUG_REPORT_EXTENSION_NAME Not Supported!.\n");
             return (vkResult);
@@ -1666,7 +1666,7 @@ VkResult fillInstanceExtensionNames (void) {
             fprintf(fptr, "fillInstanceExtensionNames(): Validation is OFF and VK_EXT_DEBUG_REPORT_EXTENSION_NAME Not Supported!.\n");
         }
     } else {
-        if(bValidation == TRUE) {
+        if(bValidation_sea == TRUE) {
             fprintf(fptr, "fillInstanceExtensionNames(): Validation is ON but VK_EXT_DEBUG_REPORT_EXTENSION_NAME is Supported!.\n");
         } else {
             fprintf(fptr, "fillInstanceExtensionNames(): Validation is OFF and VK_EXT_DEBUG_REPORT_EXTENSION_NAME is Supported!.\n");
@@ -1674,8 +1674,8 @@ VkResult fillInstanceExtensionNames (void) {
     }
 
     // step 8: print all the supported extensions
-    for(uint32_t i = 0; i < enabledInstanceExtensionCount; i++) {
-        fprintf(fptr, "fillInstanceExtensionNames(): Enabled Vulkan Instance Extension Name = %s \n", enabledInstanceExtensionNames_array[i]);
+    for(uint32_t i = 0; i < enabledInstanceExtensionCount_sea; i++) {
+        fprintf(fptr, "fillInstanceExtensionNames(): Enabled Vulkan Instance Extension Name = %s \n", enabledInstanceExtensionNames_array_sea[i]);
     }
 
     return vkResult;
@@ -1729,7 +1729,7 @@ VkResult fillValidationLayerNames(void) {
     for(uint32_t i = 0; i < validationLayerCount; i++) {
         if(strcmp(validationLayerNames_array[i], "VK_LAYER_KHRONOS_validation") == 0) {
             validationLayerFound = VK_TRUE;
-            enabledValidationLayerNames_array[enabledValidationLayerCount++] = "VK_LAYER_KHRONOS_validation";
+            enabledValidationLayerNames_array_sea[enabledValidationLayerCount_sea++] = "VK_LAYER_KHRONOS_validation";
         }
     }
 
@@ -1749,8 +1749,8 @@ VkResult fillValidationLayerNames(void) {
     }
 
     // step 8: print all the supported layers
-    for(uint32_t i = 0; i < enabledValidationLayerCount; i++) {
-        fprintf(fptr, "fillValidationLayerNames(): Enabled Vulkan Validation Layer Name = %s \n", enabledValidationLayerNames_array[i]);
+    for(uint32_t i = 0; i < enabledValidationLayerCount_sea; i++) {
+        fprintf(fptr, "fillValidationLayerNames(): Enabled Vulkan Validation Layer Name = %s \n", enabledValidationLayerNames_array_sea[i]);
     }
 
     return (vkResult);
@@ -1770,7 +1770,7 @@ VkResult createValidationCallbackFunction(void) {
 
     // code
     // get the required function pointers
-    vkCreateDebugReportCallbackEXT_fnptr = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(vkInstance, "vkCreateDebugReportCallbackEXT");
+    vkCreateDebugReportCallbackEXT_fnptr = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(vkInstance_sea, "vkCreateDebugReportCallbackEXT");
     if(vkCreateDebugReportCallbackEXT_fnptr == NULL) {
         vkResult = VK_ERROR_INITIALIZATION_FAILED; // return hardcoded failure
         fprintf(fptr, "createValidationCallbackFunction(): vkGetInstanceProcAddr() for vkCreateDebugReportCallbackEXT Failed!.\n");
@@ -1779,7 +1779,7 @@ VkResult createValidationCallbackFunction(void) {
         fprintf(fptr, "createValidationCallbackFunction(): vkGetInstanceProcAddr() for vkCreateDebugReportCallbackEXT Successful!.\n");
     }
 
-    vkDestroyDebugReportCallbackEXT_fnptr = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugReportCallbackEXT");
+    vkDestroyDebugReportCallbackEXT_fnptr_sea = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(vkInstance_sea, "vkDestroyDebugReportCallbackEXT");
     if(vkCreateDebugReportCallbackEXT_fnptr == NULL) {
         vkResult = VK_ERROR_INITIALIZATION_FAILED; // return hardcoded failure
         fprintf(fptr, "createValidationCallbackFunction(): vkGetInstanceProcAddr() for vkDestroyDebugReportCallbackEXT Failed!.\n");
@@ -1798,7 +1798,7 @@ VkResult createValidationCallbackFunction(void) {
     vkDebugReportCallbackCreateInfoEXT.pfnCallback = debugReportCallback;
     vkDebugReportCallbackCreateInfoEXT.pUserData = NULL;
 
-    vkResult = vkCreateDebugReportCallbackEXT_fnptr(vkInstance, &vkDebugReportCallbackCreateInfoEXT, NULL, &vkDebugReportCallbackEXT);
+    vkResult = vkCreateDebugReportCallbackEXT_fnptr(vkInstance_sea, &vkDebugReportCallbackCreateInfoEXT, NULL, &vkDebugReportCallbackEXT_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createValidationCallbackFunction(): vkCreateDebugReportCallbackEXT_fnptr() Failed!.\n");
         return (vkResult);
@@ -1826,10 +1826,10 @@ VkResult getSupportedSurface(void) {
     vkWin32SurfaceCreateInfoKHR.hwnd = ghwnd;
 
     vkResult = vkCreateWin32SurfaceKHR(
-        vkInstance, 
+        vkInstance_sea, 
         &vkWin32SurfaceCreateInfoKHR,
         NULL,
-        &vkSurfaceKHR
+        &vkSurfaceKHR_sea
     );
 
     if(vkResult != VK_SUCCESS) {
@@ -1848,11 +1848,11 @@ VkResult getPhysicalDevice() {
     VkResult vkResult = VK_SUCCESS;
 
     //code
-    vkResult = vkEnumeratePhysicalDevices(vkInstance, &physicalDeviceCount, NULL);
+    vkResult = vkEnumeratePhysicalDevices(vkInstance_sea, &physicalDeviceCount_sea, NULL);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "getPhysicalDevice(): vkEnumeratePhysicalDevices() First Call Failed!.\n");
         return (vkResult);
-    } else if(physicalDeviceCount == 0) {
+    } else if(physicalDeviceCount_sea == 0) {
         fprintf(fptr, "getPhysicalDevice(): vkEnumeratePhysicalDevices() Resulted in Zero Physical Devices!.\n");
         vkResult = VK_ERROR_INITIALIZATION_FAILED;
         return (vkResult);
@@ -1860,9 +1860,9 @@ VkResult getPhysicalDevice() {
         fprintf(fptr, "getPhysicalDevice(): vkEnumeratePhysicalDevices() First Call Successful!.\n");
     }
 
-    vkPhysicalDevice_array = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * physicalDeviceCount);
+    vkPhysicalDevice_array_sea = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * physicalDeviceCount_sea);
 
-    vkResult = vkEnumeratePhysicalDevices(vkInstance, &physicalDeviceCount, vkPhysicalDevice_array);
+    vkResult = vkEnumeratePhysicalDevices(vkInstance_sea, &physicalDeviceCount_sea, vkPhysicalDevice_array_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "getPhysicalDevice(): vkEnumeratePhysicalDevices() Second Call Failed!.\n");
         return (vkResult);
@@ -1872,22 +1872,22 @@ VkResult getPhysicalDevice() {
 
     VkBool32 bFound = VK_FALSE;
 
-    for(uint32_t i = 0; i < physicalDeviceCount; i++) {
+    for(uint32_t i = 0; i < physicalDeviceCount_sea; i++) {
         uint32_t queueCount = UINT32_MAX;
 
-        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice_array[i], &queueCount, NULL);
+        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice_array_sea[i], &queueCount, NULL);
         VkQueueFamilyProperties *vkQueueFamilyProperties_array = NULL;
         vkQueueFamilyProperties_array = (VkQueueFamilyProperties*)malloc(sizeof(VkQueueFamilyProperties) * queueCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice_array[i], &queueCount, vkQueueFamilyProperties_array);
+        vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice_array_sea[i], &queueCount, vkQueueFamilyProperties_array);
 
         VkBool32 *isQueueSurfaceSupported_array = NULL;
         isQueueSurfaceSupported_array = (VkBool32*)malloc(sizeof(VkBool32) * queueCount);
 
         for(uint32_t j = 0; j < queueCount; j++) {
             vkGetPhysicalDeviceSurfaceSupportKHR(
-                vkPhysicalDevice_array[i],
+                vkPhysicalDevice_array_sea[i],
                 j,
-                vkSurfaceKHR,
+                vkSurfaceKHR_sea,
                 &isQueueSurfaceSupported_array[j]
             );
         }
@@ -1895,8 +1895,8 @@ VkResult getPhysicalDevice() {
         for(uint32_t j = 0; j < queueCount; j++) {
             if(vkQueueFamilyProperties_array[j].queueFlags & VK_QUEUE_GRAPHICS_BIT
                 && isQueueSurfaceSupported_array[j] == VK_TRUE) {
-                vkPhysicalDevice_selected = vkPhysicalDevice_array[i];
-                graphicsQueueFamilyIndex_selected = j;
+                vkPhysicalDevice_selected_sea = vkPhysicalDevice_array_sea[i];
+                graphicsQueueFamilyIndex_selected_sea = j;
                 bFound = VK_TRUE;
                 break;
             }
@@ -1923,9 +1923,9 @@ VkResult getPhysicalDevice() {
     if(bFound == VK_TRUE) {
         fprintf(fptr, "getPhysicalDevice(): Successful to get required graphics enabled physical device!.\n");
     } else {
-        if(vkPhysicalDevice_array) {
-            free(vkPhysicalDevice_array);
-            vkPhysicalDevice_array = NULL;
+        if(vkPhysicalDevice_array_sea) {
+            free(vkPhysicalDevice_array_sea);
+            vkPhysicalDevice_array_sea = NULL;
             fprintf(fptr, "getPhysicalDevice(): freed vkPhysicalDevice_array!.\n");
         }
         fprintf(fptr, "getPhysicalDevice(): Failed to get required graphics enabled physical device!.\n");
@@ -1933,14 +1933,14 @@ VkResult getPhysicalDevice() {
         return (vkResult);
     }
 
-    memset((void*)&vkPhysicalDeviceMemoryProperties, 0, sizeof(VkPhysicalDeviceMemoryProperties));
+    memset((void*)&vkPhysicalDeviceMemoryProperties_sea, 0, sizeof(VkPhysicalDeviceMemoryProperties));
 
-    vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice_selected, &vkPhysicalDeviceMemoryProperties);
+    vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice_selected_sea, &vkPhysicalDeviceMemoryProperties_sea);
 
     VkPhysicalDeviceFeatures vkPhysicalDeviceFeatures;
     memset((void*)&vkPhysicalDeviceFeatures, 0, sizeof(VkPhysicalDeviceFeatures));
 
-    vkGetPhysicalDeviceFeatures(vkPhysicalDevice_selected, &vkPhysicalDeviceFeatures);
+    vkGetPhysicalDeviceFeatures(vkPhysicalDevice_selected_sea, &vkPhysicalDeviceFeatures);
 
     if(vkPhysicalDeviceFeatures.tessellationShader == VK_TRUE) {
         fprintf(fptr, "getPhysicalDevice(): Selected Physical Device Supports Tessellation Shader!.\n");
@@ -1964,12 +1964,12 @@ VkResult printVKInfo (void) {
     // code
     fprintf(fptr, "printVKInfo(): Printing Vulkan Info: \n\n");
 
-    for(uint32_t i = 0; i < physicalDeviceCount; i++) {
+    for(uint32_t i = 0; i < physicalDeviceCount_sea; i++) {
 
         VkPhysicalDeviceProperties vkPhysicalDeviceProperties;
         memset((void*)&vkPhysicalDeviceProperties, 0, sizeof(VkPhysicalDeviceProperties));
 
-        vkGetPhysicalDeviceProperties(vkPhysicalDevice_array[i], &vkPhysicalDeviceProperties);
+        vkGetPhysicalDeviceProperties(vkPhysicalDevice_array_sea[i], &vkPhysicalDeviceProperties);
 
         uint32_t majorVersion = VK_API_VERSION_MAJOR(vkPhysicalDeviceProperties.apiVersion);
         uint32_t minorVersion = VK_API_VERSION_MINOR(vkPhysicalDeviceProperties.apiVersion);
@@ -2017,9 +2017,9 @@ VkResult printVKInfo (void) {
         fprintf(fptr, "\n");
     }
 
-    if(vkPhysicalDevice_array) {
-        free(vkPhysicalDevice_array);
-        vkPhysicalDevice_array = NULL;
+    if(vkPhysicalDevice_array_sea) {
+        free(vkPhysicalDevice_array_sea);
+        vkPhysicalDevice_array_sea = NULL;
         fprintf(fptr, "printVKInfo(): freed vkPhysicalDevice_array!.\n");
     }
 
@@ -2033,7 +2033,7 @@ VkResult fillDeviceExtensionNames (void) {
     // Step 1: Find how many devices extension are supported by this vulkan driver & keep it in local variable
     uint32_t devicesExtensionCount = 0;
 
-    vkResult = vkEnumerateDeviceExtensionProperties(vkPhysicalDevice_selected, NULL, &devicesExtensionCount, NULL);
+    vkResult = vkEnumerateDeviceExtensionProperties(vkPhysicalDevice_selected_sea, NULL, &devicesExtensionCount, NULL);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "fillDeviceExtensionNames(): vkEnumerateDeviceExtensionProperties() First Call Failed!.\n");
         return (vkResult);
@@ -2044,7 +2044,7 @@ VkResult fillDeviceExtensionNames (void) {
     // step 2: Allocate & fill struct vk Extenstions array correspoinding to above count
     VkExtensionProperties *vkExtensionProperties_array = NULL;
     vkExtensionProperties_array = (VkExtensionProperties*)malloc(sizeof(VkExtensionProperties) * devicesExtensionCount);
-    vkResult = vkEnumerateDeviceExtensionProperties(vkPhysicalDevice_selected, NULL, &devicesExtensionCount, vkExtensionProperties_array);
+    vkResult = vkEnumerateDeviceExtensionProperties(vkPhysicalDevice_selected_sea, NULL, &devicesExtensionCount, vkExtensionProperties_array);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "fillDeviceExtensionNames(): vkEnumerateDeviceExtensionProperties() Second Call Failed!.\n");
         return (vkResult);
@@ -2077,7 +2077,7 @@ VkResult fillDeviceExtensionNames (void) {
     for(uint32_t i = 0; i < devicesExtensionCount; i++) {
         if(strcmp(deviceExtensionNames_array[i], VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
             vulkanSwapchainExtensionFound = VK_TRUE;
-            enabledDeviceExtensionNames_array[enabledDeviceExtensionCount++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+            enabledDeviceExtensionNames_array_sea[enabledDeviceExtensionCount_sea++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
         }
     }
 
@@ -2097,8 +2097,8 @@ VkResult fillDeviceExtensionNames (void) {
     }
 
     // step 8:
-    for(uint32_t i = 0; i < enabledDeviceExtensionCount; i++) {
-        fprintf(fptr, "fillDeviceExtensionNames(): Enabled Vulkan Device Extension Name = %s \n", enabledDeviceExtensionNames_array[i]);
+    for(uint32_t i = 0; i < enabledDeviceExtensionCount_sea; i++) {
+        fprintf(fptr, "fillDeviceExtensionNames(): Enabled Vulkan Device Extension Name = %s \n", enabledDeviceExtensionNames_array_sea[i]);
     }
 
     return vkResult;
@@ -2128,7 +2128,7 @@ VkResult createVulkanDevice () {
     vkDeviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     vkDeviceQueueCreateInfo.pNext = 0;
     vkDeviceQueueCreateInfo.flags = 0;
-    vkDeviceQueueCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex_selected;
+    vkDeviceQueueCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex_selected_sea;
     vkDeviceQueueCreateInfo.queueCount = 1;
     vkDeviceQueueCreateInfo.pQueuePriorities = queuePriorities;
 
@@ -2139,8 +2139,8 @@ VkResult createVulkanDevice () {
     vkDeviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     vkDeviceCreateInfo.pNext = NULL;
     vkDeviceCreateInfo.flags = 0;
-    vkDeviceCreateInfo.enabledExtensionCount = enabledDeviceExtensionCount;
-    vkDeviceCreateInfo.ppEnabledExtensionNames = enabledDeviceExtensionNames_array;
+    vkDeviceCreateInfo.enabledExtensionCount = enabledDeviceExtensionCount_sea;
+    vkDeviceCreateInfo.ppEnabledExtensionNames = enabledDeviceExtensionNames_array_sea;
     vkDeviceCreateInfo.enabledLayerCount = 0; // these are deprecated in current version
     vkDeviceCreateInfo.ppEnabledLayerNames = NULL; // these are deprecated in current version
     vkDeviceCreateInfo.pEnabledFeatures = NULL;
@@ -2149,9 +2149,9 @@ VkResult createVulkanDevice () {
     vkDeviceCreateInfo.pQueueCreateInfos = &vkDeviceQueueCreateInfo;
 
     vkResult = vkCreateDevice(
-        vkPhysicalDevice_selected,
+        vkPhysicalDevice_selected_sea,
         &vkDeviceCreateInfo,
-        NULL, &vkDevice
+        NULL, &vkDevice_sea
     );
 
     if(vkResult != VK_SUCCESS) {
@@ -2167,12 +2167,12 @@ VkResult createVulkanDevice () {
 void getDeviceQueue (void) {
 
     vkGetDeviceQueue(
-        vkDevice,
-        graphicsQueueFamilyIndex_selected,
-        0, &vkQueue
+        vkDevice_sea,
+        graphicsQueueFamilyIndex_selected_sea,
+        0, &vkQueue_sea
     );
 
-    if(vkQueue == VK_NULL_HANDLE) {
+    if(vkQueue_sea == VK_NULL_HANDLE) {
         fprintf(fptr, "getDeviceQueue(): vkGetDeviceQueue() Failed!.\n");
     } else {
         fprintf(fptr, "getDeviceQueue(): vkGetDeviceQueue() Successful!.\n\n");
@@ -2190,8 +2190,8 @@ VkResult getPhysicalDeviceSurfaceFormatAndColorSpace (void) {
 
     // get the count of supported color formats
     vkResult = vkGetPhysicalDeviceSurfaceFormatsKHR(
-        vkPhysicalDevice_selected, 
-        vkSurfaceKHR, &formatCount,
+        vkPhysicalDevice_selected_sea, 
+        vkSurfaceKHR_sea, &formatCount,
         NULL
     );
 
@@ -2209,8 +2209,8 @@ VkResult getPhysicalDeviceSurfaceFormatAndColorSpace (void) {
     
     // fill the allocated array with supported formats
     vkResult = vkGetPhysicalDeviceSurfaceFormatsKHR(
-        vkPhysicalDevice_selected, 
-        vkSurfaceKHR, &formatCount,
+        vkPhysicalDevice_selected_sea, 
+        vkSurfaceKHR_sea, &formatCount,
         vkSurfaceFormatKHR_array
     );
     if(vkResult != VK_SUCCESS) {
@@ -2221,13 +2221,13 @@ VkResult getPhysicalDeviceSurfaceFormatAndColorSpace (void) {
 
     // Decide the surface color format first!
     if(formatCount == 1 && vkSurfaceFormatKHR_array[0].format == VK_FORMAT_UNDEFINED) {
-        vkFormat_color = VK_FORMAT_B8G8R8G8_422_UNORM;
+        vkFormat_color_sea = VK_FORMAT_B8G8R8G8_422_UNORM;
     } else {
-        vkFormat_color = vkSurfaceFormatKHR_array[0].format;
+        vkFormat_color_sea = vkSurfaceFormatKHR_array[0].format;
     }
 
     // Decide the Color Space
-    vkColorSpaceKHR = vkSurfaceFormatKHR_array[0].colorSpace;
+    vkColorSpaceKHR_sea = vkSurfaceFormatKHR_array[0].colorSpace;
 
     if(vkSurfaceFormatKHR_array) {
         free(vkSurfaceFormatKHR_array);
@@ -2246,8 +2246,8 @@ VkResult getPhysicalDeviceSurfacePresentMode(void) {
 
     //code
     vkResult = vkGetPhysicalDeviceSurfacePresentModesKHR(
-        vkPhysicalDevice_selected, 
-        vkSurfaceKHR, &modeCount,
+        vkPhysicalDevice_selected_sea, 
+        vkSurfaceKHR_sea, &modeCount,
         NULL
     );
     if(vkResult != VK_SUCCESS) {
@@ -2264,8 +2264,8 @@ VkResult getPhysicalDeviceSurfacePresentMode(void) {
 
     // fill the allocated array with supported present modes
     vkResult = vkGetPhysicalDeviceSurfacePresentModesKHR(
-        vkPhysicalDevice_selected, 
-        vkSurfaceKHR, &modeCount,
+        vkPhysicalDevice_selected_sea, 
+        vkSurfaceKHR_sea, &modeCount,
         vkPresentModeKHR_array
     );
     if(vkResult != VK_SUCCESS) {
@@ -2276,15 +2276,15 @@ VkResult getPhysicalDeviceSurfacePresentMode(void) {
 
     for(uint32_t i = 0 ;  i < modeCount; i++) {
         if(vkPresentModeKHR_array[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-            vkPresentModeKHR = vkPresentModeKHR_array[i];
+            vkPresentModeKHR_sea = vkPresentModeKHR_array[i];
             fprintf(fptr, "getPhysicalDeviceSurfacePresentMode(): VK_PRESENT_MODE_MAILBOX_KHR Present Mode found!.\n");
             break;
         }
     }
 
-    if(vkPresentModeKHR != VK_PRESENT_MODE_MAILBOX_KHR) {
+    if(vkPresentModeKHR_sea != VK_PRESENT_MODE_MAILBOX_KHR) {
         // since we don't have mailbox as supported format let's settle for FIFO then!
-        vkPresentModeKHR = VK_PRESENT_MODE_FIFO_KHR;
+        vkPresentModeKHR_sea = VK_PRESENT_MODE_FIFO_KHR;
         fprintf(fptr, "getPhysicalDeviceSurfacePresentMode(): Present Mode set to VK_PRESENT_MODE_FIFO_KHR!.\n");
     }
 
@@ -2320,7 +2320,7 @@ VkResult createSwapchain (VkBool32 vSync) {
     VkSurfaceCapabilitiesKHR vkSurfaceCapabilitiesKHR;
     memset((void*)&vkSurfaceCapabilitiesKHR, 0, sizeof(VkSurfaceCapabilitiesKHR));
 
-    vkResult = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice_selected, vkSurfaceKHR, &vkSurfaceCapabilitiesKHR);
+    vkResult = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice_selected_sea, vkSurfaceKHR_sea, &vkSurfaceCapabilitiesKHR);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createSwapchain(): vkGetPhysicalDeviceSurfaceCapabilitiesKHR() Failed!.\n");
         return (vkResult);
@@ -2346,32 +2346,32 @@ VkResult createSwapchain (VkBool32 vSync) {
     );
 
     // Decide Size of Swapchain Image using currentExtent Size & window Size
-    memset((void*)&vkExtent2D_swapchain, 0, sizeof(VkExtent2D));
+    memset((void*)&vkExtent2D_swapchain_sea, 0, sizeof(VkExtent2D));
 
     if(vkSurfaceCapabilitiesKHR.currentExtent.width != UINT32_MAX) {
-        vkExtent2D_swapchain.width = vkSurfaceCapabilitiesKHR.currentExtent.width;
-        vkExtent2D_swapchain.height = vkSurfaceCapabilitiesKHR.currentExtent.height;
+        vkExtent2D_swapchain_sea.width = vkSurfaceCapabilitiesKHR.currentExtent.width;
+        vkExtent2D_swapchain_sea.height = vkSurfaceCapabilitiesKHR.currentExtent.height;
 
         fprintf(
             fptr, 
             "createSwapchain(): Swapchain Image Width : %d X Height : %d\n", 
-            vkExtent2D_swapchain.width, vkExtent2D_swapchain.height
+            vkExtent2D_swapchain_sea.width, vkExtent2D_swapchain_sea.height
         );
     } else {
         // if surface size is already defined then swapchain image size must match with it!
         VkExtent2D vkExtent2D;
         memset((void*)&vkExtent2D, 0, sizeof(VkExtent2D));
 
-        vkExtent2D.width = (uint32_t)winWidth;
-        vkExtent2D.height = (uint32_t)winHeight;
+        vkExtent2D.width = (uint32_t)winWidth_sea;
+        vkExtent2D.height = (uint32_t)winHeight_sea;
 
-        vkExtent2D_swapchain.width = glm::max(vkSurfaceCapabilitiesKHR.minImageExtent.width, glm::min(vkSurfaceCapabilitiesKHR.maxImageExtent.width, vkExtent2D.width));
-        vkExtent2D_swapchain.height = glm::max(vkSurfaceCapabilitiesKHR.minImageExtent.height, glm::min(vkSurfaceCapabilitiesKHR.maxImageExtent.height, vkExtent2D.height));
+        vkExtent2D_swapchain_sea.width = glm::max(vkSurfaceCapabilitiesKHR.minImageExtent.width, glm::min(vkSurfaceCapabilitiesKHR.maxImageExtent.width, vkExtent2D.width));
+        vkExtent2D_swapchain_sea.height = glm::max(vkSurfaceCapabilitiesKHR.minImageExtent.height, glm::min(vkSurfaceCapabilitiesKHR.maxImageExtent.height, vkExtent2D.height));
 
         fprintf(
             fptr, 
             "createSwapchain(): Swapchain Image (Derived from best of minImageExtent, maxImageExtent & Window Size) Width  : %d X Height : %d\n", 
-            vkExtent2D_swapchain.width, vkExtent2D_swapchain.height
+            vkExtent2D_swapchain_sea.width, vkExtent2D_swapchain_sea.height
         );
     }
 
@@ -2403,21 +2403,21 @@ VkResult createSwapchain (VkBool32 vSync) {
     vkSwapchainCreateInfoKHR.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     vkSwapchainCreateInfoKHR.pNext = NULL;
     vkSwapchainCreateInfoKHR.flags = 0;
-    vkSwapchainCreateInfoKHR.surface = vkSurfaceKHR;
+    vkSwapchainCreateInfoKHR.surface = vkSurfaceKHR_sea;
     vkSwapchainCreateInfoKHR.minImageCount = desiredNumberOfSwapchainImages;
-    vkSwapchainCreateInfoKHR.imageFormat = vkFormat_color;
-    vkSwapchainCreateInfoKHR.imageColorSpace = vkColorSpaceKHR;
-    vkSwapchainCreateInfoKHR.imageExtent.width = vkExtent2D_swapchain.width;
-    vkSwapchainCreateInfoKHR.imageExtent.height = vkExtent2D_swapchain.height;
+    vkSwapchainCreateInfoKHR.imageFormat = vkFormat_color_sea;
+    vkSwapchainCreateInfoKHR.imageColorSpace = vkColorSpaceKHR_sea;
+    vkSwapchainCreateInfoKHR.imageExtent.width = vkExtent2D_swapchain_sea.width;
+    vkSwapchainCreateInfoKHR.imageExtent.height = vkExtent2D_swapchain_sea.height;
     vkSwapchainCreateInfoKHR.imageUsage = vkImageUsageFlags;
     vkSwapchainCreateInfoKHR.preTransform = vkSurfaceTransformFlagBitsKHR;
     vkSwapchainCreateInfoKHR.imageArrayLayers = 1;
     vkSwapchainCreateInfoKHR.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     vkSwapchainCreateInfoKHR.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    vkSwapchainCreateInfoKHR.presentMode = vkPresentModeKHR;
+    vkSwapchainCreateInfoKHR.presentMode = vkPresentModeKHR_sea;
     vkSwapchainCreateInfoKHR.clipped = VK_TRUE;
 
-    vkResult = vkCreateSwapchainKHR(vkDevice, &vkSwapchainCreateInfoKHR, NULL, &vkSwapchainKHR);
+    vkResult = vkCreateSwapchainKHR(vkDevice_sea, &vkSwapchainCreateInfoKHR, NULL, &vkSwapchainKHR_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createSwapchain(): vkCreateSwapchainKHR() Failed!.\n");
         return (vkResult);
@@ -2437,23 +2437,23 @@ VkResult createSwapchainImagesAndImageViews(void) {
 
     // code
     // Step 1: Get Swapchain Image Count
-    vkResult = vkGetSwapchainImagesKHR(vkDevice, vkSwapchainKHR, &swapchainImageCount, NULL);
+    vkResult = vkGetSwapchainImagesKHR(vkDevice_sea, vkSwapchainKHR_sea, &swapchainImageCount_sea, NULL);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() First Call Failed!.\n");
         return (vkResult);
-    } else if( swapchainImageCount == 0) {
+    } else if( swapchainImageCount_sea == 0) {
         fprintf(fptr, "createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Failed: 0 Swapchain Images found!.\n");
         vkResult = VK_ERROR_INITIALIZATION_FAILED;
         return (vkResult);
     } else {
-        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Successful!. : Swapchain Image Count : [%d]\n", swapchainImageCount);
+        fprintf(fptr, "createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Successful!. : Swapchain Image Count : [%d]\n", swapchainImageCount_sea);
     }
 
     // Step 2: Allocate Swapchain Image Array
-    swapchainImage_array = (VkImage*)malloc(sizeof(VkImage) * swapchainImageCount);
+    swapchainImage_array_sea = (VkImage*)malloc(sizeof(VkImage) * swapchainImageCount_sea);
 
     // Step 3: Fill Swapchain Image Array
-    vkResult = vkGetSwapchainImagesKHR(vkDevice, vkSwapchainKHR, &swapchainImageCount, swapchainImage_array);
+    vkResult = vkGetSwapchainImagesKHR(vkDevice_sea, vkSwapchainKHR_sea, &swapchainImageCount_sea, swapchainImage_array_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Second Call Failed!.\n");
         return (vkResult);
@@ -2462,7 +2462,7 @@ VkResult createSwapchainImagesAndImageViews(void) {
     }
 
     // Setp 4: Allocate Swapchain Image Views Array
-    swapchainImageView_array = (VkImageView*)malloc(sizeof(VkImageView) * swapchainImageCount);
+    swapchainImageView_array_sea = (VkImageView*)malloc(sizeof(VkImageView) * swapchainImageCount_sea);
 
     // Step 5: vkCreateImageView for each Swapchain Image
     VkImageViewCreateInfo vkImageViewCreateInfo;
@@ -2471,7 +2471,7 @@ VkResult createSwapchainImagesAndImageViews(void) {
     vkImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     vkImageViewCreateInfo.pNext = NULL;
     vkImageViewCreateInfo.flags = 0;
-    vkImageViewCreateInfo.format = vkFormat_color;
+    vkImageViewCreateInfo.format = vkFormat_color_sea;
     vkImageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_R;
     vkImageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_G;
     vkImageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_B;
@@ -2484,9 +2484,9 @@ VkResult createSwapchainImagesAndImageViews(void) {
     vkImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 
     // Step 6: Fill Imafe view Array  using above struct
-    for(uint32_t i = 0; i < swapchainImageCount; i++) {
-        vkImageViewCreateInfo.image = swapchainImage_array[i];
-        vkResult = vkCreateImageView(vkDevice, &vkImageViewCreateInfo, NULL, &swapchainImageView_array[i]);
+    for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
+        vkImageViewCreateInfo.image = swapchainImage_array_sea[i];
+        vkResult = vkCreateImageView(vkDevice_sea, &vkImageViewCreateInfo, NULL, &swapchainImageView_array_sea[i]);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "createSwapchainImagesAndImageViews(): vkCreateImageView() Failed at {%d}!.\n", i);
             return (vkResult);
@@ -2513,9 +2513,9 @@ VkResult createSwapchainImagesAndImageViews(void) {
     vkImageCreateInfo.pNext = NULL;
     vkImageCreateInfo.flags = 0;
     vkImageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-    vkImageCreateInfo.format = vkFormat_depth;
-    vkImageCreateInfo.extent.width = winWidth;
-    vkImageCreateInfo.extent.height = winHeight;
+    vkImageCreateInfo.format = vkFormat_depth_sea;
+    vkImageCreateInfo.extent.width = winWidth_sea;
+    vkImageCreateInfo.extent.height = winHeight_sea;
     vkImageCreateInfo.extent.depth = 1;
     vkImageCreateInfo.mipLevels = 1;
     vkImageCreateInfo.arrayLayers = 1;
@@ -2523,7 +2523,7 @@ VkResult createSwapchainImagesAndImageViews(void) {
     vkImageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     vkImageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-    vkResult = vkCreateImage(vkDevice, &vkImageCreateInfo, NULL, &vkImage_depth);
+    vkResult = vkCreateImage(vkDevice_sea, &vkImageCreateInfo, NULL, &vkImage_depth_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createSwapchainImagesAndImageViews(): vkCreateImage() Failed for Depth Image!.\n");
         return (vkResult);
@@ -2535,7 +2535,7 @@ VkResult createSwapchainImagesAndImageViews(void) {
     VkMemoryRequirements vkMemoryRequirements;
     memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
 
-    vkGetImageMemoryRequirements(vkDevice, vkImage_depth, &vkMemoryRequirements);
+    vkGetImageMemoryRequirements(vkDevice_sea, vkImage_depth_sea, &vkMemoryRequirements);
 
     // Step 6
     VkMemoryAllocateInfo vkMemoryAllocateInfo;
@@ -2547,11 +2547,11 @@ VkResult createSwapchainImagesAndImageViews(void) {
     vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
 
     // Step A 
-    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties_sea.memoryTypeCount; i++) {
         // Step B
         if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
             // Step C
-            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+            if(vkPhysicalDeviceMemoryProperties_sea.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
                 // Step D
                 vkMemoryAllocateInfo.memoryTypeIndex = i;
                 break;
@@ -2562,7 +2562,7 @@ VkResult createSwapchainImagesAndImageViews(void) {
     }
 
     //Setp 9
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vkDeviceMemory_depth);
+    vkResult = vkAllocateMemory(vkDevice_sea, &vkMemoryAllocateInfo, NULL, &vkDeviceMemory_depth_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createSwapchainImagesAndImageViews(): vkAllocateMemory() Failed!.\n");
         return (vkResult);
@@ -2571,7 +2571,7 @@ VkResult createSwapchainImagesAndImageViews(void) {
     }
 
     // Step 10
-    vkResult = vkBindImageMemory(vkDevice, vkImage_depth, vkDeviceMemory_depth, 0);
+    vkResult = vkBindImageMemory(vkDevice_sea, vkImage_depth_sea, vkDeviceMemory_depth_sea, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createSwapchainImagesAndImageViews(): vkBindDev() Failed!.\n");
         return (vkResult);
@@ -2585,16 +2585,16 @@ VkResult createSwapchainImagesAndImageViews(void) {
     vkImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     vkImageViewCreateInfo.pNext = NULL;
     vkImageViewCreateInfo.flags = 0;
-    vkImageViewCreateInfo.format = vkFormat_depth;
+    vkImageViewCreateInfo.format = vkFormat_depth_sea;
     vkImageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     vkImageViewCreateInfo.subresourceRange.baseMipLevel = 0;
     vkImageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
     vkImageViewCreateInfo.subresourceRange.layerCount = 1;
     vkImageViewCreateInfo.subresourceRange.levelCount = 1;
     vkImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    vkImageViewCreateInfo.image = vkImage_depth;
+    vkImageViewCreateInfo.image = vkImage_depth_sea;
 
-    vkResult = vkCreateImageView(vkDevice, &vkImageViewCreateInfo, NULL, &vkImageView_depth);
+    vkResult = vkCreateImageView(vkDevice_sea, &vkImageViewCreateInfo, NULL, &vkImageView_depth_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createSwapchainImagesAndImageViews(): vkCreateImageView() Failed for Depth Image!.\n");
         return (vkResult);
@@ -2622,11 +2622,11 @@ VkResult getSupportedDepthFormat(void) {
         VkFormatProperties vkFormatProperties;
         memset((void*)&vkFormatProperties, 0, sizeof(VkFormatProperties));
 
-        vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice_selected, vkFormat_depth_array[i], &vkFormatProperties);
+        vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice_selected_sea, vkFormat_depth_array[i], &vkFormatProperties);
 
         if(vkFormatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-            vkFormat_depth = vkFormat_depth_array[i];
-            fprintf(fptr, "getSupportedDepthFormat(): Supported Depth Format Found: %d\n", vkFormat_depth);
+            vkFormat_depth_sea = vkFormat_depth_array[i];
+            fprintf(fptr, "getSupportedDepthFormat(): Supported Depth Format Found: %d\n", vkFormat_depth_sea);
             vkResult = VK_SUCCESS;
             break;
         }
@@ -2645,9 +2645,9 @@ VkResult createCommandPool(void) {
     vkCommandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     vkCommandPoolCreateInfo.pNext = NULL;
     vkCommandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    vkCommandPoolCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex_selected;
+    vkCommandPoolCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex_selected_sea;
 
-    vkResult = vkCreateCommandPool(vkDevice, &vkCommandPoolCreateInfo, NULL, &vkCommandPool);
+    vkResult = vkCreateCommandPool(vkDevice_sea, &vkCommandPoolCreateInfo, NULL, &vkCommandPool_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createCommandPool(): vkCreateCommandPool() Failed!.\n");
         return (vkResult);
@@ -2668,16 +2668,16 @@ VkResult createCommandBuffers(void) {
 
     vkCommandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     vkCommandBufferAllocateInfo.pNext = NULL;
-    vkCommandBufferAllocateInfo.commandPool = vkCommandPool;
+    vkCommandBufferAllocateInfo.commandPool = vkCommandPool_sea;
     vkCommandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vkCommandBufferAllocateInfo.commandBufferCount = 1;
 
-    // Step 2: Allocate Command Buffer Array to the size of swapchainImageCount
-    vkCommandBuffer_array = (VkCommandBuffer*)malloc(sizeof(VkCommandBuffer) * swapchainImageCount);
+    // Step 2: Allocate Command Buffer Array to the size of swapchainImageCount_sea
+    vkCommandBuffer_array_sea = (VkCommandBuffer*)malloc(sizeof(VkCommandBuffer) * swapchainImageCount_sea);
 
     // Step 3: Allocat eeach command buffer in loop with allocateInfo struct
-    for(uint32_t i = 0; i < swapchainImageCount; i++) {
-        vkResult = vkAllocateCommandBuffers(vkDevice, &vkCommandBufferAllocateInfo, &vkCommandBuffer_array[i]);
+    for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
+        vkResult = vkAllocateCommandBuffers(vkDevice_sea, &vkCommandBufferAllocateInfo, &vkCommandBuffer_array_sea[i]);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "createCommandBuffers(): vkCreatvkAllocateCommandBufferseImageView() Failed at {%d}!.\n", i);
             return (vkResult);
@@ -2695,34 +2695,34 @@ VkResult createVertexBuffer(void) {
     VkResult vkResult = VK_SUCCESS;
 
     // Step 1
-    vertexData_array.clear();
+    vertexData_array_sea.clear();
 
-    int seg = segmentCount > 0 ? segmentCount : 1;
-    float step = (2.0f * halfSize) / (float)seg;
+    int seg = segmentCount_sea > 0 ? segmentCount_sea : 1;
+    float step = (2.0f * halfSize_sea) / (float)seg;
 
     // Generate non-indexed triangle list: each cell -> two triangles (6 vertices)
     for (int i = 0; i < seg; ++i) {
-        float y0 = -halfSize + i * step;
-        float y1 = -halfSize + (i + 1) * step;
+        float y0 = -halfSize_sea + i * step;
+        float y1 = -halfSize_sea + (i + 1) * step;
         for (int j = 0; j < seg; ++j) {
-            float x0 = -halfSize + j * step;
-            float x1 = -halfSize + (j + 1) * step;
+            float x0 = -halfSize_sea + j * step;
+            float x1 = -halfSize_sea + (j + 1) * step;
 
             // Triangle 1: (x0,y0), (x1,y0), (x1,y1)
-            vertexData_array.push_back(glm::vec3(x0, y0, 0.0f));
-            vertexData_array.push_back(glm::vec3(x1, y0, 0.0f));
-            vertexData_array.push_back(glm::vec3(x1, y1, 0.0f));
+            vertexData_array_sea.push_back(glm::vec3(x0, y0, 0.0f));
+            vertexData_array_sea.push_back(glm::vec3(x1, y0, 0.0f));
+            vertexData_array_sea.push_back(glm::vec3(x1, y1, 0.0f));
 
             // Triangle 2: (x0,y0), (x1,y1), (x0,y1)
-            vertexData_array.push_back(glm::vec3(x0, y0, 0.0f));
-            vertexData_array.push_back(glm::vec3(x1, y1, 0.0f));
-            vertexData_array.push_back(glm::vec3(x0, y1, 0.0f));
+            vertexData_array_sea.push_back(glm::vec3(x0, y0, 0.0f));
+            vertexData_array_sea.push_back(glm::vec3(x1, y1, 0.0f));
+            vertexData_array_sea.push_back(glm::vec3(x0, y1, 0.0f));
         }
     }
 
     // VertexData for Triangle Position
     // Step 2
-    memset((void*)&vertexData_position, 0, sizeof(VertexData));
+    memset((void*)&vertexData_position_sea, 0, sizeof(VertexData));
 
     // Step 3
     VkBufferCreateInfo vkBufferCreateInfo;
@@ -2731,11 +2731,11 @@ VkResult createVertexBuffer(void) {
     vkBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCreateInfo.pNext = NULL;
     vkBufferCreateInfo.flags = 0; // No flags, Valid Flags are used in scattered buffer
-    vkBufferCreateInfo.size = vertexData_array.size() * sizeof(glm::vec3);
+    vkBufferCreateInfo.size = vertexData_array_sea.size() * sizeof(glm::vec3);
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     
     // Setp 4
-    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &vertexData_position.vkBuffer);
+    vkResult = vkCreateBuffer(vkDevice_sea, &vkBufferCreateInfo, NULL, &vertexData_position_sea.vkBuffer);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkCreateBuffer() Failed for Position!.\n");
         return (vkResult);
@@ -2747,7 +2747,7 @@ VkResult createVertexBuffer(void) {
     VkMemoryRequirements vkMemoryRequirements;
     memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
 
-    vkGetBufferMemoryRequirements(vkDevice, vertexData_position.vkBuffer, &vkMemoryRequirements);
+    vkGetBufferMemoryRequirements(vkDevice_sea, vertexData_position_sea.vkBuffer, &vkMemoryRequirements);
 
     // Step 6
     VkMemoryAllocateInfo vkMemoryAllocateInfo;
@@ -2759,11 +2759,11 @@ VkResult createVertexBuffer(void) {
     vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
 
     // Step A 
-    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties_sea.memoryTypeCount; i++) {
         // Step B
         if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
             // Step C
-            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+            if(vkPhysicalDeviceMemoryProperties_sea.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
                 // Step D
                 vkMemoryAllocateInfo.memoryTypeIndex = i;
                 break;
@@ -2774,7 +2774,7 @@ VkResult createVertexBuffer(void) {
     }
 
     //Setp 9
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &vertexData_position.vkDeviceMemory);
+    vkResult = vkAllocateMemory(vkDevice_sea, &vkMemoryAllocateInfo, NULL, &vertexData_position_sea.vkDeviceMemory);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkAllocateMemory() Failed for Position!.\n");
         return (vkResult);
@@ -2783,7 +2783,7 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 10
-    vkResult = vkBindBufferMemory(vkDevice, vertexData_position.vkBuffer, vertexData_position.vkDeviceMemory, 0);
+    vkResult = vkBindBufferMemory(vkDevice_sea, vertexData_position_sea.vkBuffer, vertexData_position_sea.vkDeviceMemory, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createVertexBuffer(): vkBindBufferMemory() Failed for Position!.\n");
         return (vkResult);
@@ -2795,8 +2795,8 @@ VkResult createVertexBuffer(void) {
     void *data = NULL;
 
     vkResult = vkMapMemory(
-        vkDevice,
-        vertexData_position.vkDeviceMemory,
+        vkDevice_sea,
+        vertexData_position_sea.vkDeviceMemory,
         0,
         vkMemoryAllocateInfo.allocationSize,
         0,
@@ -2811,10 +2811,10 @@ VkResult createVertexBuffer(void) {
     }
 
     // Step 12
-    memcpy(data, vertexData_array.data(), vertexData_array.size() * sizeof(glm::vec3));
+    memcpy(data, vertexData_array_sea.data(), vertexData_array_sea.size() * sizeof(glm::vec3));
 
     // Step 13
-    vkUnmapMemory(vkDevice, vertexData_position.vkDeviceMemory);
+    vkUnmapMemory(vkDevice_sea, vertexData_position_sea.vkDeviceMemory);
 
     return(vkResult);
 }
@@ -2827,7 +2827,7 @@ VkResult createUniformBuffer (void) {
     // variables
     VkResult vkResult = VK_SUCCESS;
 
-    memset((void*)&uniformData, 0, sizeof(UniformData));
+    memset((void*)&uniformData_sea, 0, sizeof(UniformData));
 
     // Step 3
     VkBufferCreateInfo vkBufferCreateInfo;
@@ -2840,7 +2840,7 @@ VkResult createUniformBuffer (void) {
     vkBufferCreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     
     // Setp 4
-    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo, NULL, &uniformData.vkBuffer);
+    vkResult = vkCreateBuffer(vkDevice_sea, &vkBufferCreateInfo, NULL, &uniformData_sea.vkBuffer);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createUniformBuffer(): vkCreateBuffer() Failed!.\n");
         return (vkResult);
@@ -2852,7 +2852,7 @@ VkResult createUniformBuffer (void) {
     VkMemoryRequirements vkMemoryRequirements;
     memset((void*)&vkMemoryRequirements, 0, sizeof(VkMemoryRequirements));
 
-    vkGetBufferMemoryRequirements(vkDevice, uniformData.vkBuffer, &vkMemoryRequirements);
+    vkGetBufferMemoryRequirements(vkDevice_sea, uniformData_sea.vkBuffer, &vkMemoryRequirements);
 
     // Step 6
     VkMemoryAllocateInfo vkMemoryAllocateInfo;
@@ -2864,11 +2864,11 @@ VkResult createUniformBuffer (void) {
     vkMemoryAllocateInfo.memoryTypeIndex = 0; // this will be set in next step
 
     // Step A 
-    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties_sea.memoryTypeCount; i++) {
         // Step B
         if((vkMemoryRequirements.memoryTypeBits & 1) == 1) {
             // Step C
-            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+            if(vkPhysicalDeviceMemoryProperties_sea.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
                 // Step D
                 vkMemoryAllocateInfo.memoryTypeIndex = i;
                 break;
@@ -2879,7 +2879,7 @@ VkResult createUniformBuffer (void) {
     }
 
     //Setp 9
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo, NULL, &uniformData.vkDeviceMemory);
+    vkResult = vkAllocateMemory(vkDevice_sea, &vkMemoryAllocateInfo, NULL, &uniformData_sea.vkDeviceMemory);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createUniformBuffer(): vkAllocateMemory() Failed!.\n");
         return (vkResult);
@@ -2888,7 +2888,7 @@ VkResult createUniformBuffer (void) {
     }
 
     // Step 10
-    vkResult = vkBindBufferMemory(vkDevice, uniformData.vkBuffer, uniformData.vkDeviceMemory, 0);
+    vkResult = vkBindBufferMemory(vkDevice_sea, uniformData_sea.vkBuffer, uniformData_sea.vkDeviceMemory, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createUniformBuffer(): vkBindBufferMemory() Failed!.\n");
         return (vkResult);
@@ -2962,7 +2962,7 @@ VkResult updateUniformBuffer(void) {
 
     perspectiveProjectionMatrix = glm::perspective(
         glm::radians(50.0f),
-        (float)winWidth / (float)winHeight,
+        (float)winWidth_sea / (float)winHeight_sea,
         0.1f,
         180.0f
     );
@@ -2974,7 +2974,7 @@ VkResult updateUniformBuffer(void) {
     myUniformData.cameraPosition[0] = cameraPosition.x;
     myUniformData.cameraPosition[1] = cameraPosition.y;
     myUniformData.cameraPosition[2] = cameraPosition.z;
-    myUniformData.cameraPosition[3] = (float) myClock.getElapsedTime() * gSeaParams.timeScale;
+    myUniformData.cameraPosition[3] = (float) myClock_sea.getElapsedTime() * gSeaParams.timeScale;
 
     for(int i = 0; i < 4; i++) {
         float cosAngle = cosf(angleOffsets[i]);
@@ -3063,10 +3063,10 @@ VkResult updateUniformBuffer(void) {
     myUniformData.lightingParams[2] = gSeaParams.foamIntensity;
     myUniformData.lightingParams[3] = gSeaParams.sunIntensity;
 
-    // Sphere bend (vertex shader); radius = halfSize / sphereCapAngle, centre = modelMatrix * (0, 0, -radius, 1)
+    // Sphere bend (vertex shader); radius = halfSize_sea / sphereCapAngle, centre = modelMatrix * (0, 0, -radius, 1)
     float sphereBlend = glm::clamp(gSeaParams.sphereBlend, 0.0f, 1.0f);
     float smoothBlend = sphereBlend * sphereBlend * (3.0f - 2.0f * sphereBlend);
-    myUniformData.sphereParams[0] = smoothBlend * gSeaParams.sphereCapAngle / halfSize;
+    myUniformData.sphereParams[0] = smoothBlend * gSeaParams.sphereCapAngle / halfSize_sea;
     myUniformData.sphereParams[1] = gSeaParams.sphereCapAngle;
     myUniformData.sphereParams[2] = smoothBlend;
     myUniformData.sphereParams[3] = 0.0f;
@@ -3084,8 +3084,8 @@ VkResult updateUniformBuffer(void) {
     void *data = NULL;
 
     vkResult = vkMapMemory(
-        vkDevice,
-        uniformData.vkDeviceMemory,
+        vkDevice_sea,
+        uniformData_sea.vkDeviceMemory,
         0,
         sizeof(struct MyUniformData),
         0,
@@ -3098,7 +3098,7 @@ VkResult updateUniformBuffer(void) {
 
     memcpy(data, &myUniformData, sizeof(struct MyUniformData));
 
-    vkUnmapMemory(vkDevice, uniformData.vkDeviceMemory);
+    vkUnmapMemory(vkDevice_sea, uniformData_sea.vkDeviceMemory);
 
     // Free Data / Set it to NULL
     data = NULL;
@@ -3156,7 +3156,7 @@ VkResult createShaders(void) {
     vkShaderModuleCreateInfo.codeSize = fileSize;
     vkShaderModuleCreateInfo.pCode = (uint32_t*)shaderData;
 
-    vkResult = vkCreateShaderModule(vkDevice, &vkShaderModuleCreateInfo, NULL, &vkShaderModule_vertex);
+    vkResult = vkCreateShaderModule(vkDevice_sea, &vkShaderModuleCreateInfo, NULL, &vkShaderModule_vertex_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createShaders(): vkCreateShaderModule() for Vertex Shader Failed!.\n");
         return (vkResult);
@@ -3213,7 +3213,7 @@ VkResult createShaders(void) {
     vkShaderModuleCreateInfo.codeSize = fileSize;
     vkShaderModuleCreateInfo.pCode = (uint32_t*)shaderData;
 
-    vkResult = vkCreateShaderModule(vkDevice, &vkShaderModuleCreateInfo, NULL, &vkShaderModule_fragment);
+    vkResult = vkCreateShaderModule(vkDevice_sea, &vkShaderModuleCreateInfo, NULL, &vkShaderModule_fragment_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createShaders(): vkCreateShaderModule() for Fragment Shader Failed!.\n");
         return (vkResult);
@@ -3275,7 +3275,7 @@ VkResult createTexture(const char *textureFileName) {
     vkBufferCreateInfo_stagingBuffer.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     vkBufferCreateInfo_stagingBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo_stagingBuffer, NULL, &vkBuffer_stagingBuffer);
+    vkResult = vkCreateBuffer(vkDevice_sea, &vkBufferCreateInfo_stagingBuffer, NULL, &vkBuffer_stagingBuffer);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkCreateBuffer() Failed for Staging Buffer!.\n");
         return (vkResult);
@@ -3286,7 +3286,7 @@ VkResult createTexture(const char *textureFileName) {
     VkMemoryRequirements vkMemoryRequirements_stagingBuffer;
     memset((void*)&vkMemoryRequirements_stagingBuffer, 0, sizeof(VkMemoryRequirements));
 
-    vkGetBufferMemoryRequirements(vkDevice, vkBuffer_stagingBuffer, &vkMemoryRequirements_stagingBuffer);
+    vkGetBufferMemoryRequirements(vkDevice_sea, vkBuffer_stagingBuffer, &vkMemoryRequirements_stagingBuffer);
 
     VkMemoryAllocateInfo vkMemoryAllocateInfo_stagingBuffer;
     memset((void*)&vkMemoryAllocateInfo_stagingBuffer, 0, sizeof(VkMemoryAllocateInfo));
@@ -3296,9 +3296,9 @@ VkResult createTexture(const char *textureFileName) {
     vkMemoryAllocateInfo_stagingBuffer.allocationSize = vkMemoryRequirements_stagingBuffer.size;
     vkMemoryAllocateInfo_stagingBuffer.memoryTypeIndex = 0;
 
-    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties_sea.memoryTypeCount; i++) {
         if((vkMemoryRequirements_stagingBuffer.memoryTypeBits & 1) == 1) {
-            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+            if(vkPhysicalDeviceMemoryProperties_sea.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
                 vkMemoryAllocateInfo_stagingBuffer.memoryTypeIndex = i;
                 break;
             }
@@ -3306,7 +3306,7 @@ VkResult createTexture(const char *textureFileName) {
         vkMemoryRequirements_stagingBuffer.memoryTypeBits >>= 1;
     }
 
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_stagingBuffer, NULL, &vkDeviceMemory_stagingBuffer);
+    vkResult = vkAllocateMemory(vkDevice_sea, &vkMemoryAllocateInfo_stagingBuffer, NULL, &vkDeviceMemory_stagingBuffer);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkAllocateMemory() Failed for Staging Buffer!.\n");
         return (vkResult);
@@ -3314,7 +3314,7 @@ VkResult createTexture(const char *textureFileName) {
         fprintf(fptr, "createTexture(): vkAllocateMemory() Successful for Staging Buffer!.\n");
     }
 
-    vkResult = vkBindBufferMemory(vkDevice, vkBuffer_stagingBuffer, vkDeviceMemory_stagingBuffer, 0);
+    vkResult = vkBindBufferMemory(vkDevice_sea, vkBuffer_stagingBuffer, vkDeviceMemory_stagingBuffer, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkBindBufferMemory() Failed for Staging Buffer!.\n");
         return (vkResult);
@@ -3324,7 +3324,7 @@ VkResult createTexture(const char *textureFileName) {
 
     void *data = NULL;
 
-    vkResult = vkMapMemory(vkDevice, vkDeviceMemory_stagingBuffer, 0, image_size, 0, &data);
+    vkResult = vkMapMemory(vkDevice_sea, vkDeviceMemory_stagingBuffer, 0, image_size, 0, &data);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkMapMemory() Failed for Staging Buffer!.\n");
         return (vkResult);
@@ -3334,7 +3334,7 @@ VkResult createTexture(const char *textureFileName) {
 
     memcpy(data, image_data, image_size);
 
-    vkUnmapMemory(vkDevice, vkDeviceMemory_stagingBuffer);
+    vkUnmapMemory(vkDevice_sea, vkDeviceMemory_stagingBuffer);
 
     stbi_image_free(image_data);
     image_data = NULL;
@@ -3361,7 +3361,7 @@ VkResult createTexture(const char *textureFileName) {
     vkImageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     vkImageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    vkResult = vkCreateImage(vkDevice, &vkImageCreateInfo, NULL, &vkImage_oceanMask);
+    vkResult = vkCreateImage(vkDevice_sea, &vkImageCreateInfo, NULL, &vkImage_oceanMask);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkCreateImage() Failed for Texture Image!.\n");
         return (vkResult);
@@ -3372,7 +3372,7 @@ VkResult createTexture(const char *textureFileName) {
     VkMemoryRequirements vkMemoryRequirements_image;
     memset((void*)&vkMemoryRequirements_image, 0, sizeof(VkMemoryRequirements));
 
-    vkGetImageMemoryRequirements(vkDevice, vkImage_oceanMask, &vkMemoryRequirements_image);
+    vkGetImageMemoryRequirements(vkDevice_sea, vkImage_oceanMask, &vkMemoryRequirements_image);
 
     VkMemoryAllocateInfo vkMemoryAllocateInfo_image;
     memset((void*)&vkMemoryAllocateInfo_image, 0, sizeof(VkMemoryAllocateInfo));
@@ -3382,9 +3382,9 @@ VkResult createTexture(const char *textureFileName) {
     vkMemoryAllocateInfo_image.allocationSize = vkMemoryRequirements_image.size;
     vkMemoryAllocateInfo_image.memoryTypeIndex = 0;
 
-    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties_sea.memoryTypeCount; i++) {
         if((vkMemoryRequirements_image.memoryTypeBits & 1) == 1) {
-            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+            if(vkPhysicalDeviceMemoryProperties_sea.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
                 vkMemoryAllocateInfo_image.memoryTypeIndex = i;
                 break;
             }
@@ -3392,7 +3392,7 @@ VkResult createTexture(const char *textureFileName) {
         vkMemoryRequirements_image.memoryTypeBits >>= 1;
     }
 
-    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_image, NULL, &vkDeviceMemory_oceanMask);
+    vkResult = vkAllocateMemory(vkDevice_sea, &vkMemoryAllocateInfo_image, NULL, &vkDeviceMemory_oceanMask);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkAllocateMemory() Failed for Texture Image!.\n");
         return (vkResult);
@@ -3400,7 +3400,7 @@ VkResult createTexture(const char *textureFileName) {
         fprintf(fptr, "createTexture(): vkAllocateMemory() Successful for Texture Image!.\n");
     }
 
-    vkResult = vkBindImageMemory(vkDevice, vkImage_oceanMask, vkDeviceMemory_oceanMask, 0);
+    vkResult = vkBindImageMemory(vkDevice_sea, vkImage_oceanMask, vkDeviceMemory_oceanMask, 0);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkBindImageMemory() Failed for Texture Image!.\n");
         return (vkResult);
@@ -3414,12 +3414,12 @@ VkResult createTexture(const char *textureFileName) {
 
     vkCommandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     vkCommandBufferAllocateInfo.pNext = NULL;
-    vkCommandBufferAllocateInfo.commandPool = vkCommandPool;
+    vkCommandBufferAllocateInfo.commandPool = vkCommandPool_sea;
     vkCommandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vkCommandBufferAllocateInfo.commandBufferCount = 1;
 
     VkCommandBuffer vkCommandBuffer_texture = VK_NULL_HANDLE;
-    vkResult = vkAllocateCommandBuffers(vkDevice, &vkCommandBufferAllocateInfo, &vkCommandBuffer_texture);
+    vkResult = vkAllocateCommandBuffers(vkDevice_sea, &vkCommandBufferAllocateInfo, &vkCommandBuffer_texture);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Failed!.\n");
         return (vkResult);
@@ -3518,30 +3518,30 @@ VkResult createTexture(const char *textureFileName) {
     vkSubmitInfo_texture.commandBufferCount = 1;
     vkSubmitInfo_texture.pCommandBuffers = &vkCommandBuffer_texture;
 
-    vkResult = vkQueueSubmit(vkQueue, 1, &vkSubmitInfo_texture, VK_NULL_HANDLE);
+    vkResult = vkQueueSubmit(vkQueue_sea, 1, &vkSubmitInfo_texture, VK_NULL_HANDLE);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkQueueSubmit() Failed!.\n");
         return (vkResult);
     }
 
-    vkResult = vkQueueWaitIdle(vkQueue);
+    vkResult = vkQueueWaitIdle(vkQueue_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkQueueWaitIdle() Failed!.\n");
         return (vkResult);
     }
 
     if(vkCommandBuffer_texture) {
-        vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_texture);
+        vkFreeCommandBuffers(vkDevice_sea, vkCommandPool_sea, 1, &vkCommandBuffer_texture);
         vkCommandBuffer_texture = VK_NULL_HANDLE;
     }
 
     // Step 5: Remove staging buffer
     if(vkBuffer_stagingBuffer) {
-        vkFreeMemory(vkDevice, vkDeviceMemory_stagingBuffer, NULL);
+        vkFreeMemory(vkDevice_sea, vkDeviceMemory_stagingBuffer, NULL);
         vkDeviceMemory_stagingBuffer = VK_NULL_HANDLE;
     }
     if(vkBuffer_stagingBuffer) {
-        vkDestroyBuffer(vkDevice, vkBuffer_stagingBuffer, NULL);
+        vkDestroyBuffer(vkDevice_sea, vkBuffer_stagingBuffer, NULL);
         vkBuffer_stagingBuffer = VK_NULL_HANDLE;
     }
 
@@ -3561,7 +3561,7 @@ VkResult createTexture(const char *textureFileName) {
     vkImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     vkImageViewCreateInfo.image = vkImage_oceanMask;
 
-    vkResult = vkCreateImageView(vkDevice, &vkImageViewCreateInfo, NULL, &vkImageView_oceanMask);
+    vkResult = vkCreateImageView(vkDevice_sea, &vkImageViewCreateInfo, NULL, &vkImageView_oceanMask);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkCreateImageView() Failed for Texture Image!.\n");
         return (vkResult);
@@ -3588,7 +3588,7 @@ VkResult createTexture(const char *textureFileName) {
     vkSamplerCreateInfo.compareEnable = VK_FALSE;
     vkSamplerCreateInfo.compareOp = VK_COMPARE_OP_ALWAYS;
 
-    vkResult = vkCreateSampler(vkDevice, &vkSamplerCreateInfo, NULL, &vkSampler_oceanMask);
+    vkResult = vkCreateSampler(vkDevice_sea, &vkSamplerCreateInfo, NULL, &vkSampler_oceanMask);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createTexture(): vkCreateSampler() Failed for Texture Sampler!.\n");
         return (vkResult);
@@ -3631,7 +3631,7 @@ VkResult createDescriptorSetLayout(void) {
     vkDescriptorSetLayoutCreateInfo.pBindings = vkDescriptorSetLayoutBinding_array;
     
     // Create Descriptor Set Layout
-    vkResult = vkCreateDescriptorSetLayout(vkDevice, &vkDescriptorSetLayoutCreateInfo, NULL, &vkDescriptorSetLayout);
+    vkResult = vkCreateDescriptorSetLayout(vkDevice_sea, &vkDescriptorSetLayoutCreateInfo, NULL, &vkDescriptorSetLayout_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createDescriptorSetLayout(): vkCreateDescriptorSetLayout() Failed!.\n");
         return (vkResult);
@@ -3654,12 +3654,12 @@ VkResult createPipelineLayout(void) {
     vkPipelineLayoutCreateInfo.pNext = NULL;
     vkPipelineLayoutCreateInfo.flags = 0;
     vkPipelineLayoutCreateInfo.setLayoutCount = 1; // we have only one descriptor set layout
-    vkPipelineLayoutCreateInfo.pSetLayouts = &vkDescriptorSetLayout;
+    vkPipelineLayoutCreateInfo.pSetLayouts = &vkDescriptorSetLayout_sea;
     vkPipelineLayoutCreateInfo.pushConstantRangeCount = 0; // no push constant range for now
     vkPipelineLayoutCreateInfo.pPushConstantRanges = NULL;
 
     // Create Pipeline Layout
-    vkResult = vkCreatePipelineLayout(vkDevice, &vkPipelineLayoutCreateInfo, NULL, &vkPipelineLayout);
+    vkResult = vkCreatePipelineLayout(vkDevice_sea, &vkPipelineLayoutCreateInfo, NULL, &vkPipelineLayout_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createPipelineLayout(): vkCreatePipelineLayout() Failed!.\n");
         return (vkResult);
@@ -3695,7 +3695,7 @@ VkResult createDescriptorPool(void) {
     vkDescriptorPoolCreateInfo.pPoolSizes = vkDescriptorPoolSize_array;
 
     // Create Descriptor Pool
-    vkResult = vkCreateDescriptorPool(vkDevice, &vkDescriptorPoolCreateInfo, NULL, &vkDescriptorPool);
+    vkResult = vkCreateDescriptorPool(vkDevice_sea, &vkDescriptorPoolCreateInfo, NULL, &vkDescriptorPool_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createDescriptorPool(): vkCreateDescriptorPool() Failed!.\n");
         return (vkResult);
@@ -3716,12 +3716,12 @@ VkResult createDescriptorSet(void) {
 
     vkDescriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     vkDescriptorSetAllocateInfo.pNext = NULL;
-    vkDescriptorSetAllocateInfo.descriptorPool = vkDescriptorPool;
+    vkDescriptorSetAllocateInfo.descriptorPool = vkDescriptorPool_sea;
     vkDescriptorSetAllocateInfo.descriptorSetCount = 1; // we have only one descriptor set
-    vkDescriptorSetAllocateInfo.pSetLayouts = &vkDescriptorSetLayout; // we have only one descriptor set layout
+    vkDescriptorSetAllocateInfo.pSetLayouts = &vkDescriptorSetLayout_sea; // we have only one descriptor set layout
 
     // Allocate Descriptor Set
-    vkResult = vkAllocateDescriptorSets(vkDevice, &vkDescriptorSetAllocateInfo, &vkDescriptorSet);
+    vkResult = vkAllocateDescriptorSets(vkDevice_sea, &vkDescriptorSetAllocateInfo, &vkDescriptorSet_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createDescriptorSet(): vkAllocateDescriptorSets() Failed!.\n");
         return (vkResult);
@@ -3734,7 +3734,7 @@ VkResult createDescriptorSet(void) {
     VkDescriptorBufferInfo vkDescriptorBufferInfo;
     memset((void*)&vkDescriptorBufferInfo, 0, sizeof(VkDescriptorBufferInfo));
 
-    vkDescriptorBufferInfo.buffer = uniformData.vkBuffer; // this is the buffer we want to use as uniform
+    vkDescriptorBufferInfo.buffer = uniformData_sea.vkBuffer; // this is the buffer we want to use as uniform
     vkDescriptorBufferInfo.offset = 0; // offset is 0
     vkDescriptorBufferInfo.range = sizeof(struct MyUniformData); // range is size of uniform
 
@@ -3753,7 +3753,7 @@ VkResult createDescriptorSet(void) {
 
     vkWriteDescriptorSet_array[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     vkWriteDescriptorSet_array[0].pNext = NULL;
-    vkWriteDescriptorSet_array[0].dstSet = vkDescriptorSet; // this is the descriptor set we want to update
+    vkWriteDescriptorSet_array[0].dstSet = vkDescriptorSet_sea; // this is the descriptor set we want to update
     vkWriteDescriptorSet_array[0].dstArrayElement = 0; // we have only one descriptor set, so array element is 0
     vkWriteDescriptorSet_array[0].descriptorCount = 1; // we are only gonna write one descriptor set
     vkWriteDescriptorSet_array[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -3764,7 +3764,7 @@ VkResult createDescriptorSet(void) {
 
     vkWriteDescriptorSet_array[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     vkWriteDescriptorSet_array[1].pNext = NULL;
-    vkWriteDescriptorSet_array[1].dstSet = vkDescriptorSet;
+    vkWriteDescriptorSet_array[1].dstSet = vkDescriptorSet_sea;
     vkWriteDescriptorSet_array[1].dstArrayElement = 0;
     vkWriteDescriptorSet_array[1].descriptorCount = 1;
     vkWriteDescriptorSet_array[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -3774,7 +3774,7 @@ VkResult createDescriptorSet(void) {
     vkWriteDescriptorSet_array[1].dstBinding = 1; // ocean mask binding
 
     // Update Descriptor Set
-    vkUpdateDescriptorSets(vkDevice, _ARRAYSIZE(vkWriteDescriptorSet_array), vkWriteDescriptorSet_array, 0, NULL);
+    vkUpdateDescriptorSets(vkDevice_sea, _ARRAYSIZE(vkWriteDescriptorSet_array), vkWriteDescriptorSet_array, 0, NULL);
     // last two parameters are for copy descriptor sets, which are used while copying
 
     fprintf(fptr, "createDescriptorSet(): vkUpdateDescriptorSets() Successful!.\n");
@@ -3792,7 +3792,7 @@ VkResult createRenderPass(void) {
     memset((void*)vkAttachmentDescription_array, 0, sizeof(VkAttachmentDescription) * _ARRAYSIZE(vkAttachmentDescription_array));
 
     vkAttachmentDescription_array[0].flags = 0;
-    vkAttachmentDescription_array[0].format =  vkFormat_color;
+    vkAttachmentDescription_array[0].format =  vkFormat_color_sea;
     vkAttachmentDescription_array[0].samples = VK_SAMPLE_COUNT_1_BIT;
     vkAttachmentDescription_array[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     vkAttachmentDescription_array[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -3803,7 +3803,7 @@ VkResult createRenderPass(void) {
 
         // For Depth Attachment
     vkAttachmentDescription_array[1].flags = 0;
-    vkAttachmentDescription_array[1].format =  vkFormat_depth;
+    vkAttachmentDescription_array[1].format =  vkFormat_depth_sea;
     vkAttachmentDescription_array[1].samples = VK_SAMPLE_COUNT_1_BIT;
     vkAttachmentDescription_array[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     vkAttachmentDescription_array[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -3858,10 +3858,10 @@ VkResult createRenderPass(void) {
 
     // Step 5: Create Render Pass
     vkResult = vkCreateRenderPass(
-        vkDevice,
+        vkDevice_sea,
         &vkRenderPassCreateInfo,
         NULL,
-        &vkRenderPass
+        &vkRenderPass_sea
     );
 
     if(vkResult != VK_SUCCESS) {
@@ -3955,26 +3955,26 @@ VkResult createPipeline(void) {
     // Set the viewport/s
     vkPipelineViewportStateCreateInfo.viewportCount = 1;
 
-    memset((void*)&vkViewport, 0, sizeof(VkViewport));
-    vkViewport.x = 0;
-    vkViewport.y = 0;
-    vkViewport.width = (float)vkExtent2D_swapchain.width;
-    vkViewport.height = (float)vkExtent2D_swapchain.height;
-    vkViewport.minDepth = 0.0f;
-    vkViewport.maxDepth = 1.0f;
+    memset((void*)&vkViewport_sea, 0, sizeof(VkViewport));
+    vkViewport_sea.x = 0;
+    vkViewport_sea.y = 0;
+    vkViewport_sea.width = (float)vkExtent2D_swapchain_sea.width;
+    vkViewport_sea.height = (float)vkExtent2D_swapchain_sea.height;
+    vkViewport_sea.minDepth = 0.0f;
+    vkViewport_sea.maxDepth = 1.0f;
 
-    vkPipelineViewportStateCreateInfo.pViewports = &vkViewport;
+    vkPipelineViewportStateCreateInfo.pViewports = &vkViewport_sea;
 
     // Set the scissor rect/s
     vkPipelineViewportStateCreateInfo.scissorCount = 1;
     
-    memset((void*)&vkRect2D_scissor, 0, sizeof(VkRect2D));
-    vkRect2D_scissor.offset.x = 0;
-    vkRect2D_scissor.offset.y = 0;
-    vkRect2D_scissor.extent.width = vkExtent2D_swapchain.width;
-    vkRect2D_scissor.extent.height = vkExtent2D_swapchain.height;
+    memset((void*)&vkRect2D_scissor_sea, 0, sizeof(VkRect2D));
+    vkRect2D_scissor_sea.offset.x = 0;
+    vkRect2D_scissor_sea.offset.y = 0;
+    vkRect2D_scissor_sea.extent.width = vkExtent2D_swapchain_sea.width;
+    vkRect2D_scissor_sea.extent.height = vkExtent2D_swapchain_sea.height;
 
-    vkPipelineViewportStateCreateInfo.pScissors = &vkRect2D_scissor;
+    vkPipelineViewportStateCreateInfo.pScissors = &vkRect2D_scissor_sea;
 
     // Depth Stencil State
     VkPipelineDepthStencilStateCreateInfo vkPipelineDepthStencilStateCreateInfo;
@@ -4013,7 +4013,7 @@ VkResult createPipeline(void) {
     vkPipelineShaderStageCreateInfo_array[0].pNext = NULL;
     vkPipelineShaderStageCreateInfo_array[0].flags = 0;
     vkPipelineShaderStageCreateInfo_array[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vkPipelineShaderStageCreateInfo_array[0].module = vkShaderModule_vertex;
+    vkPipelineShaderStageCreateInfo_array[0].module = vkShaderModule_vertex_sea;
     vkPipelineShaderStageCreateInfo_array[0].pName = "main"; // entry point name
     vkPipelineShaderStageCreateInfo_array[0].pSpecializationInfo = NULL;
 
@@ -4022,7 +4022,7 @@ VkResult createPipeline(void) {
     vkPipelineShaderStageCreateInfo_array[1].pNext = NULL;
     vkPipelineShaderStageCreateInfo_array[1].flags = 0;
     vkPipelineShaderStageCreateInfo_array[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    vkPipelineShaderStageCreateInfo_array[1].module = vkShaderModule_fragment;
+    vkPipelineShaderStageCreateInfo_array[1].module = vkShaderModule_fragment_sea;
     vkPipelineShaderStageCreateInfo_array[1].pName = "main"; // entry point name
     vkPipelineShaderStageCreateInfo_array[1].pSpecializationInfo = NULL;
 
@@ -4041,7 +4041,7 @@ VkResult createPipeline(void) {
 
     VkPipelineCache vkPipelineCache = VK_NULL_HANDLE;
 
-    vkResult = vkCreatePipelineCache(vkDevice, &vkPipelineCacheCreateInfo, NULL, &vkPipelineCache);
+    vkResult = vkCreatePipelineCache(vkDevice_sea, &vkPipelineCacheCreateInfo, NULL, &vkPipelineCache);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createPipeline(): vkCreatePipelineCache() Failed!.\n");
         return (vkResult);
@@ -4066,18 +4066,18 @@ VkResult createPipeline(void) {
     vkGraphicsPipelineCreateInfo.pMultisampleState = &vkPipelineMultisampleStateCreateInfo;
     vkGraphicsPipelineCreateInfo.stageCount = _ARRAYSIZE(vkPipelineShaderStageCreateInfo_array);
     vkGraphicsPipelineCreateInfo.pStages = vkPipelineShaderStageCreateInfo_array;
-    vkGraphicsPipelineCreateInfo.layout = vkPipelineLayout;
-    vkGraphicsPipelineCreateInfo.renderPass = vkRenderPass;
+    vkGraphicsPipelineCreateInfo.layout = vkPipelineLayout_sea;
+    vkGraphicsPipelineCreateInfo.renderPass = vkRenderPass_sea;
     vkGraphicsPipelineCreateInfo.subpass = 0; // subpass index
     vkGraphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE; // no base pipeline handle
     vkGraphicsPipelineCreateInfo.basePipelineIndex = 0; // no base pipeline index
 
     // Create Graphics Pipeline
-    vkResult = vkCreateGraphicsPipelines(vkDevice, vkPipelineCache, 1, &vkGraphicsPipelineCreateInfo, NULL, &vkPipeline);
+    vkResult = vkCreateGraphicsPipelines(vkDevice_sea, vkPipelineCache, 1, &vkGraphicsPipelineCreateInfo, NULL, &vkPipeline_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createPipeline(): vkCreateGraphicsPipelines() Failed!.\n");
         // Destroy Pipeline Cache
-        vkDestroyPipelineCache(vkDevice, vkPipelineCache, NULL);
+        vkDestroyPipelineCache(vkDevice_sea, vkPipelineCache, NULL);
         vkPipelineCache = VK_NULL_HANDLE;
         return (vkResult);
     } else {
@@ -4085,7 +4085,7 @@ VkResult createPipeline(void) {
     }
 
     // Destroy Pipeline Cache
-    vkDestroyPipelineCache(vkDevice, vkPipelineCache, NULL);
+    vkDestroyPipelineCache(vkDevice_sea, vkPipelineCache, NULL);
     vkPipelineCache = VK_NULL_HANDLE;
 
     return (vkResult);
@@ -4096,9 +4096,9 @@ VkResult createFramebuffers(void) {
     VkResult vkResult = VK_SUCCESS;
 
     // allocate frame buffers array and creat efream buffers in loop with counts of allocated swapchain images
-    vkFramebuffer_array = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * swapchainImageCount);
+    vkFramebuffer_array_sea = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * swapchainImageCount_sea);
 
-    for(uint32_t i = 0; i < swapchainImageCount; i++) {
+    for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
 
         // Step 1: create VkImageView array for color and depth attachments
         VkImageView vkImageView_attachments_array[2];
@@ -4111,17 +4111,17 @@ VkResult createFramebuffers(void) {
         vkFrameBufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         vkFrameBufferCreateInfo.flags = 0;
         vkFrameBufferCreateInfo.pNext = NULL;
-        vkFrameBufferCreateInfo.renderPass = vkRenderPass;
+        vkFrameBufferCreateInfo.renderPass = vkRenderPass_sea;
         vkFrameBufferCreateInfo.attachmentCount = _ARRAYSIZE(vkImageView_attachments_array);
         vkFrameBufferCreateInfo.pAttachments = vkImageView_attachments_array;
-        vkFrameBufferCreateInfo.width = vkExtent2D_swapchain.width;
-        vkFrameBufferCreateInfo.height = vkExtent2D_swapchain.height;
+        vkFrameBufferCreateInfo.width = vkExtent2D_swapchain_sea.width;
+        vkFrameBufferCreateInfo.height = vkExtent2D_swapchain_sea.height;
         vkFrameBufferCreateInfo.layers = 1; // VALIDATION USE CASE 2: Comment this line to see the error
 
-        vkImageView_attachments_array[0] = swapchainImageView_array[i];
-        vkImageView_attachments_array[1] = vkImageView_depth; // this is the depth attachment image view
+        vkImageView_attachments_array[0] = swapchainImageView_array_sea[i];
+        vkImageView_attachments_array[1] = vkImageView_depth_sea; // this is the depth attachment image view
 
-        vkResult = vkCreateFramebuffer(vkDevice, &vkFrameBufferCreateInfo, NULL, &vkFramebuffer_array[i]);
+        vkResult = vkCreateFramebuffer(vkDevice_sea, &vkFrameBufferCreateInfo, NULL, &vkFramebuffer_array_sea[i]);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "createFramebuffers(): vkCreateFramebuffer() Failed at {%d}!.\n", i);
             return (vkResult);
@@ -4148,7 +4148,7 @@ VkResult createSemaphores(void) {
     // By defualt if no type is specified, binary semaphore is created!
 
     // create semaphore for backbuffer
-    vkResult = vkCreateSemaphore(vkDevice, &vkSemaphoreCreateInfo, NULL, &vkSemaphore_backbuffer);
+    vkResult = vkCreateSemaphore(vkDevice_sea, &vkSemaphoreCreateInfo, NULL, &vkSemaphore_backbuffer_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createSemaphores(): vkCreateSemaphore() Failed for Back Buffer Semaphore!.\n");
         return (vkResult);
@@ -4157,7 +4157,7 @@ VkResult createSemaphores(void) {
     }
 
     // create semaphore for render complete
-    vkResult = vkCreateSemaphore(vkDevice, &vkSemaphoreCreateInfo, NULL, &vkSemaphore_rendercomplete);
+    vkResult = vkCreateSemaphore(vkDevice_sea, &vkSemaphoreCreateInfo, NULL, &vkSemaphore_rendercomplete_sea);
     if(vkResult != VK_SUCCESS) {
         fprintf(fptr, "createSemaphores(): vkCreateSemaphore() Failed for Render Complete Semaphore!.\n");
         return (vkResult);
@@ -4180,11 +4180,11 @@ VkResult createFences(void) {
     vkFenceCreateInfo.pNext = NULL;
     vkFenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    vkFence_array = (VkFence*) malloc(sizeof(VkFence) * swapchainImageCount);
+    vkFence_array_sea = (VkFence*) malloc(sizeof(VkFence) * swapchainImageCount_sea);
 
 
-    for(uint32_t i = 0; i < swapchainImageCount; i++) {
-        vkResult = vkCreateFence(vkDevice, &vkFenceCreateInfo, NULL, &vkFence_array[i]);
+    for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
+        vkResult = vkCreateFence(vkDevice_sea, &vkFenceCreateInfo, NULL, &vkFence_array_sea[i]);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "createFences(): vkCreateFence() Failed at {%d}!.\n", i);
             return (vkResult);
@@ -4200,8 +4200,8 @@ VkResult buildCommandBuffers(void) {
     // variables
     VkResult vkResult = VK_SUCCESS;
 
-    for(uint32_t i = 0; i < swapchainImageCount; i++) {
-        vkResult = vkResetCommandBuffer(vkCommandBuffer_array[i], 0);
+    for(uint32_t i = 0; i < swapchainImageCount_sea; i++) {
+        vkResult = vkResetCommandBuffer(vkCommandBuffer_array_sea[i], 0);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "buildCommandBuffers(): vkResetCommandBuffer() Failed for {%d}!.\n", i);
             return (vkResult);
@@ -4214,7 +4214,7 @@ VkResult buildCommandBuffers(void) {
         vkCommandBufferBeginInfo.pNext = NULL;
         vkCommandBufferBeginInfo.flags = 0;
 
-        vkResult = vkBeginCommandBuffer(vkCommandBuffer_array[i], &vkCommandBufferBeginInfo);
+        vkResult = vkBeginCommandBuffer(vkCommandBuffer_array_sea[i], &vkCommandBufferBeginInfo);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "buildCommandBuffers(): vkBeginCommandBuffer() Failed for {%d}!.\n", i);
             return (vkResult);
@@ -4223,33 +4223,33 @@ VkResult buildCommandBuffers(void) {
         VkClearValue vkClearValue_array[2];
         memset((void*)vkClearValue_array, 0, sizeof(VkClearValue) * _ARRAYSIZE(vkClearValue_array));
 
-        vkClearValue_array[0].color = vkClearColorValue;
-        vkClearValue_array[1].depthStencil = vkClearDepthStencilValue;
+        vkClearValue_array[0].color = vkClearColorValue_sea;
+        vkClearValue_array[1].depthStencil = vkClearDepthStencilValue_sea;
 
         VkRenderPassBeginInfo vkRenderPassBeginInfo;
         memset((void*)&vkRenderPassBeginInfo, 0, sizeof(VkRenderPassBeginInfo));
 
         vkRenderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         vkRenderPassBeginInfo.pNext = NULL;
-        vkRenderPassBeginInfo.renderPass = vkRenderPass;
+        vkRenderPassBeginInfo.renderPass = vkRenderPass_sea;
         vkRenderPassBeginInfo.renderArea.offset.x = 0;
         vkRenderPassBeginInfo.renderArea.offset.y = 0;
-        vkRenderPassBeginInfo.renderArea.extent.width = vkExtent2D_swapchain.width;
-        vkRenderPassBeginInfo.renderArea.extent.height = vkExtent2D_swapchain.height;
+        vkRenderPassBeginInfo.renderArea.extent.width = vkExtent2D_swapchain_sea.width;
+        vkRenderPassBeginInfo.renderArea.extent.height = vkExtent2D_swapchain_sea.height;
         vkRenderPassBeginInfo.clearValueCount = _ARRAYSIZE(vkClearValue_array);
         vkRenderPassBeginInfo.pClearValues = vkClearValue_array;
-        vkRenderPassBeginInfo.framebuffer = vkFramebuffer_array[i];
+        vkRenderPassBeginInfo.framebuffer = vkFramebuffer_array_sea[i];
 
-        vkCmdBeginRenderPass(vkCommandBuffer_array[i], &vkRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(vkCommandBuffer_array_sea[i], &vkRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(vkCommandBuffer_array[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline);
+        vkCmdBindPipeline(vkCommandBuffer_array_sea[i], VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline_sea);
 
         vkCmdBindDescriptorSets(
-            vkCommandBuffer_array[i],
+            vkCommandBuffer_array_sea[i],
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            vkPipelineLayout,
+            vkPipelineLayout_sea,
             0, 1,
-            &vkDescriptorSet,
+            &vkDescriptorSet_sea,
             0, NULL
         );
 
@@ -4257,17 +4257,17 @@ VkResult buildCommandBuffers(void) {
         memset((void*)vkDeviceSize_offset_position_array, 0, sizeof(VkDeviceSize) * _ARRAYSIZE(vkDeviceSize_offset_position_array));
 
         vkCmdBindVertexBuffers(
-            vkCommandBuffer_array[i],
+            vkCommandBuffer_array_sea[i],
             AMK_ATTRIBUTE_POSITION, 1,
-            &vertexData_position.vkBuffer,
+            &vertexData_position_sea.vkBuffer,
             vkDeviceSize_offset_position_array
         );
 
-        vkCmdDraw(vkCommandBuffer_array[i], (uint32_t)vertexData_array.size(), 1, 0, 0);
+        vkCmdDraw(vkCommandBuffer_array_sea[i], (uint32_t)vertexData_array_sea.size(), 1, 0, 0);
 
-        vkCmdEndRenderPass(vkCommandBuffer_array[i]);
+        vkCmdEndRenderPass(vkCommandBuffer_array_sea[i]);
 
-        vkResult = vkEndCommandBuffer(vkCommandBuffer_array[i]);
+        vkResult = vkEndCommandBuffer(vkCommandBuffer_array_sea[i]);
         if(vkResult != VK_SUCCESS) {
             fprintf(fptr, "buildCommandBuffers(): vkEndCommandBuffer() Failed for {%d}!.\n", i);
             return (vkResult);
