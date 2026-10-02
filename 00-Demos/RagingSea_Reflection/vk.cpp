@@ -23,6 +23,9 @@ using namespace std;
 
 #include "clockUtils/Clock.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #include "./imgui/imgui.h"
 #include "./imgui/backends/imgui_impl_win32.h"
 #include "./imgui/backends/imgui_impl_vulkan.h"
@@ -163,6 +166,9 @@ struct MyUniformData {
     float skyParams[4];     // x: horizon haze, y: fog density, w: sky exposure
     float shadingParams[4];
     float lightingParams[4];
+    float sphereParams[4];  // x: 1/radius (plane units), y: max angle, z: sphere blend
+    float bronzeDarkColor[4];   // rgb: troughs, a: roughness
+    float bronzeBrightColor[4]; // rgb: crests, a: bronze blend
 };
 
 typedef struct {
@@ -172,8 +178,15 @@ typedef struct {
 
 UniformData uniformData;
 
+// Ocean Mask Texture (globe UVs, white = ocean)
+VkImage vkImage_oceanMask = VK_NULL_HANDLE;
+VkDeviceMemory vkDeviceMemory_oceanMask = VK_NULL_HANDLE;
+VkImageView vkImageView_oceanMask = VK_NULL_HANDLE;
+VkSampler vkSampler_oceanMask = VK_NULL_HANDLE;
+
 vector<glm::vec3> vertexData_array;
-float halfSize = 6.0f; // bound of rect go from -6 to 6
+float halfSize = 5.0f; // bound of rect go from -5 to 5
+const float gSeaModelScale = 6.0f; // plane scale in the model matrix
 int segmentCount = 512; // no of segments to divide the plane into
 
 // Shader Variables
@@ -244,6 +257,12 @@ struct SeaUiState {
     float specularPower;
     float foamHeight;
     float foamIntensity;
+    float sphereBlend;      // 0: flat, 1: sphere
+    float sphereRadius;     // world units
+    float bronzeBlend;      // 0: water, 1: bronze
+    float bronzeDarkColor[3];
+    float bronzeBrightColor[3];
+    float bronzeRoughness;
 };
 
 SeaUiState gSeaUiState = {
@@ -279,7 +298,20 @@ SeaUiState gSeaUiState = {
     160.0f,
     0.32f,
     0.22f,
+    0.0f,                           // sphere blend (start flat)
+    9.55f,                          // sphere radius (largest that still closes)
+    0.0f,                           // bronze blend (start as water)
+    // Bronze measured from the Atlas model textures:
+    {0.30f, 0.23f, 0.15f},          // bronze dark
+    {0.60f, 0.49f, 0.37f},          // bronze bright
+    0.53f,                          // bronze roughness
 };
+
+float gSphereBlendTarget = 0.0f;
+const float gSphereBlendSpeed = 0.25f; // per second
+
+float gBronzeBlendTarget = 0.0f;
+const float gBronzeBlendSpeed = 0.2f; // per second
 
 bool gShowSeaControls = true;
 bool gShowImGuiDemoWindow = false;
@@ -485,6 +517,18 @@ LRESULT CALLBACK MyCallBack(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) 
                 case 'F':
                     ToggleFullScreen();
                     break;
+
+                case 'b':
+                case 'B':
+                    // toggle between flat sea and sphere
+                    gSphereBlendTarget = (gSphereBlendTarget > 0.5f) ? 0.0f : 1.0f;
+                    break;
+
+                case 'c':
+                case 'C':
+                    // toggle between water and bronze
+                    gBronzeBlendTarget = (gBronzeBlendTarget > 0.5f) ? 0.0f : 1.0f;
+                    break;
                 
                 default:
                     break;
@@ -562,6 +606,7 @@ VkResult initialize(void) {
     VkResult createCommandBuffers(void);
     VkResult createVertexBuffer(void);
     VkResult createUniformBuffer(void);
+    VkResult createTexture(const char*);
     VkResult createShaders(void);
     VkResult createDescriptorSetLayout(void);
     VkResult createPipelineLayout(void);
@@ -678,6 +723,15 @@ VkResult initialize(void) {
         return (vkResult);
     } else {
         fprintf(fptr, "initialize(): createUniformBuffer() Successful!.\n\n");
+    }
+
+    // Create Ocean Mask Texture
+    vkResult = createTexture("textures/ocean_mask.png");
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "initialize(): createTexture() Failed!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "initialize(): createTexture() Successful!.\n\n");
     }
 
 
@@ -1293,6 +1347,34 @@ void uninitialize(void){
         vkShaderModule_vertex = VK_NULL_HANDLE;
     }
 
+    // Destroy Ocean Mask Sampler
+    if(vkSampler_oceanMask) {
+        vkDestroySampler(vkDevice, vkSampler_oceanMask, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroySampler() Succeed for Ocean Mask Sampler!\n");
+        vkSampler_oceanMask = VK_NULL_HANDLE;
+    }
+
+    // Destroy Ocean Mask Image View
+    if(vkImageView_oceanMask) {
+        vkDestroyImageView(vkDevice, vkImageView_oceanMask, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyImageView() Succeed for Ocean Mask Image View!\n");
+        vkImageView_oceanMask = VK_NULL_HANDLE;
+    }
+
+    // Destroy Ocean Mask Image Memory
+    if(vkDeviceMemory_oceanMask) {
+        vkFreeMemory(vkDevice, vkDeviceMemory_oceanMask, NULL);
+        fprintf(fptr, "uninitialize(): vkFreeMemory() Succeed for Ocean Mask Image Memory!\n");
+        vkDeviceMemory_oceanMask = VK_NULL_HANDLE;
+    }
+
+    // Destroy Ocean Mask Image
+    if(vkImage_oceanMask) {
+        vkDestroyImage(vkDevice, vkImage_oceanMask, NULL);
+        fprintf(fptr, "uninitialize(): vkDestroyImage() Succeed for Ocean Mask Image!\n");
+        vkImage_oceanMask = VK_NULL_HANDLE;
+    }
+
     // Destroy Uniform Buffer
     if(uniformData.vkDeviceMemory) {
         vkFreeMemory(vkDevice, uniformData.vkDeviceMemory, NULL);
@@ -1446,7 +1528,25 @@ void uninitialize(void){
 }
 
 void update(void) {
-    // update logic for animation will go here
+    // frame time, so transitions are frame-rate independent
+    static double lastTime = myClock.getElapsedTime();
+    double currentTime = myClock.getElapsedTime();
+    float deltaTime = (float)glm::clamp(currentTime - lastTime, 0.0, 0.1);
+    lastTime = currentTime;
+
+    // ease sphere blend towards its target
+    if(gSeaUiState.sphereBlend < gSphereBlendTarget) {
+        gSeaUiState.sphereBlend = glm::min(gSeaUiState.sphereBlend + gSphereBlendSpeed * deltaTime, gSphereBlendTarget);
+    } else if(gSeaUiState.sphereBlend > gSphereBlendTarget) {
+        gSeaUiState.sphereBlend = glm::max(gSeaUiState.sphereBlend - gSphereBlendSpeed * deltaTime, gSphereBlendTarget);
+    }
+
+    // ease bronze blend towards its target
+    if(gSeaUiState.bronzeBlend < gBronzeBlendTarget) {
+        gSeaUiState.bronzeBlend = glm::min(gSeaUiState.bronzeBlend + gBronzeBlendSpeed * deltaTime, gBronzeBlendTarget);
+    } else if(gSeaUiState.bronzeBlend > gBronzeBlendTarget) {
+        gSeaUiState.bronzeBlend = glm::max(gSeaUiState.bronzeBlend - gBronzeBlendSpeed * deltaTime, gBronzeBlendTarget);
+    }
 }
 
 //! //////////////////////////////////////// Definations of vulkan Related Functions ///////////////////////////////////////////////
@@ -2918,7 +3018,7 @@ VkResult updateUniformBuffer(void) {
 
     scaleMat *= glm::scale(
         glm::mat4(1.0f),
-        glm::vec3(6.0f, 6.0f, 6.0f)
+        glm::vec3(gSeaModelScale, gSeaModelScale, gSeaModelScale)
     );
 
     myUniformData.modelMatrix = translateMat * rotateMat * scaleMat;
@@ -3034,6 +3134,25 @@ VkResult updateUniformBuffer(void) {
     myUniformData.lightingParams[1] = gSeaUiState.foamHeight;
     myUniformData.lightingParams[2] = gSeaUiState.foamIntensity;
     myUniformData.lightingParams[3] = gSeaUiState.sunIntensity;
+
+    // Sphere bend (vertex shader); centre = modelMatrix * (0, 0, -sphereRadius / gSeaModelScale, 1)
+    float sphereBlend = glm::clamp(gSeaUiState.sphereBlend, 0.0f, 1.0f);
+    float smoothBlend = sphereBlend * sphereBlend * (3.0f - 2.0f * sphereBlend);
+    float sphereRadiusPlane = glm::max(gSeaUiState.sphereRadius, 0.01f) / gSeaModelScale;
+    myUniformData.sphereParams[0] = smoothBlend / sphereRadiusPlane;
+    myUniformData.sphereParams[1] = 3.14159265f;
+    myUniformData.sphereParams[2] = smoothBlend;
+    myUniformData.sphereParams[3] = 0.0f;
+
+    myUniformData.bronzeDarkColor[0] = gSeaUiState.bronzeDarkColor[0];
+    myUniformData.bronzeDarkColor[1] = gSeaUiState.bronzeDarkColor[1];
+    myUniformData.bronzeDarkColor[2] = gSeaUiState.bronzeDarkColor[2];
+    myUniformData.bronzeDarkColor[3] = gSeaUiState.bronzeRoughness;
+
+    myUniformData.bronzeBrightColor[0] = gSeaUiState.bronzeBrightColor[0];
+    myUniformData.bronzeBrightColor[1] = gSeaUiState.bronzeBrightColor[1];
+    myUniformData.bronzeBrightColor[2] = gSeaUiState.bronzeBrightColor[2];
+    myUniformData.bronzeBrightColor[3] = glm::clamp(gSeaUiState.bronzeBlend, 0.0f, 1.0f);
 
     void *data = NULL;
 
@@ -3185,19 +3304,394 @@ VkResult createShaders(void) {
 }
 
 
+// Load texture via stb_image -> staging buffer -> VkImage + view + sampler
+VkResult createTexture(const char *textureFileName) {
+    // variables
+    VkResult vkResult = VK_SUCCESS;
+
+    // Step 1: Load Texture Image Information
+    FILE *fp = NULL;
+    fp = fopen(textureFileName, "rb");
+    if(fp == NULL) {
+        fprintf(fptr, "createTexture(): Failed to open texture file: %s\n", textureFileName);
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        return (vkResult);
+    }
+
+    uint8_t *image_data = NULL;
+    int texture_width, texture_height, texture_channels;
+
+    image_data = stbi_load_from_file(fp, &texture_width, &texture_height, &texture_channels, STBI_rgb_alpha);
+    if(image_data == NULL || texture_width <= 0 || texture_height <= 0 || texture_channels <= 0) {
+        fprintf(fptr, "createTexture(): Failed to load texture image data from stbi_load_from_file for file: %s\n", textureFileName);
+        vkResult = VK_ERROR_INITIALIZATION_FAILED;
+        fclose(fp);
+        return (vkResult);
+    }
+
+    VkDeviceSize image_size = texture_width * texture_height * 4; // 4 channels (RGBA)
+
+    fprintf(fptr, "createTexture(): Texture Image Loaded Successfully! Width: %d, Height: %d, Channels: %d, Size: %llu bytes\n",
+        texture_width, texture_height, texture_channels, (unsigned long long)image_size);
+
+    // Step 2: Create Staging Buffer
+    VkBuffer vkBuffer_stagingBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory vkDeviceMemory_stagingBuffer = VK_NULL_HANDLE;
+
+    VkBufferCreateInfo vkBufferCreateInfo_stagingBuffer;
+    memset((void*)&vkBufferCreateInfo_stagingBuffer, 0, sizeof(VkBufferCreateInfo));
+
+    vkBufferCreateInfo_stagingBuffer.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCreateInfo_stagingBuffer.pNext = NULL;
+    vkBufferCreateInfo_stagingBuffer.flags = 0;
+    vkBufferCreateInfo_stagingBuffer.size = image_size;
+    vkBufferCreateInfo_stagingBuffer.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    vkBufferCreateInfo_stagingBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    vkResult = vkCreateBuffer(vkDevice, &vkBufferCreateInfo_stagingBuffer, NULL, &vkBuffer_stagingBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkCreateBuffer() Failed for Staging Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkCreateBuffer() Successful for Staging Buffer!.\n");
+    }
+
+    VkMemoryRequirements vkMemoryRequirements_stagingBuffer;
+    memset((void*)&vkMemoryRequirements_stagingBuffer, 0, sizeof(VkMemoryRequirements));
+
+    vkGetBufferMemoryRequirements(vkDevice, vkBuffer_stagingBuffer, &vkMemoryRequirements_stagingBuffer);
+
+    VkMemoryAllocateInfo vkMemoryAllocateInfo_stagingBuffer;
+    memset((void*)&vkMemoryAllocateInfo_stagingBuffer, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo_stagingBuffer.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo_stagingBuffer.pNext = NULL;
+    vkMemoryAllocateInfo_stagingBuffer.allocationSize = vkMemoryRequirements_stagingBuffer.size;
+    vkMemoryAllocateInfo_stagingBuffer.memoryTypeIndex = 0;
+
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        if((vkMemoryRequirements_stagingBuffer.memoryTypeBits & 1) == 1) {
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+                vkMemoryAllocateInfo_stagingBuffer.memoryTypeIndex = i;
+                break;
+            }
+        }
+        vkMemoryRequirements_stagingBuffer.memoryTypeBits >>= 1;
+    }
+
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_stagingBuffer, NULL, &vkDeviceMemory_stagingBuffer);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkAllocateMemory() Failed for Staging Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkAllocateMemory() Successful for Staging Buffer!.\n");
+    }
+
+    vkResult = vkBindBufferMemory(vkDevice, vkBuffer_stagingBuffer, vkDeviceMemory_stagingBuffer, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkBindBufferMemory() Failed for Staging Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkBindBufferMemory() Successful for Staging Buffer!.\n");
+    }
+
+    void *data = NULL;
+
+    vkResult = vkMapMemory(vkDevice, vkDeviceMemory_stagingBuffer, 0, image_size, 0, &data);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkMapMemory() Failed for Staging Buffer!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkMapMemory() Successful for Staging Buffer!.\n");
+    }
+
+    memcpy(data, image_data, image_size);
+
+    vkUnmapMemory(vkDevice, vkDeviceMemory_stagingBuffer);
+
+    stbi_image_free(image_data);
+    image_data = NULL;
+    fprintf(fptr, "createTexture(): Image Data Copied to Staging Buffer Successful & Freed stbi Image Data!.\n");
+    fclose(fp);
+
+    // Step 3: Create VkImage for Texture
+    VkImageCreateInfo vkImageCreateInfo;
+    memset((void*)&vkImageCreateInfo, 0, sizeof(VkImageCreateInfo));
+
+    vkImageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    vkImageCreateInfo.pNext = NULL;
+    vkImageCreateInfo.flags = 0;
+    vkImageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    vkImageCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkImageCreateInfo.extent.width = texture_width;
+    vkImageCreateInfo.extent.height = texture_height;
+    vkImageCreateInfo.extent.depth = 1;
+    vkImageCreateInfo.mipLevels = 1;
+    vkImageCreateInfo.arrayLayers = 1;
+    vkImageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkImageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    vkImageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    vkImageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    vkImageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    vkResult = vkCreateImage(vkDevice, &vkImageCreateInfo, NULL, &vkImage_oceanMask);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkCreateImage() Failed for Texture Image!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkCreateImage() Successful for Texture Image!.\n");
+    }
+
+    VkMemoryRequirements vkMemoryRequirements_image;
+    memset((void*)&vkMemoryRequirements_image, 0, sizeof(VkMemoryRequirements));
+
+    vkGetImageMemoryRequirements(vkDevice, vkImage_oceanMask, &vkMemoryRequirements_image);
+
+    VkMemoryAllocateInfo vkMemoryAllocateInfo_image;
+    memset((void*)&vkMemoryAllocateInfo_image, 0, sizeof(VkMemoryAllocateInfo));
+
+    vkMemoryAllocateInfo_image.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vkMemoryAllocateInfo_image.pNext = NULL;
+    vkMemoryAllocateInfo_image.allocationSize = vkMemoryRequirements_image.size;
+    vkMemoryAllocateInfo_image.memoryTypeIndex = 0;
+
+    for(uint32_t i = 0; i < vkPhysicalDeviceMemoryProperties.memoryTypeCount; i++) {
+        if((vkMemoryRequirements_image.memoryTypeBits & 1) == 1) {
+            if(vkPhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+                vkMemoryAllocateInfo_image.memoryTypeIndex = i;
+                break;
+            }
+        }
+        vkMemoryRequirements_image.memoryTypeBits >>= 1;
+    }
+
+    vkResult = vkAllocateMemory(vkDevice, &vkMemoryAllocateInfo_image, NULL, &vkDeviceMemory_oceanMask);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkAllocateMemory() Failed for Texture Image!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkAllocateMemory() Successful for Texture Image!.\n");
+    }
+
+    vkResult = vkBindImageMemory(vkDevice, vkImage_oceanMask, vkDeviceMemory_oceanMask, 0);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkBindImageMemory() Failed for Texture Image!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkBindImageMemory() Successful for Texture Image!.\n");
+    }
+
+    // Step 4: Transition to TRANSFER_DST, copy staging buffer to image, transition to SHADER_READ_ONLY
+    VkCommandBufferAllocateInfo vkCommandBufferAllocateInfo;
+    memset((void*)&vkCommandBufferAllocateInfo, 0, sizeof(VkCommandBufferAllocateInfo));
+
+    vkCommandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    vkCommandBufferAllocateInfo.pNext = NULL;
+    vkCommandBufferAllocateInfo.commandPool = vkCommandPool;
+    vkCommandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vkCommandBufferAllocateInfo.commandBufferCount = 1;
+
+    VkCommandBuffer vkCommandBuffer_texture = VK_NULL_HANDLE;
+    vkResult = vkAllocateCommandBuffers(vkDevice, &vkCommandBufferAllocateInfo, &vkCommandBuffer_texture);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkAllocateCommandBuffers() Failed!.\n");
+        return (vkResult);
+    }
+
+    VkCommandBufferBeginInfo vkCommandBufferBeginInfo;
+    memset((void*)&vkCommandBufferBeginInfo, 0, sizeof(VkCommandBufferBeginInfo));
+
+    vkCommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    vkCommandBufferBeginInfo.pNext = NULL;
+    vkCommandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkResult = vkBeginCommandBuffer(vkCommandBuffer_texture, &vkCommandBufferBeginInfo);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkBeginCommandBuffer() Failed!.\n");
+        return (vkResult);
+    }
+
+    VkImageMemoryBarrier vkImageMemoryBarrier_toTransferDst;
+    memset((void*)&vkImageMemoryBarrier_toTransferDst, 0, sizeof(VkImageMemoryBarrier));
+
+    vkImageMemoryBarrier_toTransferDst.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    vkImageMemoryBarrier_toTransferDst.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkImageMemoryBarrier_toTransferDst.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    vkImageMemoryBarrier_toTransferDst.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    vkImageMemoryBarrier_toTransferDst.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    vkImageMemoryBarrier_toTransferDst.image = vkImage_oceanMask;
+    vkImageMemoryBarrier_toTransferDst.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkImageMemoryBarrier_toTransferDst.subresourceRange.baseArrayLayer = 0;
+    vkImageMemoryBarrier_toTransferDst.subresourceRange.baseMipLevel = 0;
+    vkImageMemoryBarrier_toTransferDst.subresourceRange.layerCount = 1;
+    vkImageMemoryBarrier_toTransferDst.subresourceRange.levelCount = 1;
+    vkImageMemoryBarrier_toTransferDst.srcAccessMask = 0;
+    vkImageMemoryBarrier_toTransferDst.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    vkCmdPipelineBarrier(
+        vkCommandBuffer_texture,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0, 0, NULL, 0, NULL, 1, &vkImageMemoryBarrier_toTransferDst
+    );
+
+    VkBufferImageCopy vkBufferImageCopy;
+    memset((void*)&vkBufferImageCopy, 0, sizeof(VkBufferImageCopy));
+    vkBufferImageCopy.bufferOffset = 0;
+    vkBufferImageCopy.bufferRowLength = 0;
+    vkBufferImageCopy.bufferImageHeight = 0;
+    vkBufferImageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkBufferImageCopy.imageSubresource.mipLevel = 0;
+    vkBufferImageCopy.imageSubresource.baseArrayLayer = 0;
+    vkBufferImageCopy.imageSubresource.layerCount = 1;
+    vkBufferImageCopy.imageExtent.width = texture_width;
+    vkBufferImageCopy.imageExtent.height = texture_height;
+    vkBufferImageCopy.imageExtent.depth = 1;
+
+    vkCmdCopyBufferToImage(
+        vkCommandBuffer_texture,
+        vkBuffer_stagingBuffer,
+        vkImage_oceanMask,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1, &vkBufferImageCopy
+    );
+
+    VkImageMemoryBarrier vkImageMemoryBarrier_toShaderRead;
+    memset((void*)&vkImageMemoryBarrier_toShaderRead, 0, sizeof(VkImageMemoryBarrier));
+
+    vkImageMemoryBarrier_toShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    vkImageMemoryBarrier_toShaderRead.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    vkImageMemoryBarrier_toShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    vkImageMemoryBarrier_toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    vkImageMemoryBarrier_toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    vkImageMemoryBarrier_toShaderRead.image = vkImage_oceanMask;
+    vkImageMemoryBarrier_toShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkImageMemoryBarrier_toShaderRead.subresourceRange.baseArrayLayer = 0;
+    vkImageMemoryBarrier_toShaderRead.subresourceRange.baseMipLevel = 0;
+    vkImageMemoryBarrier_toShaderRead.subresourceRange.layerCount = 1;
+    vkImageMemoryBarrier_toShaderRead.subresourceRange.levelCount = 1;
+    vkImageMemoryBarrier_toShaderRead.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    vkImageMemoryBarrier_toShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    vkCmdPipelineBarrier(
+        vkCommandBuffer_texture,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        0, 0, NULL, 0, NULL, 1, &vkImageMemoryBarrier_toShaderRead
+    );
+
+    vkResult = vkEndCommandBuffer(vkCommandBuffer_texture);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkEndCommandBuffer() Failed!.\n");
+        return (vkResult);
+    }
+
+    VkSubmitInfo vkSubmitInfo_texture;
+    memset((void*)&vkSubmitInfo_texture, 0, sizeof(VkSubmitInfo));
+    vkSubmitInfo_texture.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    vkSubmitInfo_texture.pNext = NULL;
+    vkSubmitInfo_texture.commandBufferCount = 1;
+    vkSubmitInfo_texture.pCommandBuffers = &vkCommandBuffer_texture;
+
+    vkResult = vkQueueSubmit(vkQueue, 1, &vkSubmitInfo_texture, VK_NULL_HANDLE);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkQueueSubmit() Failed!.\n");
+        return (vkResult);
+    }
+
+    vkResult = vkQueueWaitIdle(vkQueue);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkQueueWaitIdle() Failed!.\n");
+        return (vkResult);
+    }
+
+    if(vkCommandBuffer_texture) {
+        vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &vkCommandBuffer_texture);
+        vkCommandBuffer_texture = VK_NULL_HANDLE;
+    }
+
+    // Step 5: Remove staging buffer
+    if(vkBuffer_stagingBuffer) {
+        vkFreeMemory(vkDevice, vkDeviceMemory_stagingBuffer, NULL);
+        vkDeviceMemory_stagingBuffer = VK_NULL_HANDLE;
+    }
+    if(vkBuffer_stagingBuffer) {
+        vkDestroyBuffer(vkDevice, vkBuffer_stagingBuffer, NULL);
+        vkBuffer_stagingBuffer = VK_NULL_HANDLE;
+    }
+
+    // Step 6: Create Image View for Texture
+    VkImageViewCreateInfo vkImageViewCreateInfo;
+    memset((void*)&vkImageViewCreateInfo, 0, sizeof(VkImageViewCreateInfo));
+
+    vkImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    vkImageViewCreateInfo.pNext = NULL;
+    vkImageViewCreateInfo.flags = 0;
+    vkImageViewCreateInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkImageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkImageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+    vkImageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    vkImageViewCreateInfo.subresourceRange.layerCount = 1;
+    vkImageViewCreateInfo.subresourceRange.levelCount = 1;
+    vkImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    vkImageViewCreateInfo.image = vkImage_oceanMask;
+
+    vkResult = vkCreateImageView(vkDevice, &vkImageViewCreateInfo, NULL, &vkImageView_oceanMask);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkCreateImageView() Failed for Texture Image!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkCreateImageView() Successful for Texture Image!.\n");
+    }
+
+    // Step 7: Create Sampler for Texture
+    VkSamplerCreateInfo vkSamplerCreateInfo;
+    memset((void*)&vkSamplerCreateInfo, 0, sizeof(VkSamplerCreateInfo));
+
+    vkSamplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    vkSamplerCreateInfo.pNext = NULL;
+    vkSamplerCreateInfo.magFilter = VK_FILTER_LINEAR;
+    vkSamplerCreateInfo.minFilter = VK_FILTER_LINEAR;
+    vkSamplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    vkSamplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    vkSamplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE; // no wrap at poles
+    vkSamplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    vkSamplerCreateInfo.anisotropyEnable = VK_FALSE;
+    vkSamplerCreateInfo.maxAnisotropy = 16.0f;
+    vkSamplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+    vkSamplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
+    vkSamplerCreateInfo.compareEnable = VK_FALSE;
+    vkSamplerCreateInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+    vkResult = vkCreateSampler(vkDevice, &vkSamplerCreateInfo, NULL, &vkSampler_oceanMask);
+    if(vkResult != VK_SUCCESS) {
+        fprintf(fptr, "createTexture(): vkCreateSampler() Failed for Texture Sampler!.\n");
+        return (vkResult);
+    } else {
+        fprintf(fptr, "createTexture(): vkCreateSampler() Successful for Texture Sampler!.\n");
+    }
+
+    return (vkResult);
+}
+
+
 VkResult createDescriptorSetLayout(void) {
     // Variables
     VkResult vkResult = VK_SUCCESS;
 
-    // Initialize Descriptor Set Binding
-    VkDescriptorSetLayoutBinding vkDescriptorSetLayoutBinding;
-    memset((void*)&vkDescriptorSetLayoutBinding, 0, sizeof(VkDescriptorSetLayoutBinding));
+    // Initialize Descriptor Set Bindings: 0 -> uniform buffer, 1 -> ocean mask sampler
+    VkDescriptorSetLayoutBinding vkDescriptorSetLayoutBinding_array[2];
+    memset((void*)vkDescriptorSetLayoutBinding_array, 0, sizeof(VkDescriptorSetLayoutBinding) * _ARRAYSIZE(vkDescriptorSetLayoutBinding_array));
 
-    vkDescriptorSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    vkDescriptorSetLayoutBinding.binding = 0; // this 0 is  the binding index, we will use this index in shader
-    vkDescriptorSetLayoutBinding.descriptorCount = 1; 
-    vkDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT; // this binding will be used in vertex and fragment shaders
-    vkDescriptorSetLayoutBinding.pImmutableSamplers = NULL; // we don't have any immutable samplers for now
+    vkDescriptorSetLayoutBinding_array[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    vkDescriptorSetLayoutBinding_array[0].binding = 0; // this 0 is  the binding index, we will use this index in shader
+    vkDescriptorSetLayoutBinding_array[0].descriptorCount = 1;
+    vkDescriptorSetLayoutBinding_array[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT; // this binding will be used in vertex and fragment shaders
+    vkDescriptorSetLayoutBinding_array[0].pImmutableSamplers = NULL; // we don't have any immutable samplers for now
+
+    vkDescriptorSetLayoutBinding_array[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    vkDescriptorSetLayoutBinding_array[1].binding = 1;
+    vkDescriptorSetLayoutBinding_array[1].descriptorCount = 1;
+    vkDescriptorSetLayoutBinding_array[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    vkDescriptorSetLayoutBinding_array[1].pImmutableSamplers = NULL;
 
     //Create Descriptor Set Layout Create Info
     VkDescriptorSetLayoutCreateInfo vkDescriptorSetLayoutCreateInfo;
@@ -3206,8 +3700,8 @@ VkResult createDescriptorSetLayout(void) {
     vkDescriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     vkDescriptorSetLayoutCreateInfo.pNext = NULL;
     vkDescriptorSetLayoutCreateInfo.flags = 0;
-    vkDescriptorSetLayoutCreateInfo.bindingCount = 1; // we will atleast have one binding
-    vkDescriptorSetLayoutCreateInfo.pBindings = &vkDescriptorSetLayoutBinding; // we will atleast have one binding
+    vkDescriptorSetLayoutCreateInfo.bindingCount = _ARRAYSIZE(vkDescriptorSetLayoutBinding_array);
+    vkDescriptorSetLayoutCreateInfo.pBindings = vkDescriptorSetLayoutBinding_array;
     
     // Create Descriptor Set Layout
     vkResult = vkCreateDescriptorSetLayout(vkDevice, &vkDescriptorSetLayoutCreateInfo, NULL, &vkDescriptorSetLayout);
@@ -3254,11 +3748,14 @@ VkResult createDescriptorPool(void) {
     VkResult vkResult = VK_SUCCESS;
 
     // Create Descriptor Pool Create Info
-    VkDescriptorPoolSize vkDescriptorPoolSize;
-    memset((void*)&vkDescriptorPoolSize, 0, sizeof(VkDescriptorPoolSize));
+    VkDescriptorPoolSize vkDescriptorPoolSize_array[2];
+    memset((void*)vkDescriptorPoolSize_array, 0, sizeof(VkDescriptorPoolSize) * _ARRAYSIZE(vkDescriptorPoolSize_array));
 
-    vkDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    vkDescriptorPoolSize.descriptorCount = 1; // we have only one uniform buffer
+    vkDescriptorPoolSize_array[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    vkDescriptorPoolSize_array[0].descriptorCount = 1; // we have only one uniform buffer
+
+    vkDescriptorPoolSize_array[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    vkDescriptorPoolSize_array[1].descriptorCount = 1; // ocean mask
 
     VkDescriptorPoolCreateInfo vkDescriptorPoolCreateInfo;
     memset((void*)&vkDescriptorPoolCreateInfo, 0, sizeof(VkDescriptorPoolCreateInfo));
@@ -3267,8 +3764,8 @@ VkResult createDescriptorPool(void) {
     vkDescriptorPoolCreateInfo.pNext = NULL;
     vkDescriptorPoolCreateInfo.flags = 0;
     vkDescriptorPoolCreateInfo.maxSets = 1; // we have only one descriptor set
-    vkDescriptorPoolCreateInfo.poolSizeCount = 1; // we have only one pool size
-    vkDescriptorPoolCreateInfo.pPoolSizes = &vkDescriptorPoolSize;
+    vkDescriptorPoolCreateInfo.poolSizeCount = _ARRAYSIZE(vkDescriptorPoolSize_array);
+    vkDescriptorPoolCreateInfo.pPoolSizes = vkDescriptorPoolSize_array;
 
     // Create Descriptor Pool
     vkResult = vkCreateDescriptorPool(vkDevice, &vkDescriptorPoolCreateInfo, NULL, &vkDescriptorPool);
@@ -3314,25 +3811,43 @@ VkResult createDescriptorSet(void) {
     vkDescriptorBufferInfo.offset = 0; // offset is 0
     vkDescriptorBufferInfo.range = sizeof(struct MyUniformData); // range is size of uniform
 
-    // Now update the descriptor set with the buffer directly to the shader
-    // we will write to the shader
-    VkWriteDescriptorSet vkWriteDescriptorSet;
-    memset((void*)&vkWriteDescriptorSet, 0, sizeof(VkWriteDescriptorSet));
+    // Ocean mask image as combined image sampler
+    VkDescriptorImageInfo vkDescriptorImageInfo;
+    memset((void*)&vkDescriptorImageInfo, 0, sizeof(VkDescriptorImageInfo));
 
-    vkWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    vkWriteDescriptorSet.pNext = NULL;
-    vkWriteDescriptorSet.dstSet = vkDescriptorSet; // this is the descriptor set we want to update
-    vkWriteDescriptorSet.dstArrayElement = 0; // we have only one descriptor set, so array element is 0
-    vkWriteDescriptorSet.descriptorCount = 1; // we are only gonna write one descriptor set
-    vkWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; 
-    vkWriteDescriptorSet.pBufferInfo = &vkDescriptorBufferInfo;
-    vkWriteDescriptorSet.pImageInfo = NULL; // we'll use this during texture
-    vkWriteDescriptorSet.pTexelBufferView = NULL; // using for tiling of texture but we're not using it now
-    vkWriteDescriptorSet.dstBinding = 0; // this is the binding index we used in descriptor set layout & shader
+    vkDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    vkDescriptorImageInfo.imageView = vkImageView_oceanMask;
+    vkDescriptorImageInfo.sampler = vkSampler_oceanMask;
+
+    // Now update the descriptor set with the buffer & image directly to the shader
+    // we will write to the shader
+    VkWriteDescriptorSet vkWriteDescriptorSet_array[2];
+    memset((void*)vkWriteDescriptorSet_array, 0, sizeof(VkWriteDescriptorSet) * _ARRAYSIZE(vkWriteDescriptorSet_array));
+
+    vkWriteDescriptorSet_array[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    vkWriteDescriptorSet_array[0].pNext = NULL;
+    vkWriteDescriptorSet_array[0].dstSet = vkDescriptorSet; // this is the descriptor set we want to update
+    vkWriteDescriptorSet_array[0].dstArrayElement = 0; // we have only one descriptor set, so array element is 0
+    vkWriteDescriptorSet_array[0].descriptorCount = 1; // we are only gonna write one descriptor set
+    vkWriteDescriptorSet_array[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    vkWriteDescriptorSet_array[0].pBufferInfo = &vkDescriptorBufferInfo;
+    vkWriteDescriptorSet_array[0].pImageInfo = NULL;
+    vkWriteDescriptorSet_array[0].pTexelBufferView = NULL; // using for tiling of texture but we're not using it now
+    vkWriteDescriptorSet_array[0].dstBinding = 0; // this is the binding index we used in descriptor set layout & shader
+
+    vkWriteDescriptorSet_array[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    vkWriteDescriptorSet_array[1].pNext = NULL;
+    vkWriteDescriptorSet_array[1].dstSet = vkDescriptorSet;
+    vkWriteDescriptorSet_array[1].dstArrayElement = 0;
+    vkWriteDescriptorSet_array[1].descriptorCount = 1;
+    vkWriteDescriptorSet_array[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    vkWriteDescriptorSet_array[1].pBufferInfo = NULL;
+    vkWriteDescriptorSet_array[1].pImageInfo = &vkDescriptorImageInfo;
+    vkWriteDescriptorSet_array[1].pTexelBufferView = NULL;
+    vkWriteDescriptorSet_array[1].dstBinding = 1; // ocean mask binding
 
     // Update Descriptor Set
-    vkUpdateDescriptorSets(vkDevice, 1, &vkWriteDescriptorSet, 0, NULL); 
-    // we have only one descriptor set to update, so count is 1
+    vkUpdateDescriptorSets(vkDevice, _ARRAYSIZE(vkWriteDescriptorSet_array), vkWriteDescriptorSet_array, 0, NULL);
     // last two parameters are for copy descriptor sets, which are used while copying
 
     fprintf(fptr, "createDescriptorSet(): vkUpdateDescriptorSets() Successful!.\n");
@@ -3438,6 +3953,48 @@ bool buildImGuiUI(void) {
         changed |= ImGui::SliderFloat("Specular Power", &gSeaUiState.specularPower, 8.0f, 256.0f);
         changed |= ImGui::SliderFloat("Foam Height", &gSeaUiState.foamHeight, 0.0f, 0.5f);
         changed |= ImGui::SliderFloat("Foam Intensity", &gSeaUiState.foamIntensity, 0.0f, 1.0f);
+
+        ImGui::Separator();
+        ImGui::Text("Sphere Controls");
+        bool wrapToSphere = gSphereBlendTarget > 0.5f;
+        if(ImGui::Checkbox("Wrap To Sphere (B)", &wrapToSphere)) {
+            gSphereBlendTarget = wrapToSphere ? 1.0f : 0.0f;
+            changed = true;
+        }
+        if(ImGui::SliderFloat("Sphere Blend", &gSeaUiState.sphereBlend, 0.0f, 1.0f)) {
+            gSphereBlendTarget = gSeaUiState.sphereBlend; // hold the dragged value
+            changed = true;
+        }
+        changed |= ImGui::SliderFloat("Sphere Radius", &gSeaUiState.sphereRadius, 1.0f, 40.0f);
+        // Sphere closes only while radius <= halfSize * scale / PI
+        float closedSphereRadius = halfSize * gSeaModelScale / 3.14159265f;
+        if(gSeaUiState.sphereRadius > closedSphereRadius + 0.01f) {
+            ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.3f, 1.0f), "Open at south pole (closes at radius <= %.2f)", closedSphereRadius);
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Bronze Controls");
+        bool turnToBronze = gBronzeBlendTarget > 0.5f;
+        if(ImGui::Checkbox("Turn To Bronze (C)", &turnToBronze)) {
+            gBronzeBlendTarget = turnToBronze ? 1.0f : 0.0f;
+            changed = true;
+        }
+        if(ImGui::SliderFloat("Bronze Blend", &gSeaUiState.bronzeBlend, 0.0f, 1.0f)) {
+            gBronzeBlendTarget = gSeaUiState.bronzeBlend; // hold the dragged value
+            changed = true;
+        }
+        changed |= ImGui::ColorEdit3("Bronze Dark", gSeaUiState.bronzeDarkColor);
+        changed |= ImGui::ColorEdit3("Bronze Bright", gSeaUiState.bronzeBrightColor);
+        changed |= ImGui::SliderFloat("Bronze Roughness", &gSeaUiState.bronzeRoughness, 0.05f, 1.0f);
+        if(ImGui::Button("Reset Bronze")) {
+            // measured from the Atlas model
+            gSeaUiState.bronzeDarkColor[0] = 0.30f; gSeaUiState.bronzeDarkColor[1] = 0.23f; gSeaUiState.bronzeDarkColor[2] = 0.15f;
+            gSeaUiState.bronzeBrightColor[0] = 0.60f; gSeaUiState.bronzeBrightColor[1] = 0.49f; gSeaUiState.bronzeBrightColor[2] = 0.37f;
+            gSeaUiState.bronzeRoughness = 0.53f;
+            changed = true;
+        }
+
+        ImGui::Separator();
         changed |= ImGui::Checkbox("Show ImGui Demo", &gShowImGuiDemoWindow);
         ImGui::Separator();
         ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);

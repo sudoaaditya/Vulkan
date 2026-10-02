@@ -372,6 +372,19 @@ createUniformBuffer(): vkBindBufferMemory() Successful!.
 createUniformBuffer(): updateUniformBuffer() Successful!.
 initialize(): createUniformBuffer() Successful!.
 
+createTexture(): Texture Image Loaded Successfully! Width: 2048, Height: 1024, Channels: 1, Size: 8388608 bytes
+createTexture(): vkCreateBuffer() Successful for Staging Buffer!.
+createTexture(): vkAllocateMemory() Successful for Staging Buffer!.
+createTexture(): vkBindBufferMemory() Successful for Staging Buffer!.
+createTexture(): vkMapMemory() Successful for Staging Buffer!.
+createTexture(): Image Data Copied to Staging Buffer Successful & Freed stbi Image Data!.
+createTexture(): vkCreateImage() Successful for Texture Image!.
+createTexture(): vkAllocateMemory() Successful for Texture Image!.
+createTexture(): vkBindImageMemory() Successful for Texture Image!.
+createTexture(): vkCreateImageView() Successful for Texture Image!.
+createTexture(): vkCreateSampler() Successful for Texture Sampler!.
+initialize(): createTexture() Successful!.
+
 createShaders(): fopen() succeed to open Vertex Shader spir-v file!.
 createShaders(): fread() succeed to read Vertex Shader file!.
 createShaders(): vkCreateShaderModule() for Vertex Shader Successful!.
@@ -420,39 +433,6 @@ initialize(): buildCommandBuffers() Successful!.
 
 initialize(): Initialization Successful!.
 WinMain(): initialize() Successful!.
-getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() first Call Successful!. [Found 5 Formats]
-getPhysicalDeviceSurfaceFormatAndColorSpace(): vkGetPhysicalDeviceSurfaceFormatsKHR() Second Call Successful!.
-getPhysicalDeviceSurfaceFormatAndColorSpace(): vkSurfaceFormatKHR_array freed.
-createSwapchain(): getPhysicalDeviceSurfaceFormatAndColorSpace() Successful!.
-createSwapchain(): vkGetPhysicalDeviceSurfaceCapabilitiesKHR() Successful!.
-createSwapchain(): desiredNumberOfSwapchainImages is : 2, [Min: 2, Max: 8]
-createSwapchain(): Swapchain Image Width : 1920 X Height : 1080
-getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() first Call Successful!. [Found 4 Present Modes]
-getPhysicalDeviceSurfacePresentMode(): vkGetPhysicalDeviceSurfacePresentModesKHR() Second Call Successful!.
-getPhysicalDeviceSurfacePresentMode(): VK_PRESENT_MODE_MAILBOX_KHR Present Mode found!.
-getPhysicalDeviceSurfacePresentMode(): vkPresentModeKHR_array freed.
-createSwapchain(): getPhysicalDeviceSurfacePresentMode() Successful!.
-createSwapchain(): vkCreateSwapchainKHR() Successful!.
-createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Successful!. : Swapchain Image Count : [2]
-createSwapchainImagesAndImageViews(): vkGetSwapchainImagesKHR() Second Call Successful!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {0}!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for {1}!.
-getSupportedDepthFormat(): Supported Depth Format Found: 130
-createSwapchainImagesAndImageViews(): getSupportedDepthFormat() Successful!.
-createSwapchainImagesAndImageViews(): vkCreateImage() Successful for Depth Image!.
-createSwapchainImagesAndImageViews(): vkAllocateMemory() Successful!.
-createSwapchainImagesAndImageViews(): vkBindDev() Successful!.
-createSwapchainImagesAndImageViews(): vkCreateImageView() Successful for Depth Image!.
-createRenderPass(): vkCreateRenderPass() Successful!.
-createPipelineLayout(): vkCreatePipelineLayout() Successful!.
-createPipeline(): vkCreatePipelineCache() Successful!.
-createPipeline(): vkCreateGraphicsPipelines() Successful!.
-createFramebuffers(): vkCreateFramebuffer() Successful for {0}!.
-createFramebuffers(): vkCreateFramebuffer() Successful for {1}!.
-createCommandBuffers(): vkAllocateCommandBuffers() Successful for {0}!.
-createCommandBuffers(): vkAllocateCommandBuffers() Successful for {1}!.
-
-
 
 uninitialize(): vkDeviceWaitIdle is done!
 uninitializeImGui(): ImGui backend shutdown successful!.
@@ -472,6 +452,10 @@ uninitialize(): vkDestroyPipelineLayout() Succeed!
 uninitialize(): vkDestroyDescriptorSetLayout() Succeed!
 uninitialize(): vkDestroyShaderModule() Succeed for Fragment Shader!
 uninitialize(): vkDestroyShaderModule() Succeed for Vertex Shader!
+uninitialize(): vkDestroySampler() Succeed for Ocean Mask Sampler!
+uninitialize(): vkDestroyImageView() Succeed for Ocean Mask Image View!
+uninitialize(): vkFreeMemory() Succeed for Ocean Mask Image Memory!
+uninitialize(): vkDestroyImage() Succeed for Ocean Mask Image!
 uninitialize(): vkFreeMemory() Succeed for Uniform Buffer!
 uninitialize(): vkDestroyBuffer() Succeed for Uniform Buffer!
 uninitialize(): vkFreeMemory() Succeed for Vertex Buffer for Position!

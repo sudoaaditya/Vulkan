@@ -25,11 +25,19 @@ layout(binding = 0) uniform mvpMatrix {
     vec4 skyParams;
     vec4 shadingParams;
     vec4 lightingParams;
+    vec4 sphereParams; // x: 1/radius, y: max angle, z: sphere blend
+    vec4 bronzeDarkColor;
+    vec4 bronzeBrightColor;
 } uMVP;
 
 layout(location = 0) out vec3 worldPositionOut;
 layout(location = 1) out vec3 worldNormalOut;
 layout(location = 2) out float waveHeightOut;
+layout(location = 3) out vec3 surfaceUpOut;     // surface up (no waves)
+layout(location = 4) out vec3 tangentXOut;      // flat +X on the surface
+layout(location = 5) out vec3 tangentZOut;      // flat +Z on the surface
+layout(location = 6) out float sphereAngleOut;  // angle from north pole
+layout(location = 7) out vec3 globeDirectionOut; // from sphere centre, for mask
 
 // Classic Perlin 3D Noise 
 // by Stefan Gustavson
@@ -145,15 +153,45 @@ vec3 sampleOceanSurface(vec2 surfacePoint) {
     return displaced;
 }
 
+// Wrap flat point (xy, height z) onto sphere of curvature k; k = 0 is flat, origin = north pole
+vec3 bendOntoSphere(vec3 flatPosition) {
+    float k = uMVP.sphereParams.x;
+    float r = length(flatPosition.xy);
+    if(k < 1e-5 || r < 1e-6) {
+        return flatPosition;
+    }
+
+    vec2 direction = flatPosition.xy / r;
+    float theta = r * k;
+    float sinTheta = sin(theta);
+    float cosTheta = cos(theta);
+    float sinHalf = sin(0.5 * theta);
+    float height = flatPosition.z;
+
+    // -2 sin^2(t/2) == cos(t) - 1, precise for tiny k
+    return vec3(
+        direction * (sinTheta / k + height * sinTheta),
+        -2.0 * sinHalf * sinHalf / k + height * cosTheta
+    );
+}
+
 void main (void) {
     vec2 surfacePoint = vPosition.xy;
-    vec3 localPosition = sampleOceanSurface(surfacePoint);
+    vec3 flatPosition = sampleOceanSurface(surfacePoint);
+    vec3 localPosition = bendOntoSphere(flatPosition);
 
     // Adaptive epsilon: smaller step for tighter normals
     float eps = 0.05;
-    vec3 localPositionDx = sampleOceanSurface(surfacePoint + vec2(eps, 0.0));
-    vec3 localPositionDy = sampleOceanSurface(surfacePoint + vec2(0.0, eps));
+    vec3 localPositionDx = bendOntoSphere(sampleOceanSurface(surfacePoint + vec2(eps, 0.0)));
+    vec3 localPositionDy = bendOntoSphere(sampleOceanSurface(surfacePoint + vec2(0.0, eps)));
     vec3 localNormal = normalize(cross(localPositionDx - localPosition, localPositionDy - localPosition));
+
+    // Surface frame without waves (up / tangents)
+    vec3 basePosition = bendOntoSphere(vec3(surfacePoint, 0.0));
+    vec3 baseTangentX = bendOntoSphere(vec3(surfacePoint + vec2(eps, 0.0), 0.0)) - basePosition;
+    vec3 baseTangentY = bendOntoSphere(vec3(surfacePoint + vec2(0.0, eps), 0.0)) - basePosition;
+    vec3 baseUp = cross(baseTangentX, baseTangentY);
+
     mat3 normalMatrix = transpose(inverse(mat3(uMVP.modelMatrix)));
     vec4 worldPosition = uMVP.modelMatrix * vec4(localPosition, 1.0);
 
@@ -161,5 +199,16 @@ void main (void) {
 
     worldPositionOut = worldPosition.xyz;
     worldNormalOut = normalize(normalMatrix * localNormal);
-    waveHeightOut = localPosition.z;
+    waveHeightOut = flatPosition.z;
+    surfaceUpOut = normalize(normalMatrix * baseUp);
+    tangentXOut = normalize(mat3(uMVP.modelMatrix) * baseTangentX);
+    tangentZOut = normalize(mat3(uMVP.modelMatrix) * -baseTangentY); // plane +Y = world -Z
+    sphereAngleOut = length(surfacePoint) * uMVP.sphereParams.x;
+
+    // Direction from sphere centre (0, 0, -1/k)
+    vec3 localGlobeDirection = vec3(0.0, 0.0, 1.0);
+    if(uMVP.sphereParams.x >= 1e-5) {
+        localGlobeDirection = basePosition + vec3(0.0, 0.0, 1.0 / uMVP.sphereParams.x);
+    }
+    globeDirectionOut = normalize(mat3(uMVP.modelMatrix) * localGlobeDirection);
 }
